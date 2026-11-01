@@ -26,7 +26,7 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="top"><span id="hearts"></span><span id="keys"></span><span id="rescued"></span></div>
+<div id="top"><span id="level"></span><span id="hearts"></span><span id="keys"></span><span id="rescued"></span></div>
 <canvas id="map" width="180" height="180"></canvas>
 <div id="message"></div>
 <div id="stats"></div>
@@ -48,9 +48,15 @@
 
 <div id="win" class="panel hidden">
   <div class="card">
-    <h1>Kazandın! 🎉</h1>
-    <p>Bütün timsahları kurtardın. Aferin kaplan!</p>
-    <button id="again-button">Tekrar oyna</button>
+    <h1>Bölüm bitti! 🎉</h1>
+    <p>Bütün timsahları kurtardın. Aferin kaplan! Ama başka dünyalarda da timsahlar var...</p>
+    <button id="next-button">Sonraki bölüm</button>
+  </div>
+</div>
+
+<div id="loading" class="panel hidden">
+  <div class="card">
+    <p>Yeni dünya oluşturuluyor...</p>
   </div>
 </div>
 

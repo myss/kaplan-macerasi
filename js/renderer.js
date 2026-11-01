@@ -4,7 +4,6 @@
 const FLOATS_PER_SPHERE = 7; // x, y, z, radius, r, g, b
 const MAX_SHADOWS = 12;
 const COARSE_DISTANCE = 35;
-const SKY_COLOR = [0.56, 0.8, 0.96];
 
 const SPHERE_VERTEX_SHADER = `
 in vec3 position;
@@ -86,12 +85,11 @@ void main() {
   outColor = vec4(mix(color, uSky, fog), 1.0);
 }`;
 
-function createRenderer(canvas, world, dynamicData) {
+function createRenderer(canvas, dynamicData) {
   // The shader's colours are final screen colours, so Three.js must not convert them.
   THREE.ColorManagement.enabled = false;
   const three = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
   three.sortObjects = false;
-  three.setClearColor(new THREE.Color(...SKY_COLOR));
 
   const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 220);
   const scene = new THREE.Scene();
@@ -104,7 +102,7 @@ function createRenderer(canvas, world, dynamicData) {
     uniforms: {
       uCameraToWorld: { value: camera.matrixWorld },
       uLightDir: { value: new THREE.Vector3() },
-      uSky: { value: new THREE.Vector3(...SKY_COLOR) },
+      uSky: { value: new THREE.Vector3() },
       uShadows: { value: Array.from({ length: MAX_SHADOWS }, () => new THREE.Vector4()) },
       uShadowCount: { value: 0 },
     },
@@ -126,20 +124,32 @@ function createRenderer(canvas, world, dynamicData) {
     return mesh;
   };
 
-  const staticBuffer = new THREE.InstancedInterleavedBuffer(world.sphereData, FLOATS_PER_SPHERE);
-  const chunkMeshes = world.chunks.map((chunk) => {
-    const bounds = new THREE.Sphere(new THREE.Vector3(...chunk.center), chunk.radius);
-    const fine = createSphereMesh(staticBuffer, chunk.fine.first, chunk.fine.count);
-    const coarse = createSphereMesh(staticBuffer, chunk.coarse.first, chunk.coarse.count);
-    fine.geometry.boundingSphere = bounds;
-    coarse.geometry.boundingSphere = bounds;
-    return { bounds, fine, coarse };
-  });
-
   const dynamicBuffer = new THREE.InstancedInterleavedBuffer(dynamicData, FLOATS_PER_SPHERE);
   dynamicBuffer.setUsage(THREE.DynamicDrawUsage);
-  const dynamicMesh = createSphereMesh(dynamicBuffer, 0, 0);
-  dynamicMesh.frustumCulled = false;
+  let chunkMeshes = [];
+  let dynamicMesh = null;
+
+  // Every mesh goes, the moving ones too: disposing a geometry frees the quad buffers they share.
+  function loadWorld(world) {
+    for (const mesh of scene.children) mesh.geometry.dispose();
+    scene.clear();
+
+    three.setClearColor(new THREE.Color(...world.theme.sky));
+    material.uniforms.uSky.value.set(...world.theme.sky);
+
+    const staticBuffer = new THREE.InstancedInterleavedBuffer(world.sphereData, FLOATS_PER_SPHERE);
+    chunkMeshes = world.chunks.map((chunk) => {
+      const bounds = new THREE.Sphere(new THREE.Vector3(...chunk.center), chunk.radius);
+      const fine = createSphereMesh(staticBuffer, chunk.fine.first, chunk.fine.count);
+      const coarse = createSphereMesh(staticBuffer, chunk.coarse.first, chunk.coarse.count);
+      fine.geometry.boundingSphere = bounds;
+      coarse.geometry.boundingSphere = bounds;
+      return { bounds, fine, coarse };
+    });
+
+    dynamicMesh = createSphereMesh(dynamicBuffer, 0, 0);
+    dynamicMesh.frustumCulled = false;
+  }
 
   const lightDirWorld = new THREE.Vector3(0.45, 0.8, 0.35).normalize();
 
@@ -177,5 +187,5 @@ function createRenderer(canvas, world, dynamicData) {
     return three.info.render.triangles / 2;
   }
 
-  return { render };
+  return { loadWorld, render };
 }

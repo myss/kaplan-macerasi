@@ -9,18 +9,16 @@ const CAGE_OPEN_RADIUS = 3.6;
 const KEY_PICKUP_RADIUS = 1.8;
 const CROCODILE_SCALE = 0.8;
 const MAX_HEARTS = 3;
-const BIRD_SEE_RADIUS = 16;
 const BIRD_HIT_RADIUS = 1.2;
-const BIRD_SPEED = 5;
 const BIRD_RESPAWN_TIME = 30;
+const DRAW_DISTANCE = 120; // moving things farther than this are lost in the fog
 const ATTACK_DURATION = 0.35;
 const ATTACK_COOLDOWN = 0.5; // counted from the start of the attack
 const ATTACK_RADIUS = 3;
 
-const world = generateWorld();
 const canvas = document.getElementById('game');
-const frameSpheres = new Float32Array(40000 * FLOATS_PER_SPHERE);
-const renderer = createRenderer(canvas, world, frameSpheres);
+const frameSpheres = new Float32Array(80000 * FLOATS_PER_SPHERE);
+const renderer = createRenderer(canvas, frameSpheres);
 const models = {
   tiger: tigerModel(),
   crocodile: crocodileModel(),
@@ -30,6 +28,7 @@ const models = {
 };
 
 const hud = {
+  level: document.getElementById('level'),
   hearts: document.getElementById('hearts'),
   keys: document.getElementById('keys'),
   rescued: document.getElementById('rescued'),
@@ -37,39 +36,77 @@ const hud = {
   stats: document.getElementById('stats'),
   start: document.getElementById('start'),
   win: document.getElementById('win'),
+  loading: document.getElementById('loading'),
   map: document.getElementById('map').getContext('2d'),
 };
 
 const SPAWN = { x: 0, z: 0 };
 const tiger = {
-  x: SPAWN.x, y: world.terrainTop(SPAWN.x, SPAWN.z), z: SPAWN.z,
+  x: SPAWN.x, y: 0, z: SPAWN.z,
   vy: 0, yaw: 0, stride: 0, grounded: true, airTime: 0, invulnerable: 0, attackTime: 0, attackCooldown: 0,
 };
 const camera = { yaw: Math.PI, pitch: 0.42, distance: 8 };
 const game = {
   playing: false,
-  won: false,
+  levelDone: false,
+  level: 1,
   hearts: MAX_HEARTS,
   keysHeld: 0,
   rescued: 0,
   messageTime: 0,
   noKeyHintTime: 0,
   time: 0,
+  birdSpeed: 0,
+  birdSeeRadius: 0,
+  birdRestTime: 0,
 };
-const keys = world.keys.map((k) => ({ ...k, taken: false }));
-const cages = world.cages.map((c) => ({ ...c, open: false }));
+let world;
+let keys = [];
+let cages = [];
+let birds = [];
+let mapBackground;
 const followers = [];
 const particles = [];
 
-const birdHomes = [...world.cages, keys[0], keys[2], keys[4]];
-const birds = birdHomes.map((home, i) => {
-  const altitude = world.terrainTop(home.x, home.z) + 7;
-  return {
-    homeX: home.x, homeZ: home.z, altitude,
-    x: home.x, y: altitude, z: home.z, yaw: 0,
-    phase: i * 1.7, state: 'patrol', cooldown: 2 + i, timer: 0,
-  };
-});
+function loadLevel(level) {
+  world = generateWorld(level);
+  renderer.loadWorld(world);
+
+  keys = world.keys.map((k) => ({ ...k, taken: false }));
+  cages = world.cages.map((c) => ({ ...c, open: false }));
+  birds = [...cages, ...keys].map((home, i) => {
+    const altitude = home.y + 5;
+    return {
+      homeX: home.x, homeZ: home.z, altitude,
+      x: home.x, y: altitude, z: home.z, yaw: 0,
+      phase: i * 1.7, state: 'patrol', cooldown: 2 + i * 0.5, timer: 0,
+    };
+  });
+  followers.length = 0;
+  particles.length = 0;
+
+  // Birds stay just slower than the tiger, so running away always remains possible.
+  game.birdSpeed = Math.min(5 + (level - 1) * 0.35, 7.2);
+  game.birdSeeRadius = Math.min(16 + (level - 1) * 1.5, 28);
+  game.birdRestTime = Math.max(4 - (level - 1) * 0.3, 1.5);
+  game.level = level;
+  game.levelDone = false;
+  game.hearts = MAX_HEARTS;
+  game.keysHeld = 0;
+  game.rescued = 0;
+
+  tiger.x = SPAWN.x;
+  tiger.z = SPAWN.z;
+  tiger.y = world.terrainTop(SPAWN.x, SPAWN.z);
+  tiger.vy = 0;
+  tiger.yaw = 0;
+  tiger.invulnerable = 0;
+  camera.yaw = Math.PI;
+
+  mapBackground = buildMapBackground();
+  updateHud();
+  showMessage(`${level}. Bölüm: ${world.theme.name}`, 3);
+}
 
 function showMessage(text, seconds = 2.5) {
   hud.message.textContent = text;
@@ -78,6 +115,7 @@ function showMessage(text, seconds = 2.5) {
 }
 
 function updateHud() {
+  hud.level.textContent = `🌍 ${game.level}. Bölüm`;
   hud.hearts.textContent = '❤️'.repeat(game.hearts) + '🖤'.repeat(MAX_HEARTS - game.hearts);
   hud.keys.textContent = `🔑 ${game.keysHeld}`;
   hud.rescued.textContent = `🐊 ${game.rescued} / ${cages.length}`;
@@ -137,14 +175,22 @@ document.getElementById('start-button').addEventListener('click', () => {
   hud.start.classList.add('hidden');
   game.playing = true;
 });
-document.getElementById('again-button').addEventListener('click', () => location.reload());
+document.getElementById('next-button').addEventListener('click', () => {
+  hud.win.classList.add('hidden');
+  hud.loading.classList.remove('hidden');
+  // Generating blocks the page, so give the browser a moment to show the loading panel first.
+  setTimeout(() => {
+    loadLevel(game.level + 1);
+    hud.loading.classList.add('hidden');
+  }, 50);
+});
 
 // --- Tiger ---
 
 const FOOT_OFFSETS = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
 
 function isBlocked(x, y, z) {
-  if (world.isWater(x, z)) return true;
+  if (world.isLiquid(x, z)) return true;
   for (const cage of cages) {
     if (!cage.open && Math.hypot(x - cage.x, z - cage.z) < CAGE_BLOCK_RADIUS) return true;
   }
@@ -294,10 +340,10 @@ function updateBird(bird, dt) {
   if (bird.state === 'swoop') {
     bird.timer -= dt;
     moveX = toTigerX; moveY = toTigerY; moveZ = toTigerZ;
-    speed = BIRD_SPEED;
+    speed = game.birdSpeed;
     if (bird.timer <= 0) {
       bird.state = 'patrol';
-      bird.cooldown = 4;
+      bird.cooldown = game.birdRestTime;
     }
   } else {
     const a = bird.phase * 0.35;
@@ -305,7 +351,7 @@ function updateBird(bird, dt) {
     moveY = bird.altitude + Math.sin(bird.phase * 1.3) * 0.6 - bird.y;
     moveZ = bird.homeZ + Math.sin(a) * 7 - bird.z;
     speed = 5;
-    if (game.playing && bird.cooldown <= 0 && Math.hypot(toTigerX, toTigerZ) < BIRD_SEE_RADIUS) {
+    if (game.playing && bird.cooldown <= 0 && Math.hypot(toTigerX, toTigerZ) < game.birdSeeRadius) {
       bird.state = 'swoop';
       bird.timer = 3.5;
     }
@@ -328,10 +374,10 @@ function updateBird(bird, dt) {
     if (landingOnIt) {
       defeatBird(bird);
       tiger.vy = JUMP_SPEED * 0.9;
-    } else if (tiger.invulnerable <= 0 && distance < BIRD_HIT_RADIUS && !game.won) {
+    } else if (tiger.invulnerable <= 0 && distance < BIRD_HIT_RADIUS && !game.levelDone) {
       hurtTiger(bird.x, bird.z);
       bird.state = 'patrol';
-      bird.cooldown = 4;
+      bird.cooldown = game.birdRestTime;
     }
   }
 }
@@ -361,7 +407,7 @@ function updateObjectives(dt) {
       followers.push({ x: cage.x, z: cage.z, yaw: 0, stride: 0 });
       updateHud();
       if (game.rescued === cages.length) {
-        game.won = true;
+        game.levelDone = true;
         hud.win.classList.remove('hidden');
       } else {
         showMessage('Timsahı kurtardın! Artık seninle geliyor.');
@@ -409,6 +455,7 @@ function updateParticles(dt) {
 function buildFrameSpheres() {
   let count = 0;
   const swing = (t) => Math.sin(t) * 0.7;
+  const isNear = ({ x, z }) => Math.hypot(x - tiger.x, z - tiger.z) < DRAW_DISTANCE;
 
   const blink = tiger.invulnerable > 0 && Math.floor(game.time * 10) % 2 === 0;
   const attackProgress = tiger.attackTime > 0 ? 1 - tiger.attackTime / ATTACK_DURATION : 0;
@@ -431,18 +478,18 @@ function buildFrameSpheres() {
     }
   }
   for (const bird of birds) {
-    if (bird.state === 'gone') continue;
+    if (bird.state === 'gone' || !isNear(bird)) continue;
     count = drawModel(frameSpheres, count, models.bird, bird.x, bird.y, bird.z, bird.yaw, {
       wings: Math.sin(bird.phase * (bird.state === 'swoop' ? 22 : 11)) * 0.55,
     }, 1.2);
   }
   for (const key of keys) {
-    if (key.taken) continue;
+    if (key.taken || !isNear(key)) continue;
     const bob = Math.sin(game.time * 2.5) * 0.15;
     count = drawModel(frameSpheres, count, models.key, key.x, key.y + bob, key.z, game.time * 1.5, {}, 1.4);
   }
   for (const cage of cages) {
-    if (cage.open) continue;
+    if (cage.open || !isNear(cage)) continue;
     count = drawModel(frameSpheres, count, models.cage, cage.x, cage.y, cage.z, 0);
     count = drawModel(frameSpheres, count, models.crocodile, cage.x, cage.y, cage.z, game.time * 0.2, {
       tail: Math.sin(game.time * 2) * 0.15,
@@ -464,11 +511,14 @@ function buildFrameSpheres() {
 }
 
 function buildShadows() {
-  const shadows = [[tiger.x, tiger.y + 0.05, tiger.z, 1.0]];
-  for (const bird of birds) {
-    if (bird.state !== 'gone') shadows.push([bird.x, bird.y - 0.6, bird.z, 1.1]);
-  }
-  return shadows;
+  const nearestBirds = birds
+    .filter((bird) => bird.state !== 'gone')
+    .sort((a, b) => Math.hypot(a.x - tiger.x, a.z - tiger.z) - Math.hypot(b.x - tiger.x, b.z - tiger.z))
+    .slice(0, MAX_SHADOWS - 1);
+  return [
+    [tiger.x, tiger.y + 0.05, tiger.z, 1.0],
+    ...nearestBirds.map((bird) => [bird.x, bird.y - 0.6, bird.z, 1.1]),
+  ];
 }
 
 function cameraPosition() {
@@ -490,7 +540,9 @@ function cameraPosition() {
 }
 
 const MAP_SIZE = 180;
-const mapBackground = (() => {
+function buildMapBackground() {
+  const toPixels = (block) => BLOCK_COLORS[block].map((c) => c * 255);
+  const liquid = toPixels(world.theme.liquid), shore = toPixels(world.theme.shore), land = toPixels(world.theme.surface);
   const image = document.createElement('canvas');
   image.width = image.height = MAP_SIZE;
   const context = image.getContext('2d');
@@ -499,7 +551,7 @@ const mapBackground = (() => {
     for (let x = 0; x < MAP_SIZE; x++) {
       const vx = Math.floor((x / MAP_SIZE) * WORLD_SIZE), vz = Math.floor((z / MAP_SIZE) * WORLD_SIZE);
       const top = world.terrain[vx + vz * WORLD_SIZE];
-      const color = top < WATER_LEVEL ? [60, 130, 220] : top <= WATER_LEVEL + 1 ? [235, 215, 150] : [90, 175, 70];
+      const color = top < WATER_LEVEL ? liquid : top <= WATER_LEVEL + 1 ? shore : land;
       const light = top < WATER_LEVEL ? 1 : 0.85 + (top - WATER_LEVEL) * 0.012;
       const at = (x + z * MAP_SIZE) * 4;
       pixels.data[at] = color[0] * light;
@@ -510,7 +562,7 @@ const mapBackground = (() => {
   }
   context.putImageData(pixels, 0, 0);
   return image;
-})();
+}
 
 function drawMap() {
   const map = hud.map;
@@ -546,7 +598,7 @@ function frame(now) {
   lastTime = now;
   game.time += dt;
 
-  if (game.playing && !game.won) {
+  if (game.playing && !game.levelDone) {
     updateTiger(dt);
     updateObjectives(dt);
   } else {
@@ -574,5 +626,5 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-updateHud();
+loadLevel(1);
 requestAnimationFrame(frame);

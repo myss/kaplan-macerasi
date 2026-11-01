@@ -3,7 +3,10 @@
 Her şeyi kürelerden yapılmış üç boyutlu bir macera oyunu.
 
 Kötü kuşlar timsahları kafeslere kilitledi. Kaplan anahtarları bulup kafesleri açar ve timsahları
-kurtarır. Dünya hazır gelir, küreler kırılmaz.
+kurtarır. Bölüm bitince yeni bir dünyaya geçilir. Dünyalar bölüm numarasından üretilir, yani bölümler
+sonsuzdur: Orman, Çöl, Kar ve Volkan sırayla döner, her seferinde farklı bir ada çıkar. Bölüm
+ilerledikçe kafes ve kuş sayısı artar, kuşlar hızlanır. Anahtarlar basamaklı kulelerin, spiral
+merdivenlerin ve uçan taşların tepesindedir; dağlara zıplayarak çıkılır. Küreler kırılmaz.
 
 ## Oynamak
 
