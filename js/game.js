@@ -272,7 +272,7 @@ document.getElementById('start-button').addEventListener('click', () => {
   lockMouse();
 });
 document.getElementById('new-game-button').addEventListener('click', () => {
-  if (!confirm('Kayıtlı oyun silinip baştan başlansın mı?')) return;
+  if (!confirm('Emin misin? Kayıtlı oyunun silinecek ve 1. bölümden başlayacaksın.')) return;
   clearSave();
   hud.start.classList.add('hidden');
   hud.loading.classList.remove('hidden');
