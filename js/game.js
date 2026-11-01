@@ -400,7 +400,9 @@ function updateTiger(dt) {
       tiger.grounded = true;
       tiger.wingsOut = false;
     }
-  } else if (world.isSolid(tiger.x, tiger.y + TIGER_HEIGHT, tiger.z)) {
+  } else if (FOOT_OFFSETS.some(([ox, oz]) => world.isSolid(tiger.x + ox * TIGER_RADIUS, tiger.y + TIGER_HEIGHT, tiger.z + oz * TIGER_RADIUS))) {
+    // Pushed back down, or flying would creep up through the ceiling a little every frame.
+    tiger.y = Math.floor((tiger.y + TIGER_HEIGHT) / VOXEL) * VOXEL - TIGER_HEIGHT - 0.01;
     tiger.vy = 0;
   }
 
