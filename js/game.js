@@ -593,13 +593,21 @@ function drawMap() {
   for (const key of keys) if (!key.taken) dot(key.x, key.z, 4, '#ffd21f');
   for (const cage of cages) if (!cage.open) dot(cage.x, cage.z, 5, '#333842');
   for (const bird of birds) if (bird.state !== 'gone') dot(bird.x, bird.z, 2.5, '#8a2aa0');
-  dot(tiger.x, tiger.z, 5, '#ff7a00');
-  map.strokeStyle = '#ff7a00';
-  map.lineWidth = 2;
+  map.save();
+  map.translate(toMap(tiger.x), toMap(tiger.z));
+  map.rotate(-tiger.yaw); // at yaw 0 the tiger faces +z, which is down on the map
   map.beginPath();
-  map.moveTo(toMap(tiger.x), toMap(tiger.z));
-  map.lineTo(toMap(tiger.x + Math.sin(tiger.yaw) * 6), toMap(tiger.z + Math.cos(tiger.yaw) * 6));
+  map.moveTo(0, 13);
+  map.lineTo(9, -9);
+  map.lineTo(0, -4);
+  map.lineTo(-9, -9);
+  map.closePath();
+  map.fillStyle = '#ff7a00';
+  map.fill();
+  map.strokeStyle = '#ffffff';
+  map.lineWidth = 2;
   map.stroke();
+  map.restore();
 }
 
 // --- Main loop ---
