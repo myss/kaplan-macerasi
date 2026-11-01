@@ -22,7 +22,7 @@ o tarayıcıya ve açılan adrese özeldir.
 - **Fareyi oynat / Q, E:** kamerayı çevir
 - **Esc:** oyunu durdur, fareyi geri al; devam etmek için tıkla, baştan başlamak için düğmeye bas
 - **Fare tekerleği:** yakınlaş, uzaklaş
-- **C (hile):** en yakındaki anahtarı veya kanadı alır, anahtar varsa kafesi açar
+- **O (hile):** en yakındaki anahtarı veya kanadı alır, anahtar varsa kafesi açar
 
 ## Kod
 

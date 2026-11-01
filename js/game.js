@@ -223,7 +223,7 @@ let jumpQueued = false;
 let attackQueued = false;
 let cheatQueued = false;
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyC' && !e.repeat && game.playing) cheatQueued = true;
+  if (e.code === 'KeyO' && !e.repeat && game.playing) cheatQueued = true;
   if (e.code === 'Space') {
     if (!e.repeat) jumpQueued = true;
     e.preventDefault();
