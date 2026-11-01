@@ -1,6 +1,7 @@
 // The trip between two levels, played by itself: the tiger runs to the shore, crosses the liquid
 // into thickening fog, and arrives at the next island. How it crosses is up to the world's theme:
-// it swims, slides, flies with its wings out, or dives along above the dark deep.
+// it swims, slides, flies with its wings out, or dives along above the dark deep. Underground there
+// is no shore: it just walks off into the fog.
 //
 // The next world is generated before the trip starts, because generating freezes the page for a
 // moment. So both worlds exist during the trip, and a white mist hides the swap between them.
@@ -38,7 +39,7 @@ function pickCrossingDirection() {
 
 function startCrossing(nextWorld) {
   const { dirX, dirZ } = pickCrossingDirection();
-  crossing = { phase: 'run', time: 0, dirX, dirZ, nextWorld, vy: 0 };
+  crossing = { phase: world.theme.underground ? 'out' : 'run', time: 0, dirX, dirZ, nextWorld, vy: 0 };
   tiger.vy = 0;
   tiger.grounded = true;
   tiger.wingsOut = false;
@@ -52,6 +53,7 @@ function crossingHeight() {
   const surface = (WATER_LEVEL + 1) * VOXEL;
   if (world.theme.crossing === 'fly') return surface + 2.2 + Math.sin(game.time * 2.5) * 0.2;
   if (world.theme.crossing === 'slide') return surface;
+  if (world.theme.crossing === 'dig') return world.terrainTop(0, 0);
   if (world.theme.crossing === 'dive') return surface + 1.2 + Math.sin(game.time * 2) * 0.25;
   return surface - 0.75 + Math.sin(game.time * 5) * 0.06;
 }
@@ -151,6 +153,11 @@ function updateCrossing(dt) {
       if (world.theme.surf) {
         finishCrossing(); // no shore to reach: it rides off at once
         placeSurfTiger();
+      } else if (world.theme.underground) {
+        finishCrossing(); // nor underground, where it starts in the middle room
+        tiger.x = SPAWN.x;
+        tiger.z = SPAWN.z;
+        tiger.y = world.terrainTop(SPAWN.x, SPAWN.z);
       }
     }
   } else if (c.phase === 'in') {

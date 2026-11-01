@@ -50,6 +50,9 @@ const models = {
   shark: sharkModel(),
   squid: squidModel(),
   divingHelmet: divingHelmetModel(),
+  ant: antModel(),
+  mole: uprightAnimalModel({ fur: [0.3, 0.22, 0.2], belly: [0.5, 0.38, 0.32], nose: [0.95, 0.55, 0.6], earSize: 0.05, snoutLength: 0.12 }),
+  worm: wormModel(),
   surfboard: surfboardModel(),
   dolphin: dolphinModel(),
   seaRock: seaRockModel(),
@@ -131,7 +134,7 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   keys = world.keys.map((k) => ({ ...k, taken: false }));
   cages = world.cages.map((c) => ({ ...c, open: false }));
   wingPickups = world.wings.map((w) => ({ ...w, taken: false }));
-  birds = [...cages, ...keys].map((home, i) => {
+  birds = (world.theme.noBirds ? [] : [...cages, ...keys]).map((home, i) => {
     // Indoors the ceiling is low and the rooms are small, so they fly lower and in tighter circles.
     const altitude = home.y + (home.indoors ? 2.5 : 5);
     const isCaptain = world.theme.pirateBirds && i === 0;
@@ -272,7 +275,8 @@ function updateHud() {
 }
 
 function updateFlightHud() {
-  const text = world.theme.underwater || world.theme.surf ? '' : `🪶 ${Math.ceil(tiger.flightSeconds)} sn`;
+  const hasNoWings = world.theme.underwater || world.theme.surf || world.theme.underground;
+  const text = hasNoWings ? '' : `🪶 ${Math.ceil(tiger.flightSeconds)} sn`;
   if (hud.flight.textContent !== text) hud.flight.textContent = text;
 }
 

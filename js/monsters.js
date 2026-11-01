@@ -9,6 +9,8 @@ const MONSTER_KINDS = {
   rat: { speed: 5.2, scale: 0.9, color: [0.5, 0.45, 0.42], defeatMessage: 'Süper! Fareyi yendin!' },
   pirateBear: { speed: 3.6, scale: 1.2, color: [0.42, 0.26, 0.14], defeatMessage: 'Süper! Korsan ayıyı yendin!' },
   shark: { speed: 4, scale: 1.2, color: [0.42, 0.5, 0.58], defeatMessage: 'Süper! Köpekbalığını yendin!' },
+  mole: { speed: 2.6, scale: 1, color: [0.3, 0.22, 0.2], defeatMessage: 'Süper! Köstebeği yendin!' },
+  ant: { speed: 4.6, scale: 1.2, color: [0.5, 0.14, 0.08], defeatMessage: 'Süper! Karıncayı yendin!' },
 };
 
 const MONSTER_SEE_RADIUS = 14;
@@ -29,10 +31,11 @@ let monsters = [];
 let fireballs = [];
 
 function createMonsters(homes) {
-  const kind = world.theme.monster;
+  const kinds = world.theme.monsters ?? (world.theme.monster ? [world.theme.monster] : []);
   const random = seededRandom(20261101 + world.level * 7919 + 4);
   const created = [];
   for (const home of homes) {
+    const kind = kinds[created.length % kinds.length];
     for (let attempt = 0; attempt < 60; attempt++) {
       const a = random() * Math.PI * 2, reach = 3.5 + random() * (5 + attempt * 0.4);
       const x = home.x + Math.cos(a) * reach, z = home.z + Math.sin(a) * reach;

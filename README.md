@@ -4,10 +4,11 @@ Her şeyi kürelerden yapılmış üç boyutlu bir macera oyunu.
 
 Kötü kuşlar timsahları kafeslere kilitledi. Kaplan anahtarları bulup kafesleri açar ve timsahları
 kurtarır. Bölüm bitince yeni bir dünyaya geçilir. Dünyalar bölüm numarasından üretilir, yani bölümler
-sonsuzdur: ilk sekizi Orman, Çöl, Kar, Volkan, Dev Ev, Korsan Gemisi, Deniz Altı (kaplan başlıkla
+sonsuzdur: ilk dokuzu Orman, Çöl, Kar, Volkan, Dev Ev, Korsan Gemisi, Deniz Altı (kaplan başlıkla
 dalar; kanat gerekmez, Boşluk'u basılı tutunca yüzer; yavaş denizanaları, köpekbalıkları ve dev kalamar
 vardır) ve Sörf'tür (bambaşka oynanır: kaplan üç şeritte kendiliğinden ilerler, kayalardan, şamandıralardan
-ve yunuslardan kaçar; sonunda balinanın gölgesinden kaçar, balinaya vurulamaz), sonrakiler kendi
+ve yunuslardan kaçar; sonunda balinanın gölgesinden kaçar, balinaya vurulamaz) ve Yer Altı'dır (haritada
+görünen tüneller, köstebekler, karıncalar ve dev solucan), sonrakiler kendi
 renklerini, bitkilerini ve sıvısını üretir (Pembe Mantar Diyarı, Mor Kristal Vadisi gibi). Dev Ev'in
 üst katına ve geminin gözcü yerine kanatla çıkılır; gemideki kaptan kuşa iki kez vurmak gerekir.
 Her bölümde haritada görünmeyen bir bonus vardır: yüksekteki minik kulübeye yalnızca taştan taşa

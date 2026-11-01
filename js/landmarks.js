@@ -68,7 +68,113 @@ function placeBed(api, x, z, floor) {
   return floor + 6;
 }
 
+// A grid of rooms joined by tunnels. A random spanning tree connects all of them, so nothing can be
+// out of reach, and a few extra tunnels make loops. The map shows them, as they are lower than the
+// solid earth around them.
+function buildTunnels(api) {
+  const { toVoxel, toMetres, floorY, setFloor } = api;
+  const FLOOR = WATER_LEVEL + 1;
+  const SPACING = 128, GRID = 5, MIDDLE = 2;
+  const random = seededRandom(20261101 + api.level * 7919 + 6);
+  const nodeX = (i) => toVoxel(0) + (i - MIDDLE) * SPACING;
+  const nodeZ = (j) => toVoxel(0) + (j - MIDDLE) * SPACING;
+
+  const carveDisc = (cx, cz, radius, height) => {
+    for (let z = -radius; z <= radius; z++) {
+      for (let x = -radius; x <= radius; x++) {
+        if (x * x + z * z <= radius * radius) setFloor(cx + x, cz + z, FLOOR, height);
+      }
+    }
+  };
+  const carveTunnel = (x0, z0, x1, z1) => {
+    const halfWidth = 12, height = 20;
+    for (let z = Math.min(z0, z1) - halfWidth * (x0 === x1 ? 0 : 1); z <= Math.max(z0, z1) + halfWidth * (x0 === x1 ? 0 : 1); z++) {
+      for (let x = Math.min(x0, x1) - halfWidth * (z0 === z1 ? 0 : 1); x <= Math.max(x0, x1) + halfWidth * (z0 === z1 ? 0 : 1); x++) {
+        setFloor(x, z, FLOOR, height);
+      }
+    }
+    // Lamps along the ceiling, so that a tunnel can be seen in the dark.
+    const lamps = Math.abs(x1 - x0 + z1 - z0) / 32;
+    for (let i = 1; i < lamps; i++) {
+      const t = i / lamps;
+      api.stampBlob(Math.round(x0 + (x1 - x0) * t), FLOOR + height, Math.round(z0 + (z1 - z0) * t), 1, 1, 1, BLOCK.GLOW);
+    }
+  };
+
+  const seen = new Set([`${MIDDLE},${MIDDLE}`]);
+  const stack = [[MIDDLE, MIDDLE]];
+  const joined = new Set();
+  const join = (i, j, ni, nj) => {
+    const id = [i, j, ni, nj].join();
+    if (joined.has(id) || joined.has([ni, nj, i, j].join())) return;
+    joined.add(id);
+    carveTunnel(nodeX(i), nodeZ(j), nodeX(ni), nodeZ(nj));
+  };
+  const neighbours = (i, j) => [[i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]].filter(([a, b]) => a >= 0 && a < GRID && b >= 0 && b < GRID);
+  while (stack.length > 0) {
+    const [i, j] = stack[stack.length - 1];
+    const fresh = neighbours(i, j).filter(([a, b]) => !seen.has(`${a},${b}`));
+    if (fresh.length === 0) {
+      stack.pop();
+      continue;
+    }
+    const [ni, nj] = fresh[Math.floor(random() * fresh.length)];
+    seen.add(`${ni},${nj}`);
+    join(i, j, ni, nj);
+    stack.push([ni, nj]);
+  }
+  for (let extra = 0; extra < 7; extra++) {
+    const i = Math.floor(random() * GRID), j = Math.floor(random() * GRID);
+    const options = neighbours(i, j);
+    const [ni, nj] = options[Math.floor(random() * options.length)];
+    join(i, j, ni, nj);
+  }
+
+  const out = { cages: [], keys: [], wings: [], mapShapes: [] };
+  const rooms = [];
+  for (let j = 0; j < GRID; j++) {
+    for (let i = 0; i < GRID; i++) {
+      if (i !== MIDDLE || j !== MIDDLE) rooms.push([i, j]);
+    }
+  }
+  for (let i = rooms.length - 1; i > 0; i--) {
+    const k = Math.floor(random() * (i + 1));
+    [rooms[i], rooms[k]] = [rooms[k], rooms[i]];
+  }
+
+  // The middle room is wide enough for the boss, and one far corner rises high enough for the bonus.
+  carveDisc(nodeX(MIDDLE), nodeZ(MIDDLE), 72, 30);
+  const corner = rooms.find(([i, j]) => Math.abs(i - MIDDLE) === MIDDLE && Math.abs(j - MIDDLE) === MIDDLE);
+  rooms.splice(rooms.indexOf(corner), 1);
+  carveDisc(nodeX(corner[0]), nodeZ(corner[1]), 44, WORLD_HEIGHT - FLOOR - 3);
+  out.bonusSpot = { vx: nodeX(corner[0]), vz: nodeZ(corner[1]) };
+
+  const CAGES = 8;
+  rooms.forEach(([i, j], n) => {
+    const x = nodeX(i), z = nodeZ(j);
+    carveDisc(x, z, 36, 26);
+    for (const [ox, oz] of [[24, 0], [-24, 0], [0, 24], [0, -24]]) api.stampBlob(x + ox, FLOOR + 26, z + oz, 1, 1, 1, BLOCK.GLOW);
+    if (n < CAGES) {
+      out.cages.push({ x: toMetres(x), z: toMetres(z), y: floorY(FLOOR), indoors: true });
+    } else if (n < CAGES * 2) {
+      // Every other key sits on a rock that takes a jump.
+      const onRock = n % 2 === 0;
+      if (onRock) api.box(x - 8, FLOOR + 1, z - 8, x + 8, FLOOR + 4, z + 8, BLOCK.ROCK);
+      out.keys.push({ x: toMetres(x), z: toMetres(z), y: floorY(onRock ? FLOOR + 4 : FLOOR) + 1, climb: 'none', indoors: true });
+    }
+  });
+  return out;
+}
+
 const LAYOUTS = {
+  tunnels: {
+    pads: [],
+    outsidePairs: 0,
+    randomWings: 0,
+    solidEarth: true,
+    build: buildTunnels,
+  },
+
   giantHouse: {
     pads: [
       { x: -26, z: 24, inner: 28, outer: 36 },

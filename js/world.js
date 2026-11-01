@@ -35,6 +35,7 @@ const BLOCK = {
   GEN_ACCENT_A: 27, GEN_ACCENT_B: 28, GEN_TRUNK: 29, GEN_CROWN: 30,
   HOUSE_WALL: 31, ROOF: 32, WOOD_FLOOR: 33, FURNITURE: 34, DECK: 35, HULL: 36, SAIL: 37, FLAG: 38,
   SEABED: 39, ABYSS: 40, KELP: 41, CORAL_PINK: 42, CORAL_ORANGE: 43, SHELL: 44, FOAM: 45,
+  EARTH: 46, TUNNEL_FLOOR: 47, GLOW: 48,
 };
 const BLOCK_COLORS = {
   [BLOCK.GRASS]: [0.36, 0.72, 0.28],
@@ -72,6 +73,9 @@ const BLOCK_COLORS = {
   [BLOCK.CORAL_ORANGE]: [0.98, 0.56, 0.2],
   [BLOCK.SHELL]: [0.98, 0.93, 0.82],
   [BLOCK.FOAM]: [0.72, 0.9, 0.98],
+  [BLOCK.EARTH]: [0.36, 0.25, 0.16],
+  [BLOCK.TUNNEL_FLOOR]: [0.62, 0.48, 0.3],
+  [BLOCK.GLOW]: [1.5, 1.25, 0.5],
 };
 
 // The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
@@ -117,6 +121,12 @@ const WORLD_THEMES = [
     name: 'Sörf', sky: [0.55, 0.82, 0.98], fogDensity: 0.0005, hills: 0, crossing: 'swim', openSea: true, surf: true,
     surface: BLOCK.WATER, soil: BLOCK.WATER, peak: BLOCK.WATER, shore: BLOCK.WATER, liquid: BLOCK.WATER, rock: BLOCK.WATER,
     accents: [BLOCK.WATER, BLOCK.WATER],
+  },
+  {
+    name: 'Yer Altı', sky: [0.06, 0.04, 0.03], fogDensity: 0.0009, hills: 0, crossing: 'dig', layout: 'tunnels', underground: true, noBirds: true,
+    monsters: ['mole', 'ant'], boss: 'worm', walledBoss: true,
+    surface: BLOCK.EARTH, soil: BLOCK.EARTH, deep: BLOCK.EARTH, peak: BLOCK.EARTH, shore: BLOCK.TUNNEL_FLOOR, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
+    accents: [BLOCK.EARTH, BLOCK.EARTH], trunk: BLOCK.DIRT,
   },
 ];
 
@@ -199,6 +209,7 @@ function generateWorld(level) {
 
   const rawHeight = (x, z) => {
     if (theme.openSea) return 6;
+    if (layout?.solidEarth) return WORLD_HEIGHT - 1;
     // The noise wobbles the coast by up to 15%, so no two islands have the same outline.
     const wobble = 1 + (noise(x * 0.004 + 11, z * 0.004 + 23) - 0.5) * 0.3;
     const distance = Math.hypot(x, z) * VOXEL * wobble;
@@ -253,7 +264,7 @@ function generateWorld(level) {
       else if (random() < 0.012) surface = theme.accents[random() < 0.5 ? 0 : 1];
 
       for (let y = 0; y <= top; y++) {
-        voxels[index(vx, y, vz)] = y === top ? surface : y > top - 4 ? theme.soil : BLOCK.STONE;
+        voxels[index(vx, y, vz)] = y === top ? surface : y > top - 4 ? theme.soil : theme.deep ?? BLOCK.STONE;
       }
       for (let y = top + 1; y <= WATER_LEVEL; y++) voxels[index(vx, y, vz)] = theme.liquid;
       // Waves to surf past. They repeat exactly, because the surf level loops its stretch of sea.
@@ -355,7 +366,7 @@ function generateWorld(level) {
       if (top > WATER_LEVEL + 2 && isClearOfPads(x, z)) place(vx, top, vz);
     }
   };
-  if (!theme.openSea) {
+  if (!theme.openSea && !layout?.solidEarth) {
     scatter(280, PLANTS[theme.plant]);
     scatter(180, (vx, top, vz) => {
       const size = 3 + Math.floor(random() * 5);
@@ -433,6 +444,13 @@ function generateWorld(level) {
     toVoxel,
     toMetres: (voxel) => (voxel + 0.5 - WORLD_SIZE / 2) * VOXEL,
     floorY: (voxelY) => (voxelY + 1) * VOXEL,
+    level,
+    // Hollows out a column of solid earth above a new floor.
+    setFloor(vx, vz, floor, height) {
+      terrain[vx + vz * WORLD_SIZE] = floor;
+      voxels[index(vx, floor, vz)] = theme.shore;
+      for (let y = floor + 1; y <= floor + height; y++) voxels[index(vx, y, vz)] = BLOCK.EMPTY;
+    },
   });
   if (builtLayout) {
     cages.push(...builtLayout.cages);
@@ -549,7 +567,7 @@ function generateWorld(level) {
     const voxelSize = VOXEL * scale;
     const radius = voxelSize * SPHERE_RADIUS_FACTOR;
     const isEmpty = (x, y, z) => {
-      if (y >= height) return true;
+      if (y >= height) return !layout?.solidEarth; // nobody sees the top of the earth from inside it
       if (x < 0 || x >= size || z < 0 || z >= size || y < 0) return false;
       return grid[gridIndex(x, y, z)] === BLOCK.EMPTY;
     };

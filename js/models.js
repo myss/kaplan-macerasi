@@ -392,6 +392,42 @@ function divingHelmetModel() {
   return { parts: [part(spheres)] };
 }
 
+function antModel() {
+  const shell = [0.5, 0.14, 0.08], dark = [0.2, 0.05, 0.04], white = [0.98, 0.97, 0.92], black = [0.05, 0.05, 0.06];
+  const body = [];
+  addShell(body, 0, 0.45, -0.5, 0.3, 0.26, 0.42, shell);
+  addShell(body, 0, 0.42, 0.05, 0.18, 0.16, 0.22, dark);
+  addShell(body, 0, 0.5, 0.5, 0.26, 0.22, 0.24, shell);
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.15, 0.6, 0.68, 0.08, white);
+    addSphere(body, side * 0.16, 0.61, 0.74, 0.05, black);
+    for (let i = 0; i < 7; i++) addSphere(body, side * (0.08 + i * 0.03), 0.7 + i * 0.06, 0.55 + i * 0.04, 0.03, dark); // feelers
+  }
+  const legs = (side, sign) => {
+    const spheres = [];
+    for (const z of [-0.2, 0.05, 0.3]) {
+      for (let i = 0; i < 6; i++) addSphere(spheres, side * (0.15 + i * 0.08), 0.42 - i * 0.075, z, 0.04, dark);
+    }
+    return part(spheres, [side * 0.15, 0.42, 0.05], 'x', 'stride', sign);
+  };
+  return { parts: [part(body), legs(1, 1), legs(-1, -1)] };
+}
+
+function wormModel() {
+  const pink = [0.92, 0.58, 0.6], band = [0.78, 0.42, 0.46], white = [0.98, 0.97, 0.92], black = [0.05, 0.05, 0.06], mouth = [0.45, 0.1, 0.14];
+  const body = [];
+  for (let i = 0; i < 8; i++) {
+    addShell(body, Math.sin(i * 0.8) * 0.06, 0.2 + i * 0.32, Math.cos(i * 0.6) * 0.05, 0.42 - i * 0.012, 0.2, 0.42 - i * 0.012, i % 2 ? band : pink);
+  }
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.18, 2.45, 0.32, 0.1, white);
+    addSphere(body, side * 0.18, 2.45, 0.4, 0.06, black);
+  }
+  addShell(body, 0, 2.18, 0.36, 0.2, 0.09, 0.08, mouth);
+  for (let i = -3; i <= 3; i++) addSphere(body, i * 0.055, 2.26, 0.42, 0.03, white);
+  return { parts: [part(body)] };
+}
+
 function surfboardModel() {
   const board = [0.98, 0.85, 0.2], stripe = [0.95, 0.3, 0.25];
   const spheres = [];

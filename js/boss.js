@@ -53,6 +53,10 @@ const BOSS_KINDS = {
     ball: { count: 2, speed: 7, radius: 1, color: [1.5, 0.65, 0.08], putOutMessage: 'Ateşi söndürdün!', burst: [0.85, 0.85, 0.88] },
     spin: { radius: 6.5, turnsPerSecond: 0.9, color: [1.4, 0.55, 0.08], grabs: false },
   },
+  worm: {
+    name: 'Dev Solucan', scale: 2.3, speed: 2.4, lungeSpeed: 12, moves: ['throw', 'lunge', 'slam'],
+    ball: { count: 3, speed: 7, radius: 0.55, color: [0.42, 0.28, 0.16], putOutMessage: 'Toprağı dağıttın!', burst: [0.42, 0.28, 0.16] },
+  },
   squid: {
     name: 'Dev Kalamar', scale: 2.4, speed: 2.2, lungeSpeed: 11, moves: ['throw', 'spin', 'lunge'],
     ball: { count: 3, speed: 7, radius: 0.55, color: [0.05, 0.03, 0.12], putOutMessage: 'Mürekkebi dağıttın!', burst: [0.1, 0.06, 0.2] },
@@ -146,6 +150,7 @@ function bossHurtsTiger(message) {
 
 function moveBoss(x, z) {
   if (world.isLiquid(x, z)) return;
+  if (world.theme.walledBoss && world.isSolid(x, boss.y + 1, z)) return;
   boss.x = x;
   boss.z = z;
   boss.y = world.terrainTop(x, z);
