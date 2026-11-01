@@ -422,8 +422,13 @@ function updateTiger(dt) {
     const speed = tiger.stuckTime > 0 ? WALK_SPEED * STUCK_SPEED_FACTOR : WALK_SPEED;
     const stepX = (dirX / length) * speed * dt;
     const stepZ = (dirZ / length) * speed * dt;
-    if (!isBlocked(tiger.x + stepX, tiger.y, tiger.z)) tiger.x += stepX;
-    if (!isBlocked(tiger.x, tiger.y, tiger.z + stepZ)) tiger.z += stepZ;
+    // Pushed up under an overhang by the ground rising, the tiger is blocked wherever it turns. So
+    // once it is inside something, only the liquid stops it, and it can walk out.
+    const canStepTo = isBlocked(tiger.x, tiger.y, tiger.z)
+      ? (x, z) => !world.isLiquid(x, z)
+      : (x, z) => !isBlocked(x, tiger.y, z);
+    if (canStepTo(tiger.x + stepX, tiger.z)) tiger.x += stepX;
+    if (canStepTo(tiger.x, tiger.z + stepZ)) tiger.z += stepZ;
 
     const targetYaw = Math.atan2(dirX, dirZ);
     let turn = targetYaw - tiger.yaw;
