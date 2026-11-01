@@ -23,6 +23,8 @@
   .card th { font-weight: 700; white-space: nowrap; }
   button { margin-top: 12px; padding: 12px 36px; border: 0; border-radius: 18px; background: #e8710a; color: #fff; font: inherit; font-size: 26px; font-weight: 700; cursor: pointer; }
   button:hover { background: #ff8a1f; }
+  #new-game-button { display: block; margin: 12px auto 0; padding: 6px 18px; background: none; color: #8a6a3a; font-size: 16px; font-weight: 400; text-decoration: underline; }
+  #new-game-button[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -46,6 +48,7 @@
       <tr><th>Haritada</th><td>🟡 anahtar · ⚫ kafes · 🟠 sen</td></tr>
     </table>
     <button id="start-button">Başla!</button>
+    <button id="new-game-button" hidden>Baştan başla</button>
   </div>
 </div>
 

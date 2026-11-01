@@ -12,6 +12,9 @@ merdivenlerin ve uçan taşların tepesindedir; dağlara zıplayarak çıkılır
 
 `index.html` dosyasına çift tıklayın. Kurulum gerekmez, tarayıcının WebGL2 desteklemesi yeterlidir.
 
+Oyun kendini tarayıcıya kaydeder ve kapatınca kaldığı yerden devam eder; kuşlar baştan başlar. Kayıt
+o tarayıcıya ve açılan adrese özeldir.
+
 - **W A S D / oklar:** yürü
 - **Boşluk:** zıpla; kuşun üstüne zıplarsan onu yenersin
 - **F / tıkla:** dönerek vur; yakındaki kuşları yener

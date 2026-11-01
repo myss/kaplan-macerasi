@@ -13,6 +13,8 @@ const BIRD_HIT_RADIUS = 1.2;
 const BIRD_RESPAWN_TIME = 30;
 const DRAW_DISTANCE = 120; // moving things farther than this are lost in the fog
 const MOUSE_SENSITIVITY = 0.003;
+const SAVE_KEY = 'kaplan-macerasi-kayit';
+const SAVE_INTERVAL = 2; // seconds
 const ATTACK_DURATION = 0.35;
 const ATTACK_COOLDOWN = 0.5; // counted from the start of the attack
 const ATTACK_RADIUS = 3;
@@ -110,6 +112,62 @@ function loadLevel(level) {
   showMessage(`${level}. Bölüm: ${world.theme.name}`, 3);
 }
 
+// --- Saving ---
+
+// A level is rebuilt from its number, so only what the player changed needs storing. Birds start
+// over. A finished level saves as the start of the next one.
+function writeSave() {
+  if (!game.playing) return;
+  const save = game.levelDone ? { level: game.level + 1 } : {
+    level: game.level,
+    hearts: game.hearts,
+    keysHeld: game.keysHeld,
+    takenKeys: keys.flatMap((key, i) => (key.taken ? [i] : [])),
+    openCages: cages.flatMap((cage, i) => (cage.open ? [i] : [])),
+    tiger: { x: tiger.x, y: tiger.y, z: tiger.z, yaw: tiger.yaw },
+    camera: { yaw: camera.yaw, pitch: camera.pitch, distance: camera.distance },
+  };
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  } catch {
+    // Without storage the game still plays; it just starts over next time.
+  }
+}
+
+function readSave() {
+  try {
+    const save = JSON.parse(localStorage.getItem(SAVE_KEY));
+    return Number.isInteger(save?.level) && save.level >= 1 ? save : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearSave() {
+  try {
+    localStorage.removeItem(SAVE_KEY);
+  } catch {
+    // Nothing was stored, then.
+  }
+}
+
+function restoreSave(save) {
+  if (!save.tiger) return;
+  for (const i of save.takenKeys) if (keys[i]) keys[i].taken = true;
+  for (const i of save.openCages) {
+    if (!cages[i]) continue;
+    cages[i].open = true;
+    followers.push({ x: save.tiger.x, z: save.tiger.z, yaw: 0, stride: 0 });
+  }
+  game.hearts = save.hearts;
+  game.keysHeld = save.keysHeld;
+  game.rescued = followers.length;
+  Object.assign(camera, save.camera);
+  // If the world came out differently since this save, the old spot may be inside something.
+  if (!isBlocked(save.tiger.x, save.tiger.y, save.tiger.z)) Object.assign(tiger, save.tiger);
+  updateHud();
+}
+
 function showMessage(text, seconds = 2.5) {
   hud.message.textContent = text;
   hud.message.classList.add('visible');
@@ -189,6 +247,19 @@ document.getElementById('start-button').addEventListener('click', () => {
   game.playing = true;
   lockMouse();
 });
+document.getElementById('new-game-button').addEventListener('click', () => {
+  if (!confirm('Kayıtlı oyun silinip baştan başlansın mı?')) return;
+  clearSave();
+  hud.start.classList.add('hidden');
+  hud.loading.classList.remove('hidden');
+  lockMouse();
+  setTimeout(() => {
+    loadLevel(1);
+    hud.loading.classList.add('hidden');
+    game.playing = true;
+  }, 50);
+});
+window.addEventListener('pagehide', writeSave);
 document.getElementById('next-button').addEventListener('click', () => {
   hud.win.classList.add('hidden');
   hud.loading.classList.remove('hidden');
@@ -425,6 +496,7 @@ function updateObjectives(dt) {
         game.levelDone = true;
         hud.win.classList.remove('hidden');
         document.exitPointerLock();
+        writeSave();
       } else {
         showMessage('Timsahı kurtardın! Artık seninle geliyor.');
       }
@@ -614,6 +686,7 @@ function drawMap() {
 
 let lastTime = performance.now();
 let statsTime = 0, statsFrames = 0;
+let timeSinceSave = 0;
 
 function frame(now) {
   const dt = Math.min((now - lastTime) / 1000, 0.05);
@@ -635,6 +708,12 @@ function frame(now) {
     for (const bird of birds) updateBird(bird, dt);
     updateFollowers(dt);
     updateParticles(dt);
+
+    timeSinceSave += dt;
+    if (timeSinceSave >= SAVE_INTERVAL) {
+      timeSinceSave = 0;
+      writeSave();
+    }
   }
 
   if (game.messageTime > 0) {
@@ -655,5 +734,11 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-loadLevel(1);
+const savedGame = readSave();
+loadLevel(savedGame ? savedGame.level : 1);
+if (savedGame) {
+  restoreSave(savedGame);
+  document.getElementById('start-button').textContent = `Devam et (${savedGame.level}. Bölüm)`;
+  document.getElementById('new-game-button').hidden = false;
+}
 requestAnimationFrame(frame);
