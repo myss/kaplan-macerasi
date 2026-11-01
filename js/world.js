@@ -20,6 +20,7 @@ const OBJECTIVE_SEPARATION = 22;
 const MAX_CAGES = 10;
 const MAX_WINGS = 12;
 const KEY_CLIMBS = ['tower', 'stairs', 'stones'];
+const SURF_WAVE_PERIOD = 40;
 const BONUS_PLATFORM_TOP = 100; // 25 m up
 const BONUS_SPIRAL_RADIUS = 20;
 const BONUS_STONE_DEGREES = 50;
@@ -33,7 +34,7 @@ const BLOCK = {
   GEN_SURFACE: 21, GEN_SOIL: 22, GEN_PEAK: 23, GEN_SHORE: 24, GEN_LIQUID: 25, GEN_ROCK: 26,
   GEN_ACCENT_A: 27, GEN_ACCENT_B: 28, GEN_TRUNK: 29, GEN_CROWN: 30,
   HOUSE_WALL: 31, ROOF: 32, WOOD_FLOOR: 33, FURNITURE: 34, DECK: 35, HULL: 36, SAIL: 37, FLAG: 38,
-  SEABED: 39, ABYSS: 40, KELP: 41, CORAL_PINK: 42, CORAL_ORANGE: 43, SHELL: 44,
+  SEABED: 39, ABYSS: 40, KELP: 41, CORAL_PINK: 42, CORAL_ORANGE: 43, SHELL: 44, FOAM: 45,
 };
 const BLOCK_COLORS = {
   [BLOCK.GRASS]: [0.36, 0.72, 0.28],
@@ -70,6 +71,7 @@ const BLOCK_COLORS = {
   [BLOCK.CORAL_PINK]: [0.98, 0.42, 0.56],
   [BLOCK.CORAL_ORANGE]: [0.98, 0.56, 0.2],
   [BLOCK.SHELL]: [0.98, 0.93, 0.82],
+  [BLOCK.FOAM]: [0.72, 0.9, 0.98],
 };
 
 // The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
@@ -110,6 +112,11 @@ const WORLD_THEMES = [
     birdSpeedFactor: 0.5,
     surface: BLOCK.SEABED, soil: BLOCK.SEABED, peak: BLOCK.ROCK, shore: BLOCK.SEABED, liquid: BLOCK.ABYSS, rock: BLOCK.ROCK,
     accents: [BLOCK.SHELL, BLOCK.CORAL_PINK], trunk: BLOCK.KELP, crown: BLOCK.KELP,
+  },
+  {
+    name: 'Sörf', sky: [0.55, 0.82, 0.98], fogDensity: 0.0005, hills: 0, crossing: 'swim', openSea: true, surf: true,
+    surface: BLOCK.WATER, soil: BLOCK.WATER, peak: BLOCK.WATER, shore: BLOCK.WATER, liquid: BLOCK.WATER, rock: BLOCK.WATER,
+    accents: [BLOCK.WATER, BLOCK.WATER],
   },
 ];
 
@@ -204,7 +211,7 @@ function generateWorld(level) {
   };
 
   // Flat ground under everything the player has to reach.
-  const pads = [{ x: 0, z: 0, inner: 4, outer: 8 }, ...(layout ? layout.pads : [])];
+  const pads = theme.surf ? [] : [{ x: 0, z: 0, inner: 4, outer: 8 }, ...(layout ? layout.pads : [])];
   const placeObjective = () => {
     for (let attempt = 0; ; attempt++) {
       const [x, z] = polar(random() * 360, OBJECTIVE_RADIUS * (0.2 + Math.sqrt(random()) * 0.8));
@@ -214,7 +221,7 @@ function generateWorld(level) {
   };
   const cages = [];
   const keys = [];
-  const cageCount = layout ? layout.outsidePairs : Math.min(4 + level, MAX_CAGES);
+  const cageCount = theme.surf ? 0 : layout ? layout.outsidePairs : Math.min(4 + level, MAX_CAGES);
   for (let i = 0; i < cageCount; i++) {
     const [x, z] = placeObjective();
     cages.push({ x, z });
@@ -249,6 +256,8 @@ function generateWorld(level) {
         voxels[index(vx, y, vz)] = y === top ? surface : y > top - 4 ? theme.soil : BLOCK.STONE;
       }
       for (let y = top + 1; y <= WATER_LEVEL; y++) voxels[index(vx, y, vz)] = theme.liquid;
+      // Waves to surf past. They repeat exactly, because the surf level loops its stretch of sea.
+      if (theme.surf && vz % SURF_WAVE_PERIOD < 3) voxels[index(vx, WATER_LEVEL, vz)] = BLOCK.FOAM;
     }
   }
 
@@ -449,57 +458,60 @@ function generateWorld(level) {
 
   // The hidden bonus: a spiral of floating stones up to a tiny shed. Its own random sequence, for
   // the same reason as the wings below. Its spot is far from the middle and clear of everything.
-  const bonusRandom = seededRandom(20261101 + level * 7919 + 3);
-  const isGoodBonusSpot = (x, z, maxSlope) => {
-    if (pads.some((pad) => Math.hypot(x - pad.x, z - pad.z) < pad.outer + 8)) return false;
-    // Level ground: a ledge cutting through the spiral would block the jumps.
-    const ground = terrainTop(x, z);
-    for (let a = 0; a < 8; a++) {
-      for (const radius of [0, 3, 6, 8]) {
-        const [ox, oz] = polar(a * 45, radius);
-        if (isLiquid(x + ox, z + oz) || Math.abs(terrainTop(x + ox, z + oz) - ground) > maxSlope) return false;
+  const placeBonus = () => {
+    const bonusRandom = seededRandom(20261101 + level * 7919 + 3);
+    const isGoodBonusSpot = (x, z, maxSlope) => {
+      if (pads.some((pad) => Math.hypot(x - pad.x, z - pad.z) < pad.outer + 8)) return false;
+      // Level ground: a ledge cutting through the spiral would block the jumps.
+      const ground = terrainTop(x, z);
+      for (let a = 0; a < 8; a++) {
+        for (const radius of [0, 3, 6, 8]) {
+          const [ox, oz] = polar(a * 45, radius);
+          if (isLiquid(x + ox, z + oz) || Math.abs(terrainTop(x + ox, z + oz) - ground) > maxSlope) return false;
+        }
+      }
+      return true;
+    };
+    let bonusSpot = builtLayout?.bonusSpot;
+    for (let attempt = 0; !bonusSpot && attempt < 800; attempt++) {
+      const [x, z] = polar(bonusRandom() * 360, OBJECTIVE_RADIUS * (0.78 + bonusRandom() * 0.22));
+      if (isGoodBonusSpot(x, z, attempt < 400 ? 1 : 3) || attempt === 799) bonusSpot = { vx: toVoxel(x), vz: toVoxel(z) };
+    }
+    const { vx: bonusX, vz: bonusZ } = bonusSpot;
+    if (!builtLayout?.bonusSpot) {
+      // Fell the trees and rocks in the spiral's way. A layout's spot is clear by design.
+      const reach = BONUS_SPIRAL_RADIUS + 12;
+      for (let vz = bonusZ - reach; vz <= bonusZ + reach; vz++) {
+        for (let vx = bonusX - reach; vx <= bonusX + reach; vx++) {
+          if ((vx - bonusX) ** 2 + (vz - bonusZ) ** 2 > reach * reach) continue;
+          stampBox(vx, terrain[vx + vz * WORLD_SIZE] + 1, vz, vx, WORLD_HEIGHT - 1, vz, BLOCK.EMPTY);
+        }
       }
     }
-    return true;
-  };
-  let bonusSpot = builtLayout?.bonusSpot;
-  for (let attempt = 0; !bonusSpot && attempt < 800; attempt++) {
-    const [x, z] = polar(bonusRandom() * 360, OBJECTIVE_RADIUS * (0.78 + bonusRandom() * 0.22));
-    if (isGoodBonusSpot(x, z, attempt < 400 ? 1 : 3) || attempt === 799) bonusSpot = { vx: toVoxel(x), vz: toVoxel(z) };
-  }
-  const { vx: bonusX, vz: bonusZ } = bonusSpot;
-  if (!builtLayout?.bonusSpot) {
-    // Fell the trees and rocks in the spiral's way. A layout's spot is clear by design.
-    const reach = BONUS_SPIRAL_RADIUS + 12;
-    for (let vz = bonusZ - reach; vz <= bonusZ + reach; vz++) {
-      for (let vx = bonusX - reach; vx <= bonusX + reach; vx++) {
-        if ((vx - bonusX) ** 2 + (vz - bonusZ) ** 2 > reach * reach) continue;
-        stampBox(vx, terrain[vx + vz * WORLD_SIZE] + 1, vz, vx, WORLD_HEIGHT - 1, vz, BLOCK.EMPTY);
-      }
+    let stoneTop = terrain[bonusX + BONUS_SPIRAL_RADIUS + bonusZ * WORLD_SIZE];
+    for (let i = 0; stoneTop + 4 < BONUS_PLATFORM_TOP; i++) {
+      stoneTop += 4;
+      const [x, z] = polar(i * BONUS_STONE_DEGREES, BONUS_SPIRAL_RADIUS);
+      stampDisc(bonusX + Math.round(x), stoneTop, bonusZ + Math.round(z), 3, BLOCK.STONE);
     }
-  }
-  let stoneTop = terrain[bonusX + BONUS_SPIRAL_RADIUS + bonusZ * WORLD_SIZE];
-  for (let i = 0; stoneTop + 4 < BONUS_PLATFORM_TOP; i++) {
     stoneTop += 4;
-    const [x, z] = polar(i * BONUS_STONE_DEGREES, BONUS_SPIRAL_RADIUS);
-    stampDisc(bonusX + Math.round(x), stoneTop, bonusZ + Math.round(z), 3, BLOCK.STONE);
-  }
-  stoneTop += 4;
-  stampBox(bonusX - 8, stoneTop - 1, bonusZ - 8, bonusX + 8, stoneTop, bonusZ + 8, BLOCK.STONE);
-  stampBox(bonusX - 4, stoneTop + 1, bonusZ - 4, bonusX + 4, stoneTop + 11, bonusZ + 4, theme.trunk ?? BLOCK.HULL);
-  stampBox(bonusX - 3, stoneTop + 1, bonusZ - 3, bonusX + 3, stoneTop + 10, bonusZ + 3, BLOCK.EMPTY);
-  stampBox(bonusX - 2, stoneTop + 1, bonusZ - 4, bonusX + 2, stoneTop + 9, bonusZ - 4, BLOCK.EMPTY);
-  const metresOf = (voxel) => (voxel + 0.5 - WORLD_SIZE / 2) * VOXEL;
-  const bonus = {
-    x: metresOf(bonusX), z: metresOf(bonusZ), y: (stoneTop + 1) * VOXEL + 0.5,
-    doorX: metresOf(bonusX - 2) - VOXEL / 2, doorZ: metresOf(bonusZ - 4), doorY: (stoneTop + 1) * VOXEL,
-    stoneTop,
+    stampBox(bonusX - 8, stoneTop - 1, bonusZ - 8, bonusX + 8, stoneTop, bonusZ + 8, BLOCK.STONE);
+    stampBox(bonusX - 4, stoneTop + 1, bonusZ - 4, bonusX + 4, stoneTop + 11, bonusZ + 4, theme.trunk ?? BLOCK.HULL);
+    stampBox(bonusX - 3, stoneTop + 1, bonusZ - 3, bonusX + 3, stoneTop + 10, bonusZ + 3, BLOCK.EMPTY);
+    stampBox(bonusX - 2, stoneTop + 1, bonusZ - 4, bonusX + 2, stoneTop + 9, bonusZ - 4, BLOCK.EMPTY);
+    const metresOf = (voxel) => (voxel + 0.5 - WORLD_SIZE / 2) * VOXEL;
+    return {
+      x: metresOf(bonusX), z: metresOf(bonusZ), y: (stoneTop + 1) * VOXEL + 0.5,
+      doorX: metresOf(bonusX - 2) - VOXEL / 2, doorZ: metresOf(bonusZ - 4), doorY: (stoneTop + 1) * VOXEL,
+      stoneTop,
+    };
   };
+  const bonus = theme.surf ? null : placeBonus();
 
   // Their own random sequence, so that adding them leaves the rest of each level unchanged.
   const wingRandom = seededRandom(20261101 + level * 7919 + 1);
   const wings = [...(builtLayout ? builtLayout.wings : [])];
-  const randomWings = theme.underwater ? 0 : layout ? layout.randomWings : Math.min(5 + level, MAX_WINGS);
+  const randomWings = theme.underwater || theme.surf ? 0 : layout ? layout.randomWings : Math.min(5 + level, MAX_WINGS);
   const wingCount = wings.length + randomWings;
   for (let attempt = 0; attempt < 500 && wings.length < wingCount; attempt++) {
     const [x, z] = polar(wingRandom() * 360, 8 + Math.sqrt(wingRandom()) * ISLAND_RADIUS * 0.7);
@@ -554,7 +566,8 @@ function generateWorld(level) {
             sphereData = larger;
           }
           const color = blockColor(block);
-          const shade = 0.93 + random() * 0.14;
+          const speckle = 0.93 + random() * 0.14;
+          const shade = theme.surf ? 1 : speckle; // the looping sea must look the same at every point
           sphereData.set([
             (x + 0.5 - size / 2) * voxelSize, (y + 0.5) * voxelSize, (z + 0.5 - size / 2) * voxelSize, radius,
             color[0] * shade, color[1] * shade, color[2] * shade,

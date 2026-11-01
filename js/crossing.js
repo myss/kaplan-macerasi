@@ -148,6 +148,10 @@ function updateCrossing(dt) {
       arriveAtNextWorld();
       c.phase = 'in';
       c.time = 0;
+      if (world.theme.surf) {
+        finishCrossing(); // no shore to reach: it rides off at once
+        placeSurfTiger();
+      }
     }
   } else if (c.phase === 'in') {
     moveAlongCrossing(CROSSING_SEA_SPEED, dt);

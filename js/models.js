@@ -392,6 +392,71 @@ function divingHelmetModel() {
   return { parts: [part(spheres)] };
 }
 
+function surfboardModel() {
+  const board = [0.98, 0.85, 0.2], stripe = [0.95, 0.3, 0.25];
+  const spheres = [];
+  addShell(spheres, 0, 0.04, 0.05, 0.42, 0.05, 1.1, (nx) => (Math.abs(nx) < 0.22 ? stripe : board));
+  return { parts: [part(spheres)] };
+}
+
+function dolphinModel() {
+  const grey = [0.45, 0.62, 0.78], belly = [0.9, 0.94, 0.97], dark = [0.28, 0.42, 0.58], black = [0.05, 0.05, 0.06], white = [0.98, 0.98, 0.95];
+  const body = [];
+  addShell(body, 0, 0, 0, 0.3, 0.32, 0.85, (nx, ny) => (ny < -0.3 ? belly : grey));
+  addShell(body, 0, -0.04, 1, 0.1, 0.09, 0.26, grey);
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.2, 0.1, 0.62, 0.07, white);
+    addSphere(body, side * 0.23, 0.1, 0.66, 0.04, black);
+    addShell(body, side * 0.45, -0.14, 0.15, 0.26, 0.04, 0.14, dark);
+  }
+  for (let i = 0; i < 6; i++) {
+    for (let j = 0; j <= 5 - i; j++) addSphere(body, 0, 0.32 + i * 0.07, -0.1 + j * 0.06 - i * 0.03, 0.045, dark);
+  }
+  addShell(body, 0, 0.02, -0.98, 0.3, 0.04, 0.14, dark);
+  return { parts: [part(body)] };
+}
+
+function seaRockModel() {
+  const rock = [0.42, 0.42, 0.46], dark = [0.28, 0.28, 0.32];
+  const spheres = [];
+  addShell(spheres, 0, 0.6, 0, 0.62, 0.9, 0.55, (nx, ny) => (ny > 0.3 ? rock : dark));
+  addShell(spheres, 0.22, 1.35, 0.05, 0.3, 0.42, 0.3, rock);
+  return { parts: [part(spheres)] };
+}
+
+function buoyModel() {
+  const red = [0.92, 0.2, 0.2], white = [0.97, 0.97, 0.95];
+  const spheres = [];
+  addShell(spheres, 0, 0.3, 0, 0.46, 0.34, 0.46, (nx, ny) => (Math.abs(ny) < 0.3 ? white : red));
+  return { parts: [part(spheres)] };
+}
+
+// A wooden slope facing -z, which is where the surfer comes from.
+function rampModel() {
+  const wood = [0.66, 0.46, 0.27], dark = [0.45, 0.3, 0.16];
+  const spheres = [];
+  for (let z = -1; z <= 1; z += 0.14) {
+    const height = (z + 1) * 0.5;
+    for (let x = -1; x <= 1; x += 0.14) addSphere(spheres, x, height, z, 0.1, Math.abs(z * 7) % 2 < 1 ? wood : dark);
+  }
+  return { parts: [part(spheres)] };
+}
+
+// Built small and drawn large, like the walking tree. Its centre is at y = 0.
+function whaleModel() {
+  const blue = [0.2, 0.3, 0.46], belly = [0.82, 0.86, 0.9], dark = [0.13, 0.2, 0.32], white = [0.98, 0.98, 0.95], black = [0.05, 0.05, 0.06];
+  const body = [];
+  addShell(body, 0, 0, 0.2, 0.62, 0.6, 1.25, (nx, ny) => (ny < -0.25 && Math.sin(nx * 22) > -0.3 ? belly : blue));
+  addShell(body, 0, 0, -1.25, 0.28, 0.26, 0.5, blue);
+  addShell(body, 0, 0.05, -1.82, 0.62, 0.05, 0.2, dark);
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.52, 0.12, 1, 0.1, white);
+    addSphere(body, side * 0.58, 0.12, 1.03, 0.055, black);
+    addShell(body, side * 0.8, -0.3, 0.45, 0.42, 0.05, 0.2, dark);
+  }
+  return { parts: [part(body)] };
+}
+
 // A door hanging from its hinge at x = 0, drawn at the hinge's position.
 function bonusDoorModel() {
   const wood = [0.55, 0.32, 0.16], gold = [1, 0.8, 0.12];

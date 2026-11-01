@@ -50,6 +50,12 @@ const models = {
   shark: sharkModel(),
   squid: squidModel(),
   divingHelmet: divingHelmetModel(),
+  surfboard: surfboardModel(),
+  dolphin: dolphinModel(),
+  seaRock: seaRockModel(),
+  buoy: buoyModel(),
+  ramp: rampModel(),
+  whale: whaleModel(),
   walkingTree: walkingTreeModel(),
   scorpion: scorpionModel(),
   lavaMonster: lavaMonsterModel(),
@@ -144,6 +150,7 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   monsters = createMonsters([...cages, ...keys]);
   fireballs = [];
   endBossFight();
+  surf = null;
   tiger.stuckTime = 0;
   tiger.flingTime = 0;
   followers.length = 0;
@@ -178,6 +185,7 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   mapBackground = buildMapBackground();
   updateHud();
   showMessage(`${level}. Bölüm: ${world.theme.name}${world.theme.underwater ? '. Boşluk\'u basılı tut, yüz!' : ''}`, 3);
+  if (world.theme.surf) startSurf(Boolean(crossing));
 }
 
 // --- Saving ---
@@ -257,14 +265,14 @@ function showMessage(text, seconds = 2.5) {
 function updateHud() {
   hud.level.textContent = `🌍 ${game.level}. Bölüm`;
   hud.hearts.textContent = '❤️'.repeat(game.hearts) + '🖤'.repeat(MAX_HEARTS - game.hearts);
-  hud.keys.textContent = `🔑 ${game.keysHeld}`;
-  hud.rescued.textContent = `🐊 ${game.rescued} / ${cages.length}`;
+  hud.keys.textContent = world.theme.surf ? '' : `🔑 ${game.keysHeld}`;
+  hud.rescued.textContent = world.theme.surf ? '' : `🐊 ${game.rescued} / ${cages.length}`;
   hud.punch.textContent = game.punchReady ? '⭐ Yumruk hazır!' : '';
   updateFlightHud();
 }
 
 function updateFlightHud() {
-  const text = world.theme.underwater ? '' : `🪶 ${Math.ceil(tiger.flightSeconds)} sn`;
+  const text = world.theme.underwater || world.theme.surf ? '' : `🪶 ${Math.ceil(tiger.flightSeconds)} sn`;
   if (hud.flight.textContent !== text) hud.flight.textContent = text;
 }
 
@@ -285,7 +293,13 @@ let jumpQueued = false;
 let attackQueued = false;
 let cheatQueued = false;
 let bossCheatQueued = false;
+let surfLaneQueue = 0; // -1 or +1: a lane change waiting for the surf level to carry it out
 window.addEventListener('keydown', (e) => {
+  if (surf && !e.repeat) {
+    // Facing +z, the right-hand lane is towards -x.
+    if (e.code === 'KeyD' || e.code === 'ArrowRight') surfLaneQueue = -1;
+    if (e.code === 'KeyA' || e.code === 'ArrowLeft') surfLaneQueue = 1;
+  }
   if (e.code === 'KeyO' && !e.repeat && game.playing) {
     if (e.shiftKey) bossCheatQueued = true;
     else cheatQueued = true;
@@ -841,6 +855,7 @@ function buildFrameSpheres() {
   }
   count = drawMonsters(count);
   count = drawBoss(count);
+  count = drawSurf(count);
   const addSphere = (x, y, z, radius, color) => {
     const at = count * FLOATS_PER_SPHERE;
     if (at + FLOATS_PER_SPHERE > frameSpheres.length) return;
@@ -848,7 +863,7 @@ function buildFrameSpheres() {
     count++;
   };
   const { bonus } = world;
-  if (isNear(bonus)) {
+  if (bonus && isNear(bonus)) {
     count = drawModel(frameSpheres, count, models.bonusDoor, bonus.doorX, bonus.doorY, bonus.doorZ, game.bonusDoorOpen * BONUS_DOOR_OPEN_ANGLE);
     if (!game.bonusTaken) {
       // Colours above 1 stay at full brightness whatever the light, which makes it look lit from inside.
@@ -1032,6 +1047,8 @@ function frame(now) {
     game.time += dt;
     if (crossing) {
       updateCrossing(dt);
+    } else if (surf && game.playing) {
+      updateSurf(dt);
     } else if (game.playing && !game.levelDone) {
       updateTiger(dt);
       updateObjectives(dt);

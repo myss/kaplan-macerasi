@@ -4,9 +4,10 @@ Her şeyi kürelerden yapılmış üç boyutlu bir macera oyunu.
 
 Kötü kuşlar timsahları kafeslere kilitledi. Kaplan anahtarları bulup kafesleri açar ve timsahları
 kurtarır. Bölüm bitince yeni bir dünyaya geçilir. Dünyalar bölüm numarasından üretilir, yani bölümler
-sonsuzdur: ilk yedisi Orman, Çöl, Kar, Volkan, Dev Ev, Korsan Gemisi ve Deniz Altı'dır (kaplan başlıkla
+sonsuzdur: ilk sekizi Orman, Çöl, Kar, Volkan, Dev Ev, Korsan Gemisi, Deniz Altı (kaplan başlıkla
 dalar; kanat gerekmez, Boşluk'u basılı tutunca yüzer; yavaş denizanaları, köpekbalıkları ve dev kalamar
-vardır), sonrakiler kendi
+vardır) ve Sörf'tür (bambaşka oynanır: kaplan üç şeritte kendiliğinden ilerler, kayalardan, şamandıralardan
+ve yunuslardan kaçar; sonunda balinanın gölgesinden kaçar, balinaya vurulamaz), sonrakiler kendi
 renklerini, bitkilerini ve sıvısını üretir (Pembe Mantar Diyarı, Mor Kristal Vadisi gibi). Dev Ev'in
 üst katına ve geminin gözcü yerine kanatla çıkılır; gemideki kaptan kuşa iki kez vurmak gerekir.
 Her bölümde haritada görünmeyen bir bonus vardır: yüksekteki minik kulübeye yalnızca taştan taşa
@@ -50,6 +51,7 @@ o tarayıcıya ve açılan adrese özeldir.
 - `js/crossing.js`: bölümler arası geçiş animasyonu; kaplan dünyasına göre yüzer, kayar ya da uçar
 - `js/monsters.js`: her dünyanın yürüyen canavarları ve ateş topları
 - `js/boss.js`: bölüm sonu boss'ları ve hamleleri
+- `js/surf.js`: sörf bölümü ve balina
 - `js/game.js`: oyun kuralları, kontroller ve ekran
 - `js/utils.js`: küçük yardımcı fonksiyonlar
 - `vendor/three.min.js`: Three.js 0.187.0, çift tıkla çalışsın diye esbuild ile tek dosyada paketlenmiş hâli (`export * from 'three'`, `--bundle --minify --format=iife --global-name=THREE`)
