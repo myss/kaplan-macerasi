@@ -30,6 +30,7 @@ const WING_LIFT = 32; // m/s², on top of cancelling gravity
 const MAX_CLIMB_SPEED = 6;
 const FLIGHT_START_SPEED = 2; // holding jump starts flying once the jump has slowed to this
 const MAX_FLIGHT_HEIGHT = 45;
+const BIRD_PATROL_SPEED = 5;
 const SAVE_KEY = 'kaplan-macerasi-kayit';
 const SAVE_INTERVAL = 2; // seconds
 const ATTACK_DURATION = 0.35;
@@ -102,6 +103,7 @@ const game = {
   birdSpeed: 0,
   birdSeeRadius: 0,
   birdRestTime: 0,
+  birdPatrolSpeed: 0,
   bonusTaken: false,
   punchReady: false,
   birdsGone: false,
@@ -148,7 +150,9 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   particles.length = 0;
 
   // Birds stay just slower than the tiger, so running away always remains possible.
-  game.birdSpeed = Math.min(5 + (level - 1) * 0.35, 7.2);
+  const birdSpeedFactor = world.theme.birdSpeedFactor ?? 1;
+  game.birdSpeed = Math.min(5 + (level - 1) * 0.35, 7.2) * birdSpeedFactor;
+  game.birdPatrolSpeed = BIRD_PATROL_SPEED * birdSpeedFactor;
   game.birdSeeRadius = Math.min(16 + (level - 1) * 1.5, 28);
   game.birdRestTime = Math.max(4 - (level - 1) * 0.3, 1.5);
   game.level = level;
@@ -173,7 +177,7 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
 
   mapBackground = buildMapBackground();
   updateHud();
-  showMessage(`${level}. Bölüm: ${world.theme.name}`, 3);
+  showMessage(`${level}. Bölüm: ${world.theme.name}${world.theme.underwater ? '. Boşluk\'u basılı tut, yüz!' : ''}`, 3);
 }
 
 // --- Saving ---
@@ -260,7 +264,7 @@ function updateHud() {
 }
 
 function updateFlightHud() {
-  const text = `🪶 ${Math.ceil(tiger.flightSeconds)} sn`;
+  const text = world.theme.underwater ? '' : `🪶 ${Math.ceil(tiger.flightSeconds)} sn`;
   if (hud.flight.textContent !== text) hud.flight.textContent = text;
 }
 
@@ -457,18 +461,20 @@ function updateTiger(dt) {
   attackQueued = false;
 
   const inNoWingsZone = Math.hypot(tiger.x - world.bonus.x, tiger.z - world.bonus.z) < BONUS_NO_WINGS_RADIUS;
-  if (inNoWingsZone && !tiger.inNoWingsZone && tiger.flightSeconds > 0 && !game.bonusTaken) {
-    showMessage('Burada kanatlar çalışmıyor!');
+  const canRise = world.theme.underwater || tiger.flightSeconds > 0;
+  if (inNoWingsZone && !tiger.inNoWingsZone && canRise && !game.bonusTaken) {
+    showMessage(world.theme.underwater ? 'Burada yüzemezsin, zıplaman lazım!' : 'Burada kanatlar çalışmıyor!');
   }
   tiger.inNoWingsZone = inNoWingsZone;
   if (inNoWingsZone) tiger.wingsOut = false;
 
   const wasGrounded = tiger.grounded;
   tiger.vy -= GRAVITY * dt;
-  // Like a jetpack: lift only while jump is held, and only that time uses up the wings.
-  if (!wasGrounded && held.has('Space') && tiger.flightSeconds > 0 && !inNoWingsZone && (tiger.wingsOut || tiger.vy <= FLIGHT_START_SPEED)) {
+  // Like a jetpack: lift only while jump is held, and only that time uses up the wings. Underwater
+  // the same lift is swimming, which needs no wings and never runs out.
+  if (!wasGrounded && held.has('Space') && canRise && !inNoWingsZone && (tiger.wingsOut || tiger.vy <= FLIGHT_START_SPEED)) {
     tiger.wingsOut = true;
-    tiger.flightSeconds = Math.max(0, tiger.flightSeconds - dt);
+    if (!world.theme.underwater) tiger.flightSeconds = Math.max(0, tiger.flightSeconds - dt);
     tiger.vy = Math.min(tiger.vy + (GRAVITY + WING_LIFT) * dt, MAX_CLIMB_SPEED);
     updateFlightHud();
   }
@@ -629,7 +635,7 @@ function updateBird(bird, dt) {
     moveX = bird.homeX + Math.cos(a) * bird.patrolRadius - bird.x;
     moveY = bird.altitude + Math.sin(bird.phase * 1.3) * 0.6 - bird.y;
     moveZ = bird.homeZ + Math.sin(a) * bird.patrolRadius - bird.z;
-    speed = 5;
+    speed = game.birdPatrolSpeed;
     if (game.playing && !game.levelDone && !crossing && bird.cooldown <= 0 && Math.hypot(toTigerX, toTigerZ) < game.birdSeeRadius &&
         hasLineOfSight(bird.x, bird.y, bird.z, tiger.x, tiger.y + 0.9, tiger.z)) {
       bird.state = 'swoop';
@@ -814,7 +820,8 @@ function buildFrameSpheres() {
   const blink = tiger.invulnerable > 0 && Math.floor(game.time * 10) % 2 === 0;
   const attackProgress = tiger.attackTime > 0 ? 1 - tiger.attackTime / ATTACK_DURATION : 0;
   if (!blink) {
-    const stride = tiger.grounded ? swing(tiger.stride) : 0.6;
+    const isSwimming = world.theme.underwater && !tiger.grounded;
+    const stride = isSwimming ? Math.sin(game.time * 9) * 1.1 : tiger.grounded ? swing(tiger.stride) : 0.6;
     count = drawModel(frameSpheres, count, models.tiger, tiger.x, tiger.y, tiger.z, tiger.yaw + attackProgress * Math.PI * 2, {
       stride,
       arms: tiger.attackTime > 0 || tiger.groundPunchTime > 0 ? 1.5 : stride * 0.7,
@@ -823,7 +830,7 @@ function buildFrameSpheres() {
     if (world.theme.underwater) {
       count = drawModel(frameSpheres, count, models.divingHelmet, tiger.x, tiger.y, tiger.z, tiger.yaw + attackProgress * Math.PI * 2);
     }
-    if (tiger.wingsOut) {
+    if (tiger.wingsOut && !world.theme.underwater) {
       count = drawModel(frameSpheres, count, models.wings, tiger.x, tiger.y, tiger.z, tiger.yaw + attackProgress * Math.PI * 2, {
         flap: Math.sin(game.time * 16) * 0.5,
       });

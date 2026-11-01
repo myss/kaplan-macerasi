@@ -107,6 +107,7 @@ const WORLD_THEMES = [
   {
     name: 'Deniz Altı', sky: [0.08, 0.36, 0.58], fogDensity: 0.0011, hills: 22, plant: 'seaPlant', crossing: 'dive', underwater: true,
     monster: 'shark', boss: 'squid', birdModel: 'jellyfish', birdColor: [0.95, 0.5, 0.8], birdDefeatMessage: 'Süper! Denizanasını yendin!',
+    birdSpeedFactor: 0.5,
     surface: BLOCK.SEABED, soil: BLOCK.SEABED, peak: BLOCK.ROCK, shore: BLOCK.SEABED, liquid: BLOCK.ABYSS, rock: BLOCK.ROCK,
     accents: [BLOCK.SHELL, BLOCK.CORAL_PINK], trunk: BLOCK.KELP, crown: BLOCK.KELP,
   },
@@ -498,7 +499,8 @@ function generateWorld(level) {
   // Their own random sequence, so that adding them leaves the rest of each level unchanged.
   const wingRandom = seededRandom(20261101 + level * 7919 + 1);
   const wings = [...(builtLayout ? builtLayout.wings : [])];
-  const wingCount = wings.length + (layout ? layout.randomWings : Math.min(5 + level, MAX_WINGS));
+  const randomWings = theme.underwater ? 0 : layout ? layout.randomWings : Math.min(5 + level, MAX_WINGS);
+  const wingCount = wings.length + randomWings;
   for (let attempt = 0; attempt < 500 && wings.length < wingCount; attempt++) {
     const [x, z] = polar(wingRandom() * 360, 8 + Math.sqrt(wingRandom()) * ISLAND_RADIUS * 0.7);
     const y = terrainTop(x, z);

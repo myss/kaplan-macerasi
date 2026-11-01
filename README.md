@@ -5,7 +5,8 @@ Her şeyi kürelerden yapılmış üç boyutlu bir macera oyunu.
 Kötü kuşlar timsahları kafeslere kilitledi. Kaplan anahtarları bulup kafesleri açar ve timsahları
 kurtarır. Bölüm bitince yeni bir dünyaya geçilir. Dünyalar bölüm numarasından üretilir, yani bölümler
 sonsuzdur: ilk yedisi Orman, Çöl, Kar, Volkan, Dev Ev, Korsan Gemisi ve Deniz Altı'dır (kaplan başlıkla
-dalar; denizanaları, köpekbalıkları ve dev kalamar vardır), sonrakiler kendi
+dalar; kanat gerekmez, Boşluk'u basılı tutunca yüzer; yavaş denizanaları, köpekbalıkları ve dev kalamar
+vardır), sonrakiler kendi
 renklerini, bitkilerini ve sıvısını üretir (Pembe Mantar Diyarı, Mor Kristal Vadisi gibi). Dev Ev'in
 üst katına ve geminin gözcü yerine kanatla çıkılır; gemideki kaptan kuşa iki kez vurmak gerekir.
 Her bölümde haritada görünmeyen bir bonus vardır: yüksekteki minik kulübeye yalnızca taştan taşa
