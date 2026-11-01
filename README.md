@@ -13,7 +13,13 @@ kaplan yere yumruk atar ve bölüm bitene kadar bütün kuşlar yok olur; canava
 
 Kuşların yanında her dünyanın kendi yürüyen canavarı vardır: Orman'da yavaş yürüyen ağaçlar, Çöl'de
 akrepler, Kar'da kutup ayıları, Volkan'da ateş topu atan lav canavarları, Dev Ev'de fareler, gemide
-göz bandlı korsan ayılar. Ateş toplarından kaçılabilir ya da vurarak söndürülebilir. Bölüm ilerledikçe kafes ve kuş sayısı artar, kuşlar hızlanır. Anahtarlar basamaklı kulelerin, spiral
+göz bandlı korsan ayılar. Ateş toplarından kaçılabilir ya da vurarak söndürülebilir.
+
+Bütün timsahlar kurtarılınca o dünyanın canavarının devi gelir: 3 canı vardır, kaplanın 3 canı biterse
+o da baştan başlar. Her boss'un kendi hamleleri vardır: ağaç elma atar ve köküyle döner, akrep sokar,
+kıskaçlarıyla atılır ve göbek saldırısı yapar, ayılar pençe atar (kutup ayısı kartopu, korsan ayı bal
+atar), fare kuyruğuyla döner ve ısırır, lav canavarı dev ateş topu atar ve yakan kollarıyla döner.
+Dönen kök ve kuyruk yakalayıp fırlatır; üstünden zıplanarak kurtulunur. Bölüm ilerledikçe kafes ve kuş sayısı artar, kuşlar hızlanır. Anahtarlar basamaklı kulelerin, spiral
 merdivenlerin ve uçan taşların tepesindedir; dağlara zıplayarak çıkılır. Küreler kırılmaz.
 
 ## Oynamak
@@ -30,7 +36,7 @@ o tarayıcıya ve açılan adrese özeldir.
 - **Fareyi oynat / Q, E:** kamerayı çevir
 - **Esc:** oyunu durdur, fareyi geri al; devam etmek için tıkla, baştan başlamak için düğmeye bas
 - **Fare tekerleği:** yakınlaş, uzaklaş
-- **O (hile):** en yakındaki anahtarı veya kanadı alır, anahtar varsa kafesi açar
+- **O (hile):** en yakındaki anahtarı veya kanadı alır, anahtar varsa kafesi açar, boss'u yener
 
 ## Kod
 
@@ -40,6 +46,7 @@ o tarayıcıya ve açılan adrese özeldir.
 - `js/models.js`: kaplan, timsah, kuş, anahtar ve kafes
 - `js/crossing.js`: bölümler arası geçiş animasyonu; kaplan dünyasına göre yüzer, kayar ya da uçar
 - `js/monsters.js`: her dünyanın yürüyen canavarları ve ateş topları
+- `js/boss.js`: bölüm sonu boss'ları ve hamleleri
 - `js/game.js`: oyun kuralları, kontroller ve ekran
 - `js/utils.js`: küçük yardımcı fonksiyonlar
 - `vendor/three.min.js`: Three.js 0.187.0, çift tıkla çalışsın diye esbuild ile tek dosyada paketlenmiş hâli (`export * from 'three'`, `--bundle --minify --format=iife --global-name=THREE`)

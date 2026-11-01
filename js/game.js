@@ -71,6 +71,9 @@ const hud = {
   win: document.getElementById('win'),
   loading: document.getElementById('loading'),
   mist: document.getElementById('mist'),
+  bossBar: document.getElementById('boss-bar'),
+  bossName: document.getElementById('boss-name'),
+  bossFill: document.getElementById('boss-fill'),
   map: document.getElementById('map').getContext('2d'),
 };
 
@@ -79,6 +82,7 @@ const tiger = {
   x: SPAWN.x, y: 0, z: SPAWN.z,
   vy: 0, yaw: 0, stride: 0, grounded: true, airTime: 0, invulnerable: 0, attackTime: 0, attackCooldown: 0,
   flightSeconds: 0, wingsOut: false, inNoWingsZone: false, groundPunchTime: 0,
+  stuckTime: 0, flingTime: 0, flingX: 0, flingZ: 0,
 };
 const camera = { yaw: Math.PI, pitch: 0.42, distance: 8 };
 const game = {
@@ -132,6 +136,9 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   });
   monsters = createMonsters([...cages, ...keys]);
   fireballs = [];
+  endBossFight();
+  tiger.stuckTime = 0;
+  tiger.flingTime = 0;
   followers.length = 0;
   particles.length = 0;
 
@@ -229,6 +236,7 @@ function restoreSave(save) {
   // If the world came out differently since this save, the old spot may be inside something.
   if (!isBlocked(save.tiger.x, save.tiger.y, save.tiger.z)) Object.assign(tiger, save.tiger);
   updateHud();
+  if (cages.length > 0 && game.rescued === cages.length) startBossFight(); // closed during the fight
 }
 
 function showMessage(text, seconds = 2.5) {
@@ -381,6 +389,17 @@ function floorBelow(x, y, z) {
 }
 
 function updateTiger(dt) {
+  if (boss?.state === 'grab') return;
+  tiger.stuckTime = Math.max(0, tiger.stuckTime - dt);
+  if (tiger.flingTime > 0) {
+    tiger.flingTime -= dt;
+    const x = tiger.x + tiger.flingX * dt, z = tiger.z + tiger.flingZ * dt;
+    if (!isBlocked(x, tiger.y, z)) {
+      tiger.x = x;
+      tiger.z = z;
+    }
+  }
+
   let right = 0, forward = 0;
   if (held.has('KeyW') || held.has('ArrowUp')) forward += 1;
   if (held.has('KeyS') || held.has('ArrowDown')) forward -= 1;
@@ -395,8 +414,9 @@ function updateTiger(dt) {
     const dirX = -sin * forward + cos * right;
     const dirZ = -cos * forward - sin * right;
     const length = Math.hypot(dirX, dirZ);
-    const stepX = (dirX / length) * WALK_SPEED * dt;
-    const stepZ = (dirZ / length) * WALK_SPEED * dt;
+    const speed = tiger.stuckTime > 0 ? WALK_SPEED * STUCK_SPEED_FACTOR : WALK_SPEED;
+    const stepX = (dirX / length) * speed * dt;
+    const stepZ = (dirZ / length) * speed * dt;
     if (!isBlocked(tiger.x + stepX, tiger.y, tiger.z)) tiger.x += stepX;
     if (!isBlocked(tiger.x, tiger.y, tiger.z + stepZ)) tiger.z += stepZ;
 
@@ -418,7 +438,7 @@ function updateTiger(dt) {
   tiger.attackTime = Math.max(0, tiger.attackTime - dt);
   tiger.attackCooldown = Math.max(0, tiger.attackCooldown - dt);
   tiger.groundPunchTime = Math.max(0, tiger.groundPunchTime - dt);
-  if (attackQueued && game.punchReady) {
+  if (attackQueued && game.punchReady && !boss) {
     groundPunch();
   } else if (attackQueued && tiger.attackCooldown <= 0) {
     tiger.attackTime = ATTACK_DURATION;
@@ -489,6 +509,7 @@ function hurtTiger(fromX, fromZ, message = 'Ah! Yaklaşınca F tuşuyla ya da t�
       f.x = tiger.x;
       f.z = tiger.z;
     }
+    if (boss) restartBossFight();
   } else {
     showMessage(message);
   }
@@ -657,18 +678,24 @@ function openCage(cage) {
   burst(cage.x, cage.y + 1.5, cage.z, [0.28, 0.58, 0.24], 30);
   followers.push({ x: cage.x, z: cage.z, yaw: 0, stride: 0 });
   updateHud();
-  if (game.rescued === cages.length) {
-    game.levelDone = true;
-    hud.win.classList.remove('hidden');
-    document.exitPointerLock();
-    writeSave();
-  } else {
-    showMessage('Timsahı kurtardın! Artık seninle geliyor.');
-  }
+  if (game.rescued === cages.length) startBossFight();
+  else showMessage('Timsahı kurtardın! Artık seninle geliyor.');
 }
 
-// The cheat key: takes whatever is nearest, wherever it is. A cage only counts with a key in hand.
+function completeLevel() {
+  game.levelDone = true;
+  hud.win.classList.remove('hidden');
+  document.exitPointerLock();
+  writeSave();
+}
+
+// The cheat key: beats a boss, or else takes whatever is nearest, wherever it is. A cage only counts
+// with a key in hand.
 function collectNearest() {
+  if (boss) {
+    defeatBoss();
+    return;
+  }
   const candidates = [
     ...wingPickups.filter((wing) => !wing.taken).map((target) => ({ target, collect: collectWing })),
     ...keys.filter((key) => !key.taken).map((target) => ({ target, collect: collectKey })),
@@ -709,7 +736,7 @@ function updateObjectives(dt) {
     if (!key.taken && Math.hypot(tiger.x - key.x, tiger.y + 0.8 - key.y, tiger.z - key.z) < KEY_PICKUP_RADIUS) collectKey(key);
   }
   for (const cage of cages) {
-    if (cage.open || Math.hypot(tiger.x - cage.x, tiger.z - cage.z) > CAGE_OPEN_RADIUS || Math.abs(tiger.y - cage.y) > CAGE_HEIGHT) continue;
+    if (game.levelDone || cage.open || Math.hypot(tiger.x - cage.x, tiger.z - cage.z) > CAGE_OPEN_RADIUS || Math.abs(tiger.y - cage.y) > CAGE_HEIGHT) continue;
     if (game.keysHeld > 0) {
       openCage(cage);
     } else if (game.noKeyHintTime <= 0) {
@@ -777,6 +804,7 @@ function buildFrameSpheres() {
     }
   }
   count = drawMonsters(count);
+  count = drawBoss(count);
   const addSphere = (x, y, z, radius, color) => {
     const at = count * FLOATS_PER_SPHERE;
     if (at + FLOATS_PER_SPHERE > frameSpheres.length) return;
@@ -862,7 +890,8 @@ function buildShadows() {
   return [
     [tiger.x, tiger.y + 0.05, tiger.z, 1.0],
     ...nearestBirds.map((bird) => [bird.x, bird.y - 0.6, bird.z, 1.1]),
-  ];
+    ...(boss ? [[boss.x, boss.y + 0.05, boss.z, boss.scale]] : []),
+  ].slice(0, MAX_SHADOWS);
 }
 
 function cameraPosition() {
@@ -970,6 +999,7 @@ function frame(now) {
     } else if (game.playing && !game.levelDone) {
       updateTiger(dt);
       updateObjectives(dt);
+      updateBossFight(dt);
     } else {
       camera.yaw += dt * (game.playing ? 0.3 : 0.15);
     }

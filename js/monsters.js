@@ -154,11 +154,17 @@ function updateFireballs(dt) {
     let isOut = ball.life <= 0 || world.isSolid(ball.x, ball.y, ball.z);
     if (!isOut && tiger.attackTime > 0 && distance < ATTACK_RADIUS) {
       isOut = true;
-      burst(ball.x, ball.y, ball.z, [0.85, 0.85, 0.88], 20);
-      showMessage('Ateşi söndürdün!', 1.5);
-    } else if (!isOut && distance < FIREBALL_HIT_RADIUS && !crossing && !game.levelDone) {
+      burst(ball.x, ball.y, ball.z, ball.burst ?? [0.85, 0.85, 0.88], 20);
+      showMessage(ball.putOutMessage ?? 'Ateşi söndürdün!', 1.5);
+    } else if (!isOut && distance < (ball.hitRadius ?? FIREBALL_HIT_RADIUS) && !crossing && !game.levelDone) {
       isOut = true;
-      if (tiger.invulnerable <= 0) hurtTiger(ball.x, ball.z);
+      if (ball.sticky) {
+        // Honey does not hurt: the tiger eats it, and is left sticky and slow.
+        tiger.stuckTime = HONEY_STUCK_SECONDS;
+        showMessage('Mmm, bal! Ama yapış yapış oldun, yavaşladın!', 2.5);
+      } else if (tiger.invulnerable <= 0) {
+        hurtTiger(ball.x, ball.z);
+      }
     }
     if (isOut) fireballs.splice(i, 1);
   }
@@ -176,7 +182,8 @@ function drawMonsters(count) {
     const at = count * FLOATS_PER_SPHERE;
     if (at + FLOATS_PER_SPHERE > frameSpheres.length) break;
     const glow = 1.4 + Math.sin(game.time * 12) * 0.2;
-    frameSpheres.set([ball.x, ball.y, ball.z, FIREBALL_RADIUS, glow, glow * 0.45, 0.08], at);
+    const color = ball.color ?? [glow, glow * 0.45, 0.08];
+    frameSpheres.set([ball.x, ball.y, ball.z, ball.radius ?? FIREBALL_RADIUS, color[0], color[1], color[2]], at);
     count++;
   }
   return count;

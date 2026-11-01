@@ -14,6 +14,10 @@
   #message.visible { opacity: 1; }
   #paused { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 16px 30px; border-radius: 22px; background: #000c; color: #fff; font-size: 28px; text-align: center; display: none; pointer-events: none; }
   #paused.visible { display: block; }
+  #boss-bar { position: fixed; bottom: 34px; left: 50%; transform: translateX(-50%); width: min(460px, 70vw); color: #fff; font-size: 20px; text-align: center; text-shadow: 0 2px 4px #000a; pointer-events: none; }
+  #boss-bar.hidden { display: none; }
+  #boss-track { height: 16px; margin-top: 4px; border: 2px solid #fff; border-radius: 10px; background: #0007; overflow: hidden; }
+  #boss-fill { height: 100%; background: #e8352a; transition: width .15s; }
   #mist { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
   .panel { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #0005; }
   .panel.hidden { display: none; }
@@ -39,6 +43,7 @@
   Oyun durdu. Devam etmek için tıkla!
   <button class="start-over">Baştan başla</button>
 </div>
+<div id="boss-bar" class="hidden"><div id="boss-name"></div><div id="boss-track"><div id="boss-fill"></div></div></div>
 <div id="mist"></div>
 <div id="stats"></div>
 
@@ -81,6 +86,7 @@
 <script src="js/models.js"></script>
 <script src="js/crossing.js"></script>
 <script src="js/monsters.js"></script>
+<script src="js/boss.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>
