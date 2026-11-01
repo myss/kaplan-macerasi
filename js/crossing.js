@@ -1,6 +1,6 @@
 // The trip between two levels, played by itself: the tiger runs to the shore, crosses the liquid
-// into thickening fog, and arrives at the next island. How it crosses depends on the liquid: it
-// swims through water, slides on ice and flies over lava.
+// into thickening fog, and arrives at the next island. How it crosses is up to the world's theme:
+// it swims, slides, or flies with its wings out.
 //
 // The next world is generated before the trip starts, because generating freezes the page for a
 // moment. So both worlds exist during the trip, and a white mist hides the swap between them.
@@ -50,9 +50,8 @@ function startCrossing(nextWorld) {
 
 function crossingHeight() {
   const surface = (WATER_LEVEL + 1) * VOXEL;
-  const liquid = world.theme.liquid;
-  if (liquid === BLOCK.LAVA) return surface + 2.2 + Math.sin(game.time * 2.5) * 0.2;
-  if (liquid === BLOCK.ICE) return surface;
+  if (world.theme.crossing === 'fly') return surface + 2.2 + Math.sin(game.time * 2.5) * 0.2;
+  if (world.theme.crossing === 'slide') return surface;
   return surface - 0.75 + Math.sin(game.time * 5) * 0.06;
 }
 
@@ -82,7 +81,7 @@ function arriveAtNextWorld() {
   tiger.x = -crossing.dirX * start;
   tiger.z = -crossing.dirZ * start;
   tiger.y = crossingHeight();
-  tiger.wingsOut = world.theme.liquid === BLOCK.LAVA;
+  tiger.wingsOut = world.theme.crossing === 'fly';
 }
 
 function finishCrossing() {
@@ -109,7 +108,7 @@ function updateCrossing(dt) {
   camera.yaw += Math.atan2(Math.sin(cameraTurn), Math.cos(cameraTurn)) * Math.min(1, dt * 2.5);
   camera.pitch += (0.3 - camera.pitch) * Math.min(1, dt * 2.5);
 
-  const isSliding = world.theme.liquid === BLOCK.ICE;
+  const isSliding = world.theme.crossing === 'slide';
   if (c.phase !== 'leap' && !(isSliding && (c.phase === 'out' || c.phase === 'in'))) {
     tiger.stride += dt * (c.phase === 'run' || c.phase === 'land' ? 16 : 9);
   }
@@ -121,14 +120,14 @@ function updateCrossing(dt) {
       c.phase = 'leap';
       c.vy = CROSSING_LEAP_SPEED;
       tiger.grounded = false;
-      tiger.wingsOut = world.theme.liquid === BLOCK.LAVA;
+      tiger.wingsOut = world.theme.crossing === 'fly';
     }
   } else if (c.phase === 'leap') {
     moveAlongCrossing(CROSSING_RUN_SPEED, dt);
     c.vy -= GRAVITY * dt;
     tiger.y += c.vy * dt;
     if (c.vy < 0 && tiger.y <= crossingHeight()) {
-      if (world.theme.liquid === BLOCK.WATER) burst(tiger.x, tiger.y + 0.6, tiger.z, BLOCK_COLORS[BLOCK.WATER], 40);
+      if (world.theme.crossing === 'swim') burst(tiger.x, tiger.y + 0.6, tiger.z, world.blockColor(world.theme.liquid), 40);
       c.phase = 'out';
       c.time = 0;
       tiger.grounded = true;

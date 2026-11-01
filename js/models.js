@@ -124,9 +124,9 @@ function crocodileModel() {
 }
 
 // Stands around its own centre, because a bird has no ground to stand on.
-function birdModel() {
+function birdModel({ eyePatch = false, captainHat = false } = {}) {
   const feathers = [0.46, 0.15, 0.55], dark = [0.28, 0.08, 0.36], beak = [0.98, 0.62, 0.1];
-  const white = [0.98, 0.98, 0.95], red = [0.9, 0.08, 0.08];
+  const white = [0.98, 0.98, 0.95], red = [0.9, 0.08, 0.08], black = [0.05, 0.05, 0.06];
 
   const body = [];
   addShell(body, 0, 0, 0, 0.32, 0.32, 0.5, feathers);
@@ -135,6 +135,18 @@ function birdModel() {
   for (const side of [-1, 1]) {
     addSphere(body, side * 0.13, 0.32, 0.7, 0.08, white);
     addSphere(body, side * 0.13, 0.32, 0.76, 0.045, red);
+  }
+  if (eyePatch) {
+    addSphere(body, 0.13, 0.32, 0.78, 0.11, black);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      addSphere(body, Math.cos(a) * 0.27, 0.32 + Math.sin(a) * 0.05, 0.5 + Math.sin(a) * 0.27, 0.035, black);
+    }
+  }
+  if (captainHat) {
+    addShell(body, 0, 0.52, 0.5, 0.42, 0.05, 0.3, black);
+    addShell(body, 0, 0.64, 0.5, 0.24, 0.14, 0.2, black);
+    addSphere(body, 0, 0.66, 0.72, 0.065, white);
   }
 
   const wing = (side) => {
@@ -171,6 +183,17 @@ function wingsModel() {
       part(wing(-1), [-0.2, 1.15, -0.36], 'z', 'flap', -1),
     ],
   };
+}
+
+// A door hanging from its hinge at x = 0, drawn at the hinge's position.
+function bonusDoorModel() {
+  const wood = [0.55, 0.32, 0.16], gold = [1, 0.8, 0.12];
+  const spheres = [];
+  for (let x = 0; x <= 1.25; x += 0.1) {
+    for (let y = 0.05; y <= 2.2; y += 0.1) addSphere(spheres, x, y, 0, 0.08, wood);
+  }
+  addSphere(spheres, 1.1, 1, -0.08, 0.08, gold);
+  return { parts: [part(spheres)] };
 }
 
 function keyModel() {

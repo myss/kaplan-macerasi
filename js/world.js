@@ -20,12 +20,19 @@ const OBJECTIVE_SEPARATION = 22;
 const MAX_CAGES = 10;
 const MAX_WINGS = 12;
 const KEY_CLIMBS = ['tower', 'stairs', 'stones'];
+const BONUS_PLATFORM_TOP = 100; // 25 m up
+const BONUS_SPIRAL_RADIUS = 20;
+const BONUS_STONE_DEGREES = 50;
 // Spheres overlap their neighbours just enough to leave no holes in a flat layer.
 const SPHERE_RADIUS_FACTOR = 0.72;
 
 const BLOCK = {
   EMPTY: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, WATER: 5, TRUNK: 6, LEAF: 7, ROCK: 8, RED_FLOWER: 9, YELLOW_FLOWER: 10,
   RED_SAND: 11, CACTUS: 12, SNOW: 13, ICE: 14, PINE: 15, ASH: 16, BASALT: 17, LAVA: 18, EMBER: 19, DEAD_WOOD: 20,
+  // These get their colours from the generated theme of each level.
+  GEN_SURFACE: 21, GEN_SOIL: 22, GEN_PEAK: 23, GEN_SHORE: 24, GEN_LIQUID: 25, GEN_ROCK: 26,
+  GEN_ACCENT_A: 27, GEN_ACCENT_B: 28, GEN_TRUNK: 29, GEN_CROWN: 30,
+  HOUSE_WALL: 31, ROOF: 32, WOOD_FLOOR: 33, FURNITURE: 34, DECK: 35, HULL: 36, SAIL: 37, FLAG: 38,
 };
 const BLOCK_COLORS = {
   [BLOCK.GRASS]: [0.36, 0.72, 0.28],
@@ -48,30 +55,93 @@ const BLOCK_COLORS = {
   [BLOCK.LAVA]: [1, 0.38, 0.05],
   [BLOCK.EMBER]: [1, 0.55, 0.12],
   [BLOCK.DEAD_WOOD]: [0.22, 0.17, 0.14],
+  [BLOCK.HOUSE_WALL]: [0.96, 0.9, 0.74],
+  [BLOCK.ROOF]: [0.74, 0.27, 0.22],
+  [BLOCK.WOOD_FLOOR]: [0.66, 0.46, 0.27],
+  [BLOCK.FURNITURE]: [0.5, 0.3, 0.16],
+  [BLOCK.DECK]: [0.72, 0.53, 0.32],
+  [BLOCK.HULL]: [0.36, 0.2, 0.11],
+  [BLOCK.SAIL]: [0.97, 0.95, 0.88],
+  [BLOCK.FLAG]: [0.08, 0.08, 0.09],
 };
 
+// The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
 const WORLD_THEMES = [
   {
-    name: 'Orman', sky: [0.56, 0.8, 0.96], hills: 26, plant: 'leafyTree',
+    name: 'Orman', sky: [0.56, 0.8, 0.96], hills: 26, plant: 'leafyTree', crossing: 'swim',
     surface: BLOCK.GRASS, soil: BLOCK.DIRT, peak: BLOCK.STONE, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
-    accents: [BLOCK.RED_FLOWER, BLOCK.YELLOW_FLOWER],
+    accents: [BLOCK.RED_FLOWER, BLOCK.YELLOW_FLOWER], trunk: BLOCK.TRUNK, crown: BLOCK.LEAF,
   },
   {
-    name: 'Çöl', sky: [0.96, 0.84, 0.62], hills: 20, plant: 'cactus',
+    name: 'Çöl', sky: [0.96, 0.84, 0.62], hills: 20, plant: 'cactus', crossing: 'swim',
     surface: BLOCK.SAND, soil: BLOCK.RED_SAND, peak: BLOCK.RED_SAND, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.RED_SAND,
-    accents: [BLOCK.RED_SAND, BLOCK.ROCK],
+    accents: [BLOCK.RED_SAND, BLOCK.ROCK], trunk: BLOCK.CACTUS, crown: BLOCK.CACTUS,
   },
   {
-    name: 'Kar', sky: [0.78, 0.87, 0.95], hills: 30, plant: 'pine',
+    name: 'Kar', sky: [0.78, 0.87, 0.95], hills: 30, plant: 'pine', crossing: 'slide',
     surface: BLOCK.SNOW, soil: BLOCK.STONE, peak: BLOCK.ICE, shore: BLOCK.SNOW, liquid: BLOCK.ICE, rock: BLOCK.STONE,
-    accents: [BLOCK.ICE, BLOCK.STONE],
+    accents: [BLOCK.ICE, BLOCK.STONE], trunk: BLOCK.TRUNK, crown: BLOCK.PINE,
   },
   {
-    name: 'Volkan', sky: [0.42, 0.24, 0.2], hills: 32, plant: 'deadTree',
+    name: 'Volkan', sky: [0.42, 0.24, 0.2], hills: 32, plant: 'deadTree', crossing: 'fly',
     surface: BLOCK.ASH, soil: BLOCK.BASALT, peak: BLOCK.BASALT, shore: BLOCK.BASALT, liquid: BLOCK.LAVA, rock: BLOCK.BASALT,
-    accents: [BLOCK.EMBER, BLOCK.EMBER],
+    accents: [BLOCK.EMBER, BLOCK.EMBER], trunk: BLOCK.DEAD_WOOD, crown: BLOCK.DEAD_WOOD,
+  },
+  {
+    name: 'Dev Ev', sky: [0.6, 0.82, 0.95], hills: 10, mountains: 0, plant: 'leafyTree', crossing: 'swim', layout: 'giantHouse',
+    surface: BLOCK.GRASS, soil: BLOCK.DIRT, peak: BLOCK.STONE, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
+    accents: [BLOCK.RED_FLOWER, BLOCK.YELLOW_FLOWER], trunk: BLOCK.TRUNK, crown: BLOCK.LEAF,
+  },
+  {
+    name: 'Korsan Gemisi', sky: [0.62, 0.84, 0.96], hills: 0, crossing: 'swim', layout: 'pirateShip', openSea: true, pirateBirds: true,
+    surface: BLOCK.DECK, soil: BLOCK.HULL, peak: BLOCK.DECK, shore: BLOCK.DECK, liquid: BLOCK.WATER, rock: BLOCK.HULL,
+    accents: [BLOCK.DECK, BLOCK.DECK],
   },
 ];
+
+const PLANT_PLACE_NAMES = {
+  leafyTree: 'Orman', cactus: 'Çöl', pine: 'Çam Tepeleri', deadTree: 'Bozkır',
+  mushroom: 'Mantar Diyarı', crystal: 'Kristal Vadisi', lollipop: 'Şeker Adası',
+};
+const HUE_NAMES = ['Kırmızı', 'Turuncu', 'Sarı', 'Yeşil', 'Turkuaz', 'Mavi', 'Mor', 'Pembe'];
+const HUE_NAME_STARTS = [0, 0.05, 0.11, 0.2, 0.44, 0.53, 0.72, 0.86];
+
+// Every level after the fixed ones invents its own colours, plants and liquid. The hues keep their
+// distance, so the ground, the liquid and the plants can always be told apart.
+function generateTheme(level) {
+  const random = seededRandom(20261101 + level * 7919 + 2);
+  const between = (min, max) => min + random() * (max - min);
+  const pick = (list) => list[Math.floor(random() * list.length)];
+  const hue = random();
+  const plant = pick(Object.keys(PLANT_PLACE_NAMES));
+  const hueName = HUE_NAMES[HUE_NAME_STARTS.findLastIndex((start) => hue >= start)];
+  return {
+    name: `${hueName} ${PLANT_PLACE_NAMES[plant]}`,
+    sky: hslColor(hue + between(0.45, 0.65), 0.5, 0.82),
+    hills: Math.round(between(20, 32)),
+    plant,
+    crossing: pick(['swim', 'swim', 'slide', 'fly']),
+    surface: BLOCK.GEN_SURFACE, soil: BLOCK.GEN_SOIL, peak: BLOCK.GEN_PEAK, shore: BLOCK.GEN_SHORE,
+    liquid: BLOCK.GEN_LIQUID, rock: BLOCK.GEN_ROCK, accents: [BLOCK.GEN_ACCENT_A, BLOCK.GEN_ACCENT_B],
+    trunk: BLOCK.GEN_TRUNK, crown: BLOCK.GEN_CROWN,
+    colors: {
+      [BLOCK.GEN_SURFACE]: hslColor(hue, between(0.45, 0.7), between(0.55, 0.72)),
+      [BLOCK.GEN_SOIL]: hslColor(hue, 0.35, 0.35),
+      [BLOCK.GEN_PEAK]: hslColor(hue, 0.25, 0.85),
+      [BLOCK.GEN_SHORE]: hslColor(hue + 0.08, 0.4, 0.75),
+      [BLOCK.GEN_LIQUID]: hslColor(hue + between(0.33, 0.67), 0.75, 0.52),
+      [BLOCK.GEN_ROCK]: hslColor(hue + 0.5, 0.12, 0.55),
+      [BLOCK.GEN_ACCENT_A]: hslColor(random(), 0.85, 0.6),
+      [BLOCK.GEN_ACCENT_B]: hslColor(random(), 0.85, 0.6),
+      [BLOCK.GEN_TRUNK]: hslColor(hue + between(0.6, 0.8), 0.4, 0.38),
+      [BLOCK.GEN_CROWN]: hslColor(hue + between(0.25, 0.75), 0.65, 0.52),
+    },
+  };
+}
+
+function themeForLevel(level) {
+  return level <= WORLD_THEMES.length ? WORLD_THEMES[level - 1] : generateTheme(level);
+}
 
 function makeNoise(random) {
   const table = new Float32Array(256 * 256);
@@ -96,13 +166,17 @@ function polar(angleDegrees, radius) {
 function generateWorld(level) {
   const random = seededRandom(20261101 + level * 7919);
   const noise = makeNoise(random);
-  const theme = WORLD_THEMES[(level - 1) % WORLD_THEMES.length];
+  const theme = themeForLevel(level);
+  const blockColor = (block) => theme.colors?.[block] ?? BLOCK_COLORS[block];
   const voxels = new Uint8Array(WORLD_SIZE * WORLD_SIZE * WORLD_HEIGHT);
   const terrain = new Int16Array(WORLD_SIZE * WORLD_SIZE);
   const index = (x, y, z) => x + z * WORLD_SIZE + y * WORLD_SIZE * WORLD_SIZE;
   const toVoxel = (metres) => Math.floor(metres / VOXEL + WORLD_SIZE / 2);
 
+  const layout = theme.layout ? LAYOUTS[theme.layout] : null;
+
   const rawHeight = (x, z) => {
+    if (theme.openSea) return 6;
     // The noise wobbles the coast by up to 15%, so no two islands have the same outline.
     const wobble = 1 + (noise(x * 0.004 + 11, z * 0.004 + 23) - 0.5) * 0.3;
     const distance = Math.hypot(x, z) * VOXEL * wobble;
@@ -110,21 +184,22 @@ function generateWorld(level) {
     const mask = t * t * (3 - 2 * t);
     const rolling = 6 + mask * (8 + noise(x * 0.012 + 40, z * 0.012 + 70) * theme.hills);
     const m = clamp((noise(x * 0.006 + 90, z * 0.006 + 15) - 0.42) / 0.25, 0, 1);
-    const mountain = m * m * (3 - 2 * m) * mask * MOUNTAIN_HEIGHT;
+    const mountain = m * m * (3 - 2 * m) * mask * MOUNTAIN_HEIGHT * (theme.mountains ?? 1);
     return rolling + Math.floor(mountain / MOUNTAIN_LEDGE) * MOUNTAIN_LEDGE;
   };
 
   // Flat ground under everything the player has to reach.
-  const pads = [{ x: 0, z: 0, inner: 4, outer: 8 }];
+  const pads = [{ x: 0, z: 0, inner: 4, outer: 8 }, ...(layout ? layout.pads : [])];
   const placeObjective = () => {
     for (let attempt = 0; ; attempt++) {
       const [x, z] = polar(random() * 360, OBJECTIVE_RADIUS * (0.2 + Math.sqrt(random()) * 0.8));
-      if (attempt > 500 || pads.every((pad) => Math.hypot(x - pad.x, z - pad.z) > OBJECTIVE_SEPARATION)) return [x, z];
+      const isApart = (pad) => Math.hypot(x - pad.x, z - pad.z) > Math.max(OBJECTIVE_SEPARATION, pad.outer + 8);
+      if (attempt > 500 || pads.every(isApart)) return [x, z];
     }
   };
   const cages = [];
   const keys = [];
-  const cageCount = Math.min(4 + level, MAX_CAGES);
+  const cageCount = layout ? layout.outsidePairs : Math.min(4 + level, MAX_CAGES);
   for (let i = 0; i < cageCount; i++) {
     const [x, z] = placeObjective();
     cages.push({ x, z });
@@ -181,33 +256,52 @@ function generateWorld(level) {
   const PLANTS = {
     leafyTree(vx, top, vz) {
       const trunkHeight = 16 + Math.floor(random() * 10);
-      stampColumn([vx, vz], top + 1, top + trunkHeight, BLOCK.TRUNK);
+      stampColumn([vx, vz], top + 1, top + trunkHeight, theme.trunk);
       const crown = 8 + Math.floor(random() * 5);
-      stampBlob(vx, top + trunkHeight + crown - 3, vz, crown, crown, crown, BLOCK.LEAF);
+      stampBlob(vx, top + trunkHeight + crown - 3, vz, crown, crown, crown, theme.crown);
     },
     cactus(vx, top, vz) {
       const height = 10 + Math.floor(random() * 10);
-      stampColumn([vx, vz], top + 1, top + height, BLOCK.CACTUS);
+      stampColumn([vx, vz], top + 1, top + height, theme.crown);
       const side = random() < 0.5 ? 1 : -1;
       const armY = top + 5 + Math.floor(random() * 4);
-      for (let i = 1; i <= 5; i++) stampBlob(vx + side * i, armY, vz, 1, 1, 1, BLOCK.CACTUS);
-      for (let y = 0; y <= 4; y++) stampBlob(vx + side * 5, armY + y, vz, 1, 1, 1, BLOCK.CACTUS);
+      for (let i = 1; i <= 5; i++) stampBlob(vx + side * i, armY, vz, 1, 1, 1, theme.crown);
+      for (let y = 0; y <= 4; y++) stampBlob(vx + side * 5, armY + y, vz, 1, 1, 1, theme.crown);
     },
     pine(vx, top, vz) {
       const trunkHeight = 12 + Math.floor(random() * 6);
-      stampColumn([vx, vz], top + 1, top + trunkHeight + 12, BLOCK.TRUNK);
+      stampColumn([vx, vz], top + 1, top + trunkHeight + 12, theme.trunk);
       for (let layer = 0; layer < 3; layer++) {
         const radius = 9 - layer * 3;
-        stampBlob(vx, top + trunkHeight + layer * 6, vz, radius, 4, radius, BLOCK.PINE);
+        stampBlob(vx, top + trunkHeight + layer * 6, vz, radius, 4, radius, theme.crown);
       }
     },
     deadTree(vx, top, vz) {
       const height = 12 + Math.floor(random() * 10);
-      stampColumn([vx, vz], top + 1, top + height, BLOCK.DEAD_WOOD);
+      stampColumn([vx, vz], top + 1, top + height, theme.trunk);
       for (const side of [-1, 1]) {
         const y = top + height - 4 - Math.floor(random() * 3);
-        for (let i = 1; i <= 5; i++) stampBlob(vx + side * i, y + i, vz, 1, 1, 1, BLOCK.DEAD_WOOD);
+        for (let i = 1; i <= 5; i++) stampBlob(vx + side * i, y + i, vz, 1, 1, 1, theme.trunk);
       }
+    },
+    mushroom(vx, top, vz) {
+      const height = 8 + Math.floor(random() * 8);
+      stampColumn([vx, vz], top + 1, top + height, theme.trunk);
+      const cap = 7 + Math.floor(random() * 5);
+      stampBlob(vx, top + height + 2, vz, cap, 4, cap, theme.crown);
+    },
+    crystal(vx, top, vz) {
+      const height = 14 + Math.floor(random() * 12);
+      for (let y = 0; y < height; y++) {
+        const radius = Math.max(1, Math.round(4 * (1 - y / height)));
+        stampBlob(vx, top + y, vz, radius, 1, radius, theme.crown);
+      }
+    },
+    lollipop(vx, top, vz) {
+      const height = 12 + Math.floor(random() * 10);
+      for (let y = 1; y <= height; y++) stampBlob(vx, top + y, vz, 1, 1, 1, theme.trunk);
+      const radius = 5 + Math.floor(random() * 4);
+      stampBlob(vx, top + height + radius - 1, vz, radius, radius, radius, theme.crown);
     },
   };
 
@@ -220,11 +314,13 @@ function generateWorld(level) {
       if (top > WATER_LEVEL + 2 && isClearOfPads(x, z)) place(vx, top, vz);
     }
   };
-  scatter(280, PLANTS[theme.plant]);
-  scatter(180, (vx, top, vz) => {
-    const size = 3 + Math.floor(random() * 5);
-    stampBlob(vx, top, vz, size, size, size, theme.rock);
-  });
+  if (!theme.openSea) {
+    scatter(280, PLANTS[theme.plant]);
+    scatter(180, (vx, top, vz) => {
+      const size = 3 + Math.floor(random() * 5);
+      stampBlob(vx, top, vz, size, size, size, theme.rock);
+    });
+  }
 
   const stampDisc = (cx, y, cz, radius, block) => {
     for (let layer = 0; layer < 2; layer++) {
@@ -275,11 +371,38 @@ function generateWorld(level) {
     key.y = (platform + 1) * VOXEL + 1;
   }
 
+  const stampBox = (x0, y0, z0, x1, y1, z1, block) => {
+    for (let y = y0; y <= y1; y++) {
+      for (let z = z0; z <= z1; z++) {
+        for (let x = x0; x <= x1; x++) stamp(x, y, z, block);
+      }
+    }
+  };
+  const builtLayout = layout?.build({
+    EMPTY: BLOCK.EMPTY,
+    box: stampBox,
+    stampBlob,
+    stampDisc,
+    terrainAt: (vx, vz) => terrain[vx + vz * WORLD_SIZE],
+    // Makes a column solid up to `top`, and land as far as walking is concerned.
+    setColumn(vx, vz, top, surface, body) {
+      terrain[vx + vz * WORLD_SIZE] = top;
+      for (let y = 0; y <= top; y++) voxels[index(vx, y, vz)] = y === top ? surface : body;
+    },
+    toVoxel,
+    toMetres: (voxel) => (voxel + 0.5 - WORLD_SIZE / 2) * VOXEL,
+    floorY: (voxelY) => (voxelY + 1) * VOXEL,
+  });
+  if (builtLayout) {
+    cages.push(...builtLayout.cages);
+    keys.push(...builtLayout.keys);
+  }
+
   const terrainTop = (x, z) => {
     const vx = clamp(toVoxel(x), 0, WORLD_SIZE - 1), vz = clamp(toVoxel(z), 0, WORLD_SIZE - 1);
     return (terrain[vx + vz * WORLD_SIZE] + 1) * VOXEL;
   };
-  for (const cage of cages) cage.y = terrainTop(cage.x, cage.z);
+  for (const cage of cages) cage.y ??= terrainTop(cage.x, cage.z);
 
   const isSolid = (x, y, z) => {
     const vx = toVoxel(x), vz = toVoxel(z), vy = Math.floor(y / VOXEL);
@@ -292,15 +415,65 @@ function generateWorld(level) {
     return terrain[vx + vz * WORLD_SIZE] < WATER_LEVEL;
   };
 
+  // The hidden bonus: a spiral of floating stones up to a tiny shed. Its own random sequence, for
+  // the same reason as the wings below. Its spot is far from the middle and clear of everything.
+  const bonusRandom = seededRandom(20261101 + level * 7919 + 3);
+  const isGoodBonusSpot = (x, z, maxSlope) => {
+    if (pads.some((pad) => Math.hypot(x - pad.x, z - pad.z) < pad.outer + 8)) return false;
+    // Level ground: a ledge cutting through the spiral would block the jumps.
+    const ground = terrainTop(x, z);
+    for (let a = 0; a < 8; a++) {
+      for (const radius of [0, 3, 6, 8]) {
+        const [ox, oz] = polar(a * 45, radius);
+        if (isLiquid(x + ox, z + oz) || Math.abs(terrainTop(x + ox, z + oz) - ground) > maxSlope) return false;
+      }
+    }
+    return true;
+  };
+  let bonusSpot = builtLayout?.bonusSpot;
+  for (let attempt = 0; !bonusSpot && attempt < 800; attempt++) {
+    const [x, z] = polar(bonusRandom() * 360, OBJECTIVE_RADIUS * (0.78 + bonusRandom() * 0.22));
+    if (isGoodBonusSpot(x, z, attempt < 400 ? 1 : 3) || attempt === 799) bonusSpot = { vx: toVoxel(x), vz: toVoxel(z) };
+  }
+  const { vx: bonusX, vz: bonusZ } = bonusSpot;
+  if (!builtLayout?.bonusSpot) {
+    // Fell the trees and rocks in the spiral's way. A layout's spot is clear by design.
+    const reach = BONUS_SPIRAL_RADIUS + 12;
+    for (let vz = bonusZ - reach; vz <= bonusZ + reach; vz++) {
+      for (let vx = bonusX - reach; vx <= bonusX + reach; vx++) {
+        if ((vx - bonusX) ** 2 + (vz - bonusZ) ** 2 > reach * reach) continue;
+        stampBox(vx, terrain[vx + vz * WORLD_SIZE] + 1, vz, vx, WORLD_HEIGHT - 1, vz, BLOCK.EMPTY);
+      }
+    }
+  }
+  let stoneTop = terrain[bonusX + BONUS_SPIRAL_RADIUS + bonusZ * WORLD_SIZE];
+  for (let i = 0; stoneTop + 4 < BONUS_PLATFORM_TOP; i++) {
+    stoneTop += 4;
+    const [x, z] = polar(i * BONUS_STONE_DEGREES, BONUS_SPIRAL_RADIUS);
+    stampDisc(bonusX + Math.round(x), stoneTop, bonusZ + Math.round(z), 3, BLOCK.STONE);
+  }
+  stoneTop += 4;
+  stampBox(bonusX - 8, stoneTop - 1, bonusZ - 8, bonusX + 8, stoneTop, bonusZ + 8, BLOCK.STONE);
+  stampBox(bonusX - 4, stoneTop + 1, bonusZ - 4, bonusX + 4, stoneTop + 11, bonusZ + 4, theme.trunk ?? BLOCK.HULL);
+  stampBox(bonusX - 3, stoneTop + 1, bonusZ - 3, bonusX + 3, stoneTop + 10, bonusZ + 3, BLOCK.EMPTY);
+  stampBox(bonusX - 2, stoneTop + 1, bonusZ - 4, bonusX + 2, stoneTop + 9, bonusZ - 4, BLOCK.EMPTY);
+  const metresOf = (voxel) => (voxel + 0.5 - WORLD_SIZE / 2) * VOXEL;
+  const bonus = {
+    x: metresOf(bonusX), z: metresOf(bonusZ), y: (stoneTop + 1) * VOXEL + 0.5,
+    doorX: metresOf(bonusX - 2) - VOXEL / 2, doorZ: metresOf(bonusZ - 4), doorY: (stoneTop + 1) * VOXEL,
+    stoneTop,
+  };
+
   // Their own random sequence, so that adding them leaves the rest of each level unchanged.
   const wingRandom = seededRandom(20261101 + level * 7919 + 1);
-  const wings = [];
-  const wingCount = Math.min(5 + level, MAX_WINGS);
+  const wings = [...(builtLayout ? builtLayout.wings : [])];
+  const wingCount = wings.length + (layout ? layout.randomWings : Math.min(5 + level, MAX_WINGS));
   for (let attempt = 0; attempt < 500 && wings.length < wingCount; attempt++) {
     const [x, z] = polar(wingRandom() * 360, 8 + Math.sqrt(wingRandom()) * ISLAND_RADIUS * 0.7);
     const y = terrainTop(x, z);
     const isFree = !isLiquid(x, z) && !isSolid(x, y + 0.5, z) && !isSolid(x, y + 1.5, z) && !isSolid(x, y + 2.5, z);
-    const isClear = [...cages, ...wings].every((other) => Math.hypot(x - other.x, z - other.z) > 6);
+    const isClear = [...cages, ...wings].every((other) => Math.hypot(x - other.x, z - other.z) > 6) &&
+      Math.hypot(x - bonus.x, z - bonus.z) > 20;
     if (isFree && isClear) wings.push({ x, y: y + 1.2, z });
   }
 
@@ -347,7 +520,7 @@ function generateWorld(level) {
             larger.set(sphereData);
             sphereData = larger;
           }
-          const color = BLOCK_COLORS[block];
+          const color = blockColor(block);
           const shade = 0.93 + random() * 0.14;
           sphereData.set([
             (x + 0.5 - size / 2) * voxelSize, (y + 0.5) * voxelSize, (z + 0.5 - size / 2) * voxelSize, radius,
@@ -377,11 +550,14 @@ function generateWorld(level) {
   return {
     level,
     theme,
+    blockColor,
     sphereData: sphereData.subarray(0, sphereCount * FLOATS_PER_SPHERE),
     chunks,
     cages,
     keys,
     wings,
+    bonus,
+    mapShapes: builtLayout ? builtLayout.mapShapes : [],
     terrain,
     terrainTop,
     isSolid,

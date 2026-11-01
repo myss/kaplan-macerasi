@@ -6,11 +6,22 @@ const TIGER_RADIUS = 0.4;
 const TIGER_HEIGHT = 1.9;
 const CAGE_BLOCK_RADIUS = 2.4;
 const CAGE_OPEN_RADIUS = 3.6;
+const CAGE_HEIGHT = 2.6;
 const KEY_PICKUP_RADIUS = 1.8;
 const CROCODILE_SCALE = 0.8;
 const MAX_HEARTS = 3;
 const BIRD_HIT_RADIUS = 1.2;
 const BIRD_RESPAWN_TIME = 30;
+const BIRD_RECOVERY_SECONDS = 0.6; // one spin is many frames, but must only count as one hit
+const BIRD_BODY_RADIUS = 0.45;
+const BONUS_NO_WINGS_RADIUS = 18; // too wide to glide across from any height the wings can reach
+const BONUS_PICKUP_RADIUS = 1.1;
+const BONUS_DOOR_OPEN_RADIUS = 3;
+const BONUS_DOOR_OPEN_ANGLE = 1.9;
+const GROUND_PUNCH_SECONDS = 0.8;
+const GROUND_PUNCH_RING_METRES = 60;
+const CAPTAIN_SCALE = 1.7;
+const BIRD_SCALE = 1.2;
 const DRAW_DISTANCE = 120; // moving things farther than this are lost in the fog
 const MOUSE_SENSITIVITY = 0.003;
 const WING_PICKUP_RADIUS = 1.8;
@@ -32,9 +43,12 @@ const models = {
   tiger: tigerModel(),
   crocodile: crocodileModel(),
   bird: birdModel(),
+  pirateBird: birdModel({ eyePatch: true }),
+  captainBird: birdModel({ eyePatch: true, captainHat: true }),
   key: keyModel(),
   cage: cageModel(),
   wings: wingsModel(),
+  bonusDoor: bonusDoorModel(),
 };
 
 const hud = {
@@ -43,6 +57,7 @@ const hud = {
   keys: document.getElementById('keys'),
   rescued: document.getElementById('rescued'),
   flight: document.getElementById('flight'),
+  punch: document.getElementById('punch'),
   message: document.getElementById('message'),
   paused: document.getElementById('paused'),
   stats: document.getElementById('stats'),
@@ -57,7 +72,7 @@ const SPAWN = { x: 0, z: 0 };
 const tiger = {
   x: SPAWN.x, y: 0, z: SPAWN.z,
   vy: 0, yaw: 0, stride: 0, grounded: true, airTime: 0, invulnerable: 0, attackTime: 0, attackCooldown: 0,
-  flightSeconds: 0, wingsOut: false,
+  flightSeconds: 0, wingsOut: false, inNoWingsZone: false, groundPunchTime: 0,
 };
 const camera = { yaw: Math.PI, pitch: 0.42, distance: 8 };
 const game = {
@@ -73,6 +88,10 @@ const game = {
   birdSpeed: 0,
   birdSeeRadius: 0,
   birdRestTime: 0,
+  bonusTaken: false,
+  punchReady: false,
+  birdsGone: false,
+  bonusDoorOpen: 0, // 0 is shut, 1 is wide open
 };
 let world;
 let keys = [];
@@ -90,12 +109,18 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   keys = world.keys.map((k) => ({ ...k, taken: false }));
   cages = world.cages.map((c) => ({ ...c, open: false }));
   wingPickups = world.wings.map((w) => ({ ...w, taken: false }));
-  birds =[...cages, ...keys].map((home, i) => {
-    const altitude = home.y + 5;
+  birds = [...cages, ...keys].map((home, i) => {
+    // Indoors the ceiling is low and the rooms are small, so they fly lower and in tighter circles.
+    const altitude = home.y + (home.indoors ? 2.5 : 5);
+    const isCaptain = world.theme.pirateBirds && i === 0;
+    const maxHits = isCaptain ? 2 : 1;
     return {
-      homeX: home.x, homeZ: home.z, altitude,
+      homeX: home.x, homeZ: home.z, altitude, patrolRadius: home.indoors ? 3 : 7,
       x: home.x, y: altitude, z: home.z, yaw: 0,
       phase: i * 1.7, state: 'patrol', cooldown: 2 + i * 0.5, timer: 0,
+      model: isCaptain ? 'captainBird' : world.theme.pirateBirds ? 'pirateBird' : 'bird',
+      scale: isCaptain ? CAPTAIN_SCALE : BIRD_SCALE,
+      maxHits, hitsLeft: maxHits, recovery: 0,
     };
   });
   followers.length = 0;
@@ -110,6 +135,10 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   game.hearts = MAX_HEARTS;
   game.keysHeld = 0;
   game.rescued = 0;
+  game.bonusTaken = false;
+  game.punchReady = false;
+  game.birdsGone = false;
+  game.bonusDoorOpen = 0;
 
   tiger.x = SPAWN.x;
   tiger.z = SPAWN.z;
@@ -140,6 +169,9 @@ function writeSave() {
     openCages: cages.flatMap((cage, i) => (cage.open ? [i] : [])),
     takenWings: wingPickups.flatMap((wing, i) => (wing.taken ? [i] : [])),
     flightSeconds: tiger.flightSeconds,
+    bonusTaken: game.bonusTaken,
+    punchReady: game.punchReady,
+    birdsGone: game.birdsGone,
     tiger: { x: tiger.x, y: tiger.y, z: tiger.z, yaw: tiger.yaw },
     camera: { yaw: camera.yaw, pitch: camera.pitch, distance: camera.distance },
   };
@@ -178,6 +210,9 @@ function restoreSave(save) {
   // Saves from before wings existed have neither of these.
   for (const i of save.takenWings ?? []) if (wingPickups[i]) wingPickups[i].taken = true;
   tiger.flightSeconds = save.flightSeconds ?? 0;
+  game.bonusTaken = save.bonusTaken ?? false;
+  game.punchReady = save.punchReady ?? false;
+  if (save.birdsGone) removeAllBirds();
   game.hearts = save.hearts;
   game.keysHeld = save.keysHeld;
   game.rescued = followers.length;
@@ -198,6 +233,7 @@ function updateHud() {
   hud.hearts.textContent = '❤️'.repeat(game.hearts) + '🖤'.repeat(MAX_HEARTS - game.hearts);
   hud.keys.textContent = `🔑 ${game.keysHeld}`;
   hud.rescued.textContent = `🐊 ${game.rescued} / ${cages.length}`;
+  hud.punch.textContent = game.punchReady ? '⭐ Yumruk hazır!' : '';
   updateFlightHud();
 }
 
@@ -307,7 +343,9 @@ const FOOT_OFFSETS = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
 function isBlocked(x, y, z) {
   if (world.isLiquid(x, z)) return true;
   for (const cage of cages) {
-    if (!cage.open && Math.hypot(x - cage.x, z - cage.z) < CAGE_BLOCK_RADIUS) return true;
+    // Height matters: this cage may be upstairs, and the tiger on the floor below or flying over.
+    const isLevelWithCage = y > cage.y - TIGER_HEIGHT && y < cage.y + CAGE_HEIGHT;
+    if (!cage.open && isLevelWithCage && Math.hypot(x - cage.x, z - cage.z) < CAGE_BLOCK_RADIUS) return true;
   }
   for (const [ox, oz] of FOOT_OFFSETS) {
     const sx = x + ox * TIGER_RADIUS, sz = z + oz * TIGER_RADIUS;
@@ -370,16 +408,26 @@ function updateTiger(dt) {
 
   tiger.attackTime = Math.max(0, tiger.attackTime - dt);
   tiger.attackCooldown = Math.max(0, tiger.attackCooldown - dt);
-  if (attackQueued && tiger.attackCooldown <= 0) {
+  tiger.groundPunchTime = Math.max(0, tiger.groundPunchTime - dt);
+  if (attackQueued && game.punchReady) {
+    groundPunch();
+  } else if (attackQueued && tiger.attackCooldown <= 0) {
     tiger.attackTime = ATTACK_DURATION;
     tiger.attackCooldown = ATTACK_COOLDOWN;
   }
   attackQueued = false;
 
+  const inNoWingsZone = Math.hypot(tiger.x - world.bonus.x, tiger.z - world.bonus.z) < BONUS_NO_WINGS_RADIUS;
+  if (inNoWingsZone && !tiger.inNoWingsZone && tiger.flightSeconds > 0 && !game.bonusTaken) {
+    showMessage('Burada kanatlar çalışmıyor!');
+  }
+  tiger.inNoWingsZone = inNoWingsZone;
+  if (inNoWingsZone) tiger.wingsOut = false;
+
   const wasGrounded = tiger.grounded;
   tiger.vy -= GRAVITY * dt;
   // Like a jetpack: lift only while jump is held, and only that time uses up the wings.
-  if (!wasGrounded && held.has('Space') && tiger.flightSeconds > 0 && (tiger.wingsOut || tiger.vy <= FLIGHT_START_SPEED)) {
+  if (!wasGrounded && held.has('Space') && tiger.flightSeconds > 0 && !inNoWingsZone && (tiger.wingsOut || tiger.vy <= FLIGHT_START_SPEED)) {
     tiger.wingsOut = true;
     tiger.flightSeconds = Math.max(0, tiger.flightSeconds - dt);
     tiger.vy = Math.min(tiger.vy + (GRAVITY + WING_LIFT) * dt, MAX_CLIMB_SPEED);
@@ -447,9 +495,70 @@ function defeatBird(bird) {
   showMessage('Süper! Kuşu yendin!', 1.5);
 }
 
+function hitBird(bird) {
+  if (bird.recovery > 0) return;
+  bird.recovery = BIRD_RECOVERY_SECONDS;
+  bird.hitsLeft--;
+  if (bird.hitsLeft > 0) {
+    burst(bird.x, bird.y, bird.z, [0.05, 0.05, 0.06], 15);
+    showMessage('Kaptan çok sağlam! Bir kez daha vur!', 2);
+  } else {
+    defeatBird(bird);
+  }
+}
+
+function removeAllBirds() {
+  game.birdsGone = true;
+  for (const bird of birds) {
+    bird.state = 'gone';
+    bird.timer = Infinity; // until the next level builds new ones
+  }
+}
+
+// The bonus's prize: one punch at the ground ends every bird on this level.
+function groundPunch() {
+  game.punchReady = false;
+  tiger.groundPunchTime = GROUND_PUNCH_SECONDS;
+  for (const bird of birds) {
+    if (bird.state !== 'gone') burst(bird.x, bird.y, bird.z, [0.46, 0.15, 0.55], 25);
+  }
+  removeAllBirds();
+  burst(tiger.x, tiger.y + 0.2, tiger.z, [1, 0.8, 0.2], 60);
+  showMessage('GÜM! Bütün kuşlar yok oldu!', 3);
+  updateHud();
+  writeSave();
+}
+
+function isBirdBlocked(x, y, z) {
+  return world.isSolid(x, y, z) || world.isSolid(x + BIRD_BODY_RADIUS, y, z) || world.isSolid(x - BIRD_BODY_RADIUS, y, z) ||
+    world.isSolid(x, y, z + BIRD_BODY_RADIUS) || world.isSolid(x, y, z - BIRD_BODY_RADIUS) ||
+    world.isSolid(x, y + BIRD_BODY_RADIUS, z) || world.isSolid(x, y - BIRD_BODY_RADIUS, z);
+}
+
+function hasLineOfSight(ax, ay, az, bx, by, bz) {
+  const distance = Math.hypot(bx - ax, by - ay, bz - az);
+  for (let travelled = 0.5; travelled < distance; travelled += 0.5) {
+    const t = travelled / distance;
+    if (world.isSolid(ax + (bx - ax) * t, ay + (by - ay) * t, az + (bz - az) * t)) return false;
+  }
+  return true;
+}
+
+// Each axis moves on its own, so a bird slides along a wall. A bird stopped by something flies up
+// over it, unless a ceiling is in the way too.
+function moveBird(bird, stepX, stepY, stepZ, size) {
+  const blockedX = isBirdBlocked(bird.x + stepX, bird.y, bird.z);
+  const blockedZ = isBirdBlocked(bird.x, bird.y, bird.z + stepZ);
+  if (!blockedX) bird.x += stepX;
+  if (!blockedZ) bird.z += stepZ;
+  if (blockedX || blockedZ) stepY = size;
+  if (!isBirdBlocked(bird.x, bird.y + stepY, bird.z)) bird.y += stepY;
+}
+
 function updateBird(bird, dt) {
   bird.phase += dt;
   bird.cooldown -= dt;
+  bird.recovery = Math.max(0, bird.recovery - dt);
   const toTigerX = tiger.x - bird.x, toTigerY = tiger.y + 0.9 - bird.y, toTigerZ = tiger.z - bird.z;
   const distance = Math.hypot(toTigerX, toTigerY, toTigerZ);
 
@@ -458,6 +567,7 @@ function updateBird(bird, dt) {
     if (bird.timer <= 0) {
       bird.state = 'patrol';
       bird.cooldown = 3;
+      bird.hitsLeft = bird.maxHits;
       bird.x = bird.homeX;
       bird.y = bird.altitude;
       bird.z = bird.homeZ;
@@ -476,32 +586,33 @@ function updateBird(bird, dt) {
     }
   } else {
     const a = bird.phase * 0.35;
-    moveX = bird.homeX + Math.cos(a) * 7 - bird.x;
+    moveX = bird.homeX + Math.cos(a) * bird.patrolRadius - bird.x;
     moveY = bird.altitude + Math.sin(bird.phase * 1.3) * 0.6 - bird.y;
-    moveZ = bird.homeZ + Math.sin(a) * 7 - bird.z;
+    moveZ = bird.homeZ + Math.sin(a) * bird.patrolRadius - bird.z;
     speed = 5;
-    if (game.playing && !game.levelDone && !crossing && bird.cooldown <= 0 && Math.hypot(toTigerX, toTigerZ) < game.birdSeeRadius) {
+    if (game.playing && !game.levelDone && !crossing && bird.cooldown <= 0 && Math.hypot(toTigerX, toTigerZ) < game.birdSeeRadius &&
+        hasLineOfSight(bird.x, bird.y, bird.z, tiger.x, tiger.y + 0.9, tiger.z)) {
       bird.state = 'swoop';
       bird.timer = 3.5;
     }
   }
   const length = Math.hypot(moveX, moveY, moveZ) || 1;
   const step = Math.min(length, speed * dt);
-  bird.x += (moveX / length) * step;
-  bird.y += (moveY / length) * step;
-  bird.z += (moveZ / length) * step;
+  moveBird(bird, (moveX / length) * step, (moveY / length) * step, (moveZ / length) * step, speed * dt);
   if (Math.hypot(moveX, moveZ) > 0.05) {
     let turn = Math.atan2(moveX, moveZ) - bird.yaw;
     turn = Math.atan2(Math.sin(turn), Math.cos(turn));
     bird.yaw += turn * Math.min(1, dt * 6);
   }
 
-  if (tiger.attackTime > 0 && distance < ATTACK_RADIUS) {
-    defeatBird(bird);
+  // Nothing reaches through a wall, in either direction.
+  if (distance >= ATTACK_RADIUS || !hasLineOfSight(bird.x, bird.y, bird.z, tiger.x, tiger.y + 0.9, tiger.z)) return;
+  if (tiger.attackTime > 0) {
+    hitBird(bird);
   } else if (distance < BIRD_HIT_RADIUS + 0.4) {
     const landingOnIt = tiger.vy < -1 && tiger.y + 0.3 > bird.y - 0.2;
     if (landingOnIt) {
-      defeatBird(bird);
+      hitBird(bird);
       tiger.vy = JUMP_SPEED * 0.9;
     } else if (tiger.invulnerable <= 0 && distance < BIRD_HIT_RADIUS && !game.levelDone && !crossing) {
       hurtTiger(bird.x, bird.z);
@@ -559,18 +670,37 @@ function collectNearest() {
   if (nearest) nearest.collect(nearest.target);
 }
 
+function updateBonus(dt) {
+  const { bonus } = world;
+  const doorDistance = Math.hypot(tiger.x - bonus.x, tiger.y - bonus.doorY, tiger.z - bonus.doorZ);
+  const doorTarget = doorDistance < BONUS_DOOR_OPEN_RADIUS ? 1 : 0;
+  game.bonusDoorOpen += (doorTarget - game.bonusDoorOpen) * Math.min(1, dt * 5);
+
+  if (!game.bonusTaken && Math.hypot(tiger.x - bonus.x, tiger.y + 0.8 - bonus.y, tiger.z - bonus.z) < BONUS_PICKUP_RADIUS) {
+    game.bonusTaken = true;
+    game.punchReady = true;
+    burst(bonus.x, bonus.y, bonus.z, [1, 0.8, 0.2], 50);
+    showMessage('BONUS! Vurma tuşuna bas, yere yumruk at!', 4);
+    updateHud();
+    writeSave();
+  }
+}
+
 function updateObjectives(dt) {
   game.noKeyHintTime -= dt;
+  updateBonus(dt);
   if (cheatQueued) collectNearest();
   cheatQueued = false;
   for (const wing of wingPickups) {
-    if (!wing.taken && Math.hypot(tiger.x - wing.x, tiger.y + 0.8 - wing.y, tiger.z - wing.z) < WING_PICKUP_RADIUS) collectWing(wing);
+    const distance = Math.hypot(tiger.x - wing.x, tiger.y + 0.8 - wing.y, tiger.z - wing.z);
+    if (!wing.taken && distance < WING_PICKUP_RADIUS) collectWing(wing);
+    else if (wing.taken && wing.refills && tiger.flightSeconds <= 0 && distance > WING_PICKUP_RADIUS * 2) wing.taken = false;
   }
   for (const key of keys) {
     if (!key.taken && Math.hypot(tiger.x - key.x, tiger.y + 0.8 - key.y, tiger.z - key.z) < KEY_PICKUP_RADIUS) collectKey(key);
   }
   for (const cage of cages) {
-    if (cage.open || Math.hypot(tiger.x - cage.x, tiger.z - cage.z) > CAGE_OPEN_RADIUS) continue;
+    if (cage.open || Math.hypot(tiger.x - cage.x, tiger.z - cage.z) > CAGE_OPEN_RADIUS || Math.abs(tiger.y - cage.y) > CAGE_HEIGHT) continue;
     if (game.keysHeld > 0) {
       openCage(cage);
     } else if (game.noKeyHintTime <= 0) {
@@ -628,13 +758,40 @@ function buildFrameSpheres() {
     const stride = tiger.grounded ? swing(tiger.stride) : 0.6;
     count = drawModel(frameSpheres, count, models.tiger, tiger.x, tiger.y, tiger.z, tiger.yaw + attackProgress * Math.PI * 2, {
       stride,
-      arms: tiger.attackTime > 0 ? 1.5 : stride * 0.7,
+      arms: tiger.attackTime > 0 || tiger.groundPunchTime > 0 ? 1.5 : stride * 0.7,
       tail: Math.sin(game.time * 3) * 0.2,
     });
     if (tiger.wingsOut) {
       count = drawModel(frameSpheres, count, models.wings, tiger.x, tiger.y, tiger.z, tiger.yaw + attackProgress * Math.PI * 2, {
         flap: Math.sin(game.time * 16) * 0.5,
       });
+    }
+  }
+  const addSphere = (x, y, z, radius, color) => {
+    const at = count * FLOATS_PER_SPHERE;
+    if (at + FLOATS_PER_SPHERE > frameSpheres.length) return;
+    frameSpheres.set([x, y, z, radius, color[0], color[1], color[2]], at);
+    count++;
+  };
+  const { bonus } = world;
+  if (isNear(bonus)) {
+    count = drawModel(frameSpheres, count, models.bonusDoor, bonus.doorX, bonus.doorY, bonus.doorZ, game.bonusDoorOpen * BONUS_DOOR_OPEN_ANGLE);
+    if (!game.bonusTaken) {
+      // Colours above 1 stay at full brightness whatever the light, which makes it look lit from inside.
+      const glow = 1.5 + Math.sin(game.time * 4) * 0.3;
+      addSphere(bonus.x, bonus.y, bonus.z, 0.4, [glow, glow * 0.8, 0.3]);
+      for (let i = 0; i < 8; i++) {
+        const a = game.time * 2 + (i / 8) * Math.PI * 2;
+        addSphere(bonus.x + Math.cos(a) * 0.6, bonus.y + Math.sin(a * 2) * 0.2, bonus.z + Math.sin(a) * 0.6, 0.05, [1.6, 1.4, 0.6]);
+      }
+    }
+  }
+  if (tiger.groundPunchTime > 0) {
+    const progress = 1 - tiger.groundPunchTime / GROUND_PUNCH_SECONDS;
+    for (let i = 0; i < 72; i++) {
+      const a = (i / 72) * Math.PI * 2;
+      const ring = progress * GROUND_PUNCH_RING_METRES;
+      addSphere(tiger.x + Math.cos(a) * ring, tiger.y + 0.4, tiger.z + Math.sin(a) * ring, 0.35, [1.4, 1.1, 0.3]);
     }
   }
   for (const wing of wingPickups) {
@@ -656,9 +813,9 @@ function buildFrameSpheres() {
   }
   for (const bird of birds) {
     if (bird.state === 'gone' || !isNear(bird)) continue;
-    count = drawModel(frameSpheres, count, models.bird, bird.x, bird.y, bird.z, bird.yaw, {
+    count = drawModel(frameSpheres, count, models[bird.model], bird.x, bird.y, bird.z, bird.yaw, {
       wings: Math.sin(bird.phase * (bird.state === 'swoop' ? 22 : 11)) * 0.55,
-    }, 1.2);
+    }, bird.scale);
   }
   for (const key of keys) {
     if (key.taken || !isNear(key)) continue;
@@ -718,7 +875,7 @@ function cameraPosition() {
 
 const MAP_SIZE = 180;
 function buildMapBackground() {
-  const toPixels = (block) => BLOCK_COLORS[block].map((c) => c * 255);
+  const toPixels = (block) => world.blockColor(block).map((c) => c * 255);
   const liquid = toPixels(world.theme.liquid), shore = toPixels(world.theme.shore), land = toPixels(world.theme.surface);
   const image = document.createElement('canvas');
   image.width = image.height = MAP_SIZE;
@@ -738,6 +895,11 @@ function buildMapBackground() {
     }
   }
   context.putImageData(pixels, 0, 0);
+  const toMapSize = (metres) => (metres / (WORLD_SIZE * VOXEL)) * MAP_SIZE;
+  for (const { x, z, width, depth, color } of world.mapShapes) {
+    context.fillStyle = color;
+    context.fillRect(toMapSize(x) + MAP_SIZE / 2, toMapSize(z) + MAP_SIZE / 2, toMapSize(width), toMapSize(depth));
+  }
   return image;
 }
 
