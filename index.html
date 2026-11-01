@@ -24,8 +24,10 @@
   .card th { font-weight: 700; white-space: nowrap; }
   button { margin-top: 12px; padding: 12px 36px; border: 0; border-radius: 18px; background: #e8710a; color: #fff; font: inherit; font-size: 26px; font-weight: 700; cursor: pointer; }
   button:hover { background: #ff8a1f; }
-  #new-game-button { display: block; margin: 12px auto 0; padding: 6px 18px; background: none; color: #8a6a3a; font-size: 16px; font-weight: 400; text-decoration: underline; }
-  #new-game-button[hidden] { display: none; }
+  .start-over { display: block; margin: 12px auto 0; padding: 6px 18px; background: none; color: #8a6a3a; font-size: 16px; font-weight: 400; text-decoration: underline; }
+  .start-over:hover { background: none; }
+  .start-over[hidden] { display: none; }
+  #paused .start-over { color: #ddd; pointer-events: auto; }
 </style>
 </head>
 <body>
@@ -33,7 +35,10 @@
 <div id="top"><span id="level"></span><span id="hearts"></span><span id="keys"></span><span id="rescued"></span><span id="flight"></span></div>
 <canvas id="map" width="180" height="180"></canvas>
 <div id="message"></div>
-<div id="paused">Oyun durdu. Devam etmek için tıkla!</div>
+<div id="paused">
+  Oyun durdu. Devam etmek için tıkla!
+  <button class="start-over">Baştan başla</button>
+</div>
 <div id="mist"></div>
 <div id="stats"></div>
 
@@ -50,7 +55,7 @@
       <tr><th>Haritada</th><td>🟡 anahtar · ⚫ kafes · ⚪ kanat · 🟠 sen</td></tr>
     </table>
     <button id="start-button">Başla!</button>
-    <button id="new-game-button" hidden>Baştan başla</button>
+    <button id="new-game-button" class="start-over" hidden>Baştan başla</button>
   </div>
 </div>
 

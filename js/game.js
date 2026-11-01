@@ -274,8 +274,9 @@ document.getElementById('start-button').addEventListener('click', () => {
   game.playing = true;
   lockMouse();
 });
-document.getElementById('new-game-button').addEventListener('click', () => {
+function startOver() {
   if (!confirm('Emin misin? Kayıtlı oyunun silinecek ve 1. bölümden başlayacaksın.')) return;
+  game.playing = false; // or a save in the meantime would bring the old game back
   clearSave();
   hud.start.classList.add('hidden');
   hud.loading.classList.remove('hidden');
@@ -285,7 +286,8 @@ document.getElementById('new-game-button').addEventListener('click', () => {
     hud.loading.classList.add('hidden');
     game.playing = true;
   }, 50);
-});
+}
+for (const button of document.querySelectorAll('.start-over')) button.addEventListener('click', startOver);
 window.addEventListener('pagehide', writeSave);
 document.getElementById('next-button').addEventListener('click', () => {
   hud.win.classList.add('hidden');

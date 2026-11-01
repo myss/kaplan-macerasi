@@ -20,7 +20,7 @@ o tarayıcıya ve açılan adrese özeldir.
 - **Boşluk'u basılı tut:** kanat aldıysan uç; her kanat 10 saniye uçurur, süre yalnızca uçarken azalır
 - **F / tıkla:** dönerek vur; yakındaki kuşları yener
 - **Fareyi oynat / Q, E:** kamerayı çevir
-- **Esc:** oyunu durdur, fareyi geri al; devam etmek için tıkla
+- **Esc:** oyunu durdur, fareyi geri al; devam etmek için tıkla, baştan başlamak için düğmeye bas
 - **Fare tekerleği:** yakınlaş, uzaklaş
 - **C (hile):** en yakındaki anahtarı veya kanadı alır, anahtar varsa kafesi açar
 
