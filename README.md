@@ -16,8 +16,9 @@ kurtarır. Dünya hazır gelir, küreler kırılmaz.
 
 ## Kod
 
-- `js/renderer.js`: küreleri WebGL2 ile çizer
+- `js/renderer.js`: küreleri Three.js ile çizer
 - `js/world.js`: adayı üretir; dünya 25 cm'lik bir ızgaradır
 - `js/models.js`: kaplan, timsah, kuş, anahtar ve kafes
 - `js/game.js`: oyun kuralları, kontroller ve ekran
-- `js/math.js`: matris ve yardımcı hesaplar
+- `js/utils.js`: küçük yardımcı fonksiyonlar
+- `vendor/three.min.js`: Three.js 0.187.0, çift tıkla çalışsın diye esbuild ile tek dosyada paketlenmiş hâli (`export * from 'three'`, `--bundle --minify --format=iife --global-name=THREE`)

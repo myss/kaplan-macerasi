@@ -15,7 +15,8 @@ const BIRD_SPEED = 6.5;
 
 const world = generateWorld();
 const canvas = document.getElementById('game');
-const renderer = createRenderer(canvas, world);
+const frameSpheres = new Float32Array(40000 * FLOATS_PER_SPHERE);
+const renderer = createRenderer(canvas, world, frameSpheres);
 const models = {
   tiger: tigerModel(),
   crocodile: crocodileModel(),
@@ -23,7 +24,6 @@ const models = {
   key: keyModel(),
   cage: cageModel(),
 };
-const frameSpheres = new Float32Array(40000 * FLOATS_PER_SPHERE);
 
 const hud = {
   hearts: document.getElementById('hearts'),
@@ -523,7 +523,7 @@ function frame(now) {
 
   const { eye, target } = cameraPosition();
   const dynamicCount = buildFrameSpheres();
-  const drawn = renderer.render(eye, target, buildShadows(), frameSpheres, dynamicCount);
+  const drawn = renderer.render(eye, target, buildShadows(), dynamicCount);
   drawMap();
 
   if (statsTime >= 0.5) {

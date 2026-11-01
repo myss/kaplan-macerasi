@@ -6,19 +6,19 @@ const MAX_SHADOWS = 12;
 const COARSE_DISTANCE = 35;
 const SKY_COLOR = [0.56, 0.8, 0.96];
 
-const SPHERE_VERTEX_SHADER = `#version 300 es
-layout(location = 0) in vec2 aCorner;
-layout(location = 1) in vec4 aSphere;
-layout(location = 2) in vec3 aColor;
-uniform mat4 uView;
-uniform mat4 uProj;
+const SPHERE_VERTEX_SHADER = `
+in vec3 position;
+in vec4 aSphere;
+in vec3 aColor;
+uniform mat4 viewMatrix;
+uniform mat4 projectionMatrix;
 out vec3 vRay;
 flat out vec3 vCenter;
 flat out float vRadius;
 flat out vec3 vColor;
 
 void main() {
-  vec3 center = (uView * vec4(aSphere.xyz, 1.0)).xyz;
+  vec3 center = (viewMatrix * vec4(aSphere.xyz, 1.0)).xyz;
   float radius = aSphere.w;
   float dist2 = dot(center, center);
   if (dist2 <= radius * radius * 1.01) {
@@ -32,22 +32,22 @@ void main() {
   vec3 up = cross(dir, right);
   // A sphere's silhouette is larger than its radius under perspective.
   float extent = radius * dist / sqrt(dist2 - radius * radius);
-  vec3 position = center + (right * aCorner.x + up * aCorner.y) * extent;
-  vRay = position;
+  vec3 corner = center + (right * position.x + up * position.y) * extent;
+  vRay = corner;
   vCenter = center;
   vRadius = radius;
   vColor = aColor;
-  gl_Position = uProj * vec4(position, 1.0);
+  gl_Position = projectionMatrix * vec4(corner, 1.0);
 }`;
 
-const SPHERE_FRAGMENT_SHADER = `#version 300 es
+const SPHERE_FRAGMENT_SHADER = `
 precision highp float;
 in vec3 vRay;
 flat in vec3 vCenter;
 flat in float vRadius;
 flat in vec3 vColor;
-uniform mat4 uProj;
-uniform mat4 uInvView;
+uniform mat4 projectionMatrix;
+uniform mat4 uCameraToWorld;
 uniform vec3 uLightDir;
 uniform vec3 uSky;
 uniform vec4 uShadows[${MAX_SHADOWS}];
@@ -64,14 +64,14 @@ void main() {
   vec3 hit = ray * t;
   vec3 normal = (hit - vCenter) / vRadius;
 
-  vec4 clip = uProj * vec4(hit, 1.0);
+  vec4 clip = projectionMatrix * vec4(hit, 1.0);
   gl_FragDepth = clip.z / clip.w * 0.5 + 0.5;
 
   float diffuse = max(dot(normal, uLightDir), 0.0);
   float facing = max(-dot(normal, ray), 0.0);
   vec3 color = vColor * (0.5 + 0.65 * diffuse) * (0.72 + 0.28 * facing);
 
-  vec3 world = (uInvView * vec4(hit, 1.0)).xyz;
+  vec3 world = (uCameraToWorld * vec4(hit, 1.0)).xyz;
   float shade = 1.0;
   for (int i = 0; i < uShadowCount; i++) {
     vec4 caster = uShadows[i];
@@ -86,115 +86,95 @@ void main() {
   outColor = vec4(mix(color, uSky, fog), 1.0);
 }`;
 
-function compileProgram(gl, vertexSource, fragmentSource) {
-  const compile = (type, source) => {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader));
-    return shader;
-  };
-  const program = gl.createProgram();
-  gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSource));
-  gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSource));
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
-  return program;
-}
+function createRenderer(canvas, world, dynamicData) {
+  // The shader's colours are final screen colours, so Three.js must not convert them.
+  THREE.ColorManagement.enabled = false;
+  const three = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  three.sortObjects = false;
+  three.setClearColor(new THREE.Color(...SKY_COLOR));
 
-function createRenderer(canvas, world) {
-  const gl = canvas.getContext('webgl2', { antialias: false, powerPreference: 'high-performance' });
-  if (!gl) throw new Error('Bu tarayıcı WebGL2 desteklemiyor.');
+  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 220);
+  const scene = new THREE.Scene();
 
-  const program = compileProgram(gl, SPHERE_VERTEX_SHADER, SPHERE_FRAGMENT_SHADER);
-  const uniforms = {};
-  for (const name of ['uView', 'uProj', 'uInvView', 'uLightDir', 'uSky', 'uShadows', 'uShadowCount']) {
-    uniforms[name] = gl.getUniformLocation(program, name);
-  }
+  const material = new THREE.RawShaderMaterial({
+    glslVersion: THREE.GLSL3,
+    vertexShader: SPHERE_VERTEX_SHADER,
+    fragmentShader: SPHERE_FRAGMENT_SHADER,
+    side: THREE.DoubleSide,
+    uniforms: {
+      uCameraToWorld: { value: camera.matrixWorld },
+      uLightDir: { value: new THREE.Vector3() },
+      uSky: { value: new THREE.Vector3(...SKY_COLOR) },
+      uShadows: { value: Array.from({ length: MAX_SHADOWS }, () => new THREE.Vector4()) },
+      uShadowCount: { value: 0 },
+    },
+  });
 
-  const vao = gl.createVertexArray();
-  gl.bindVertexArray(vao);
+  const quadCorners = new THREE.BufferAttribute(new Float32Array([-1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0]), 3);
+  const quadIndex = new THREE.BufferAttribute(new Uint16Array([0, 1, 2, 2, 1, 3]), 1);
 
-  const quadBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(1);
-  gl.vertexAttribDivisor(1, 1);
-  gl.enableVertexAttribArray(2);
-  gl.vertexAttribDivisor(2, 1);
-
-  const staticBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, staticBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, world.sphereData, gl.STATIC_DRAW);
-  const dynamicBuffer = gl.createBuffer();
-
-  const stride = FLOATS_PER_SPHERE * 4;
-  const drawSpheres = (buffer, first, count) => {
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.vertexAttribPointer(1, 4, gl.FLOAT, false, stride, first * stride);
-    gl.vertexAttribPointer(2, 3, gl.FLOAT, false, stride, first * stride + 16);
-    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
+  // Spheres from `first` onwards in a shared buffer, drawn as one instanced mesh.
+  const createSphereMesh = (buffer, first, count) => {
+    const geometry = new THREE.InstancedBufferGeometry();
+    geometry.setIndex(quadIndex);
+    geometry.setAttribute('position', quadCorners);
+    geometry.setAttribute('aSphere', new THREE.InterleavedBufferAttribute(buffer, 4, first * FLOATS_PER_SPHERE));
+    geometry.setAttribute('aColor', new THREE.InterleavedBufferAttribute(buffer, 3, first * FLOATS_PER_SPHERE + 4));
+    geometry.instanceCount = count;
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+    return mesh;
   };
 
-  gl.enable(gl.DEPTH_TEST);
-  gl.clearColor(SKY_COLOR[0], SKY_COLOR[1], SKY_COLOR[2], 1);
+  const staticBuffer = new THREE.InstancedInterleavedBuffer(world.sphereData, FLOATS_PER_SPHERE);
+  const chunkMeshes = world.chunks.map((chunk) => {
+    const bounds = new THREE.Sphere(new THREE.Vector3(...chunk.center), chunk.radius);
+    const fine = createSphereMesh(staticBuffer, chunk.fine.first, chunk.fine.count);
+    const coarse = createSphereMesh(staticBuffer, chunk.coarse.first, chunk.coarse.count);
+    fine.geometry.boundingSphere = bounds;
+    coarse.geometry.boundingSphere = bounds;
+    return { bounds, fine, coarse };
+  });
 
-  const lightDirWorld = normalize3([0.45, 0.8, 0.35]);
-  const shadowData = new Float32Array(MAX_SHADOWS * 4);
+  const dynamicBuffer = new THREE.InstancedInterleavedBuffer(dynamicData, FLOATS_PER_SPHERE);
+  dynamicBuffer.setUsage(THREE.DynamicDrawUsage);
+  const dynamicMesh = createSphereMesh(dynamicBuffer, 0, 0);
+  dynamicMesh.frustumCulled = false;
 
-  // Returns how many spheres were submitted this frame.
-  function render(eye, target, shadows, dynamicData, dynamicCount) {
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    const width = Math.round(canvas.clientWidth * dpr);
-    const height = Math.round(canvas.clientHeight * dpr);
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
-    }
-    gl.viewport(0, 0, width, height);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  const lightDirWorld = new THREE.Vector3(0.45, 0.8, 0.35).normalize();
 
-    const proj = perspective(1.05, width / height, 0.1, 220);
-    const { view, invView } = lookAt(eye, target);
-    const planes = frustumPlanes(multiply4(proj, view));
-    const lightView = [
-      view[0] * lightDirWorld[0] + view[4] * lightDirWorld[1] + view[8] * lightDirWorld[2],
-      view[1] * lightDirWorld[0] + view[5] * lightDirWorld[1] + view[9] * lightDirWorld[2],
-      view[2] * lightDirWorld[0] + view[6] * lightDirWorld[1] + view[10] * lightDirWorld[2],
-    ];
-
-    const shadowCount = Math.min(shadows.length, MAX_SHADOWS);
-    for (let i = 0; i < shadowCount; i++) shadowData.set(shadows[i], i * 4);
-
-    gl.useProgram(program);
-    gl.uniformMatrix4fv(uniforms.uView, false, view);
-    gl.uniformMatrix4fv(uniforms.uProj, false, proj);
-    gl.uniformMatrix4fv(uniforms.uInvView, false, invView);
-    gl.uniform3fv(uniforms.uLightDir, lightView);
-    gl.uniform3fv(uniforms.uSky, SKY_COLOR);
-    gl.uniform4fv(uniforms.uShadows, shadowData);
-    gl.uniform1i(uniforms.uShadowCount, shadowCount);
-
-    let drawn = 0;
-    for (const chunk of world.chunks) {
-      const c = chunk.center;
-      if (planes.some((p) => p[0] * c[0] + p[1] * c[1] + p[2] * c[2] + p[3] < -chunk.radius)) continue;
-      const distance = Math.hypot(c[0] - eye[0], c[1] - eye[1], c[2] - eye[2]) - chunk.radius;
-      const range = distance > COARSE_DISTANCE ? chunk.coarse : chunk.fine;
-      if (range.count === 0) continue;
-      drawSpheres(staticBuffer, range.first, range.count);
-      drawn += range.count;
+  // Returns how many spheres were drawn this frame.
+  function render(eye, target, shadows, dynamicCount) {
+    const width = canvas.clientWidth, height = canvas.clientHeight;
+    const size = three.getSize(new THREE.Vector2());
+    if (size.x !== width || size.y !== height) {
+      three.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      three.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
     }
 
-    if (dynamicCount > 0) {
-      gl.bindBuffer(gl.ARRAY_BUFFER, dynamicBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, dynamicData.subarray(0, dynamicCount * FLOATS_PER_SPHERE), gl.DYNAMIC_DRAW);
-      drawSpheres(dynamicBuffer, 0, dynamicCount);
-      drawn += dynamicCount;
+    camera.position.set(...eye);
+    camera.lookAt(...target);
+    camera.updateMatrixWorld();
+
+    const { uLightDir, uShadows, uShadowCount } = material.uniforms;
+    uLightDir.value.copy(lightDirWorld).transformDirection(camera.matrixWorldInverse);
+    uShadowCount.value = Math.min(shadows.length, MAX_SHADOWS);
+    for (let i = 0; i < uShadowCount.value; i++) uShadows.value[i].fromArray(shadows[i]);
+
+    for (const { bounds, fine, coarse } of chunkMeshes) {
+      const useCoarse = camera.position.distanceTo(bounds.center) - bounds.radius > COARSE_DISTANCE;
+      fine.visible = !useCoarse;
+      coarse.visible = useCoarse;
     }
-    return drawn;
+
+    dynamicBuffer.addUpdateRange(0, dynamicCount * FLOATS_PER_SPHERE);
+    dynamicBuffer.needsUpdate = true;
+    dynamicMesh.geometry.instanceCount = dynamicCount;
+
+    three.render(scene, camera);
+    return three.info.render.triangles / 2;
   }
 
   return { render };
