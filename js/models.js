@@ -75,8 +75,8 @@ function tigerModel() {
       part(head),
       part(leg(0.16), [0.16, 0.44, 0.03], 'x', 'stride', 1),
       part(leg(-0.16), [-0.16, 0.44, 0.03], 'x', 'stride', -1),
-      part(arm(0.4), [0.4, 1.05, 0.03], 'x', 'stride', -0.7),
-      part(arm(-0.4), [-0.4, 1.05, 0.03], 'x', 'stride', 0.7),
+      part(arm(0.4), [0.4, 1.05, 0.03], 'x', 'arms', -1),
+      part(arm(-0.4), [-0.4, 1.05, 0.03], 'x', 'arms', 1),
       part(tail, [0, 0.5, -0.25], 'x', 'tail', 1),
     ],
   };

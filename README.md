@@ -11,6 +11,7 @@ kurtarır. Dünya hazır gelir, küreler kırılmaz.
 
 - **W A S D / oklar:** yürü
 - **Boşluk:** zıpla; kuşun üstüne zıplarsan onu yenersin
+- **F / tıkla:** dönerek vur; yakındaki kuşları yener
 - **Fare ile sürükle / Q, E:** kamerayı çevir
 - **Fare tekerleği:** yakınlaş, uzaklaş
 

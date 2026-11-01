@@ -11,7 +11,11 @@ const CROCODILE_SCALE = 0.8;
 const MAX_HEARTS = 3;
 const BIRD_SEE_RADIUS = 16;
 const BIRD_HIT_RADIUS = 1.2;
-const BIRD_SPEED = 6.5;
+const BIRD_SPEED = 5;
+const BIRD_RESPAWN_TIME = 30;
+const ATTACK_DURATION = 0.35;
+const ATTACK_COOLDOWN = 0.5; // counted from the start of the attack
+const ATTACK_RADIUS = 3;
 
 const world = generateWorld();
 const canvas = document.getElementById('game');
@@ -39,7 +43,7 @@ const hud = {
 const SPAWN = { x: 0, z: 0 };
 const tiger = {
   x: SPAWN.x, y: world.terrainTop(SPAWN.x, SPAWN.z), z: SPAWN.z,
-  vy: 0, yaw: 0, stride: 0, grounded: true, airTime: 0, invulnerable: 0,
+  vy: 0, yaw: 0, stride: 0, grounded: true, airTime: 0, invulnerable: 0, attackTime: 0, attackCooldown: 0,
 };
 const camera = { yaw: Math.PI, pitch: 0.42, distance: 8 };
 const game = {
@@ -93,11 +97,13 @@ function burst(x, y, z, color, amount) {
 
 const held = new Set();
 let jumpQueued = false;
+let attackQueued = false;
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') {
     if (!e.repeat) jumpQueued = true;
     e.preventDefault();
   }
+  if (e.code === 'KeyF' && !e.repeat) attackQueued = true;
   if (e.code.startsWith('Arrow')) e.preventDefault();
   held.add(e.code);
 });
@@ -105,13 +111,20 @@ window.addEventListener('keyup', (e) => held.delete(e.code));
 window.addEventListener('blur', () => held.clear());
 
 let dragging = false;
+let dragDistance = 0;
 canvas.addEventListener('pointerdown', (e) => {
   dragging = true;
+  dragDistance = 0;
   canvas.setPointerCapture(e.pointerId);
 });
-canvas.addEventListener('pointerup', () => { dragging = false; });
+// A press that barely moved is a click, which attacks; a longer one only turned the camera.
+canvas.addEventListener('pointerup', () => {
+  dragging = false;
+  if (dragDistance < 6) attackQueued = true;
+});
 canvas.addEventListener('pointermove', (e) => {
   if (!dragging) return;
+  dragDistance += Math.abs(e.movementX) + Math.abs(e.movementY);
   camera.yaw -= e.movementX * 0.006;
   camera.pitch = clamp(camera.pitch + e.movementY * 0.005, 0.08, 1.25);
 });
@@ -194,6 +207,14 @@ function updateTiger(dt) {
   }
   jumpQueued = false;
 
+  tiger.attackTime = Math.max(0, tiger.attackTime - dt);
+  tiger.attackCooldown = Math.max(0, tiger.attackCooldown - dt);
+  if (attackQueued && tiger.attackCooldown <= 0) {
+    tiger.attackTime = ATTACK_DURATION;
+    tiger.attackCooldown = ATTACK_COOLDOWN;
+  }
+  attackQueued = false;
+
   const wasGrounded = tiger.grounded;
   tiger.vy -= GRAVITY * dt;
   tiger.y += tiger.vy * dt;
@@ -237,12 +258,19 @@ function hurtTiger(fromX, fromZ) {
       f.z = tiger.z;
     }
   } else {
-    showMessage('Ah! Üstüne zıplayarak kuşları yenebilirsin.');
+    showMessage('Ah! Kuş yaklaşınca F tuşuyla ya da tıklayarak vur!');
   }
   updateHud();
 }
 
 // --- Birds ---
+
+function defeatBird(bird) {
+  burst(bird.x, bird.y, bird.z, [0.46, 0.15, 0.55], 40);
+  bird.state = 'gone';
+  bird.timer = BIRD_RESPAWN_TIME;
+  showMessage('Süper! Kuşu yendin!', 1.5);
+}
 
 function updateBird(bird, dt) {
   bird.phase += dt;
@@ -293,14 +321,13 @@ function updateBird(bird, dt) {
     bird.yaw += turn * Math.min(1, dt * 6);
   }
 
-  if (distance < BIRD_HIT_RADIUS + 0.4) {
+  if (tiger.attackTime > 0 && distance < ATTACK_RADIUS) {
+    defeatBird(bird);
+  } else if (distance < BIRD_HIT_RADIUS + 0.4) {
     const landingOnIt = tiger.vy < -1 && tiger.y + 0.3 > bird.y - 0.2;
     if (landingOnIt) {
-      burst(bird.x, bird.y, bird.z, [0.46, 0.15, 0.55], 40);
-      bird.state = 'gone';
-      bird.timer = 20;
+      defeatBird(bird);
       tiger.vy = JUMP_SPEED * 0.9;
-      showMessage('Süper! Kuşu yendin!', 1.5);
     } else if (tiger.invulnerable <= 0 && distance < BIRD_HIT_RADIUS && !game.won) {
       hurtTiger(bird.x, bird.z);
       bird.state = 'patrol';
@@ -384,11 +411,24 @@ function buildFrameSpheres() {
   const swing = (t) => Math.sin(t) * 0.7;
 
   const blink = tiger.invulnerable > 0 && Math.floor(game.time * 10) % 2 === 0;
+  const attackProgress = tiger.attackTime > 0 ? 1 - tiger.attackTime / ATTACK_DURATION : 0;
   if (!blink) {
-    count = drawModel(frameSpheres, count, models.tiger, tiger.x, tiger.y, tiger.z, tiger.yaw, {
-      stride: tiger.grounded ? swing(tiger.stride) : 0.6,
+    const stride = tiger.grounded ? swing(tiger.stride) : 0.6;
+    count = drawModel(frameSpheres, count, models.tiger, tiger.x, tiger.y, tiger.z, tiger.yaw + attackProgress * Math.PI * 2, {
+      stride,
+      arms: tiger.attackTime > 0 ? 1.5 : stride * 0.7,
       tail: Math.sin(game.time * 3) * 0.2,
     });
+  }
+  if (tiger.attackTime > 0) {
+    const ringRadius = ATTACK_RADIUS * (0.4 + 0.6 * attackProgress);
+    for (let i = 0; i < 28; i++) {
+      const at = count * FLOATS_PER_SPHERE;
+      if (at + FLOATS_PER_SPHERE > frameSpheres.length) break;
+      const a = (i / 28) * Math.PI * 2;
+      frameSpheres.set([tiger.x + Math.cos(a) * ringRadius, tiger.y + 0.9, tiger.z + Math.sin(a) * ringRadius, 0.14, 1, 0.85, 0.3], at);
+      count++;
+    }
   }
   for (const bird of birds) {
     if (bird.state === 'gone') continue;
