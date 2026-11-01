@@ -22,13 +22,14 @@ o tarayıcıya ve açılan adrese özeldir.
 - **Fareyi oynat / Q, E:** kamerayı çevir
 - **Esc:** oyunu durdur, fareyi geri al; devam etmek için tıkla
 - **Fare tekerleği:** yakınlaş, uzaklaş
+- **C (hile):** en yakındaki anahtarı veya kanadı alır, anahtar varsa kafesi açar
 
 ## Kod
 
 - `js/renderer.js`: küreleri Three.js ile çizer
 - `js/world.js`: adayı üretir; dünya 25 cm'lik bir ızgaradır
 - `js/models.js`: kaplan, timsah, kuş, anahtar ve kafes
-- `js/game.js`: oyun kuralları, kontroller ve ekran
 - `js/crossing.js`: bölümler arası geçiş animasyonu; kaplan suda yüzer, buzda kayar, lavda uçar
+- `js/game.js`: oyun kuralları, kontroller ve ekran
 - `js/utils.js`: küçük yardımcı fonksiyonlar
 - `vendor/three.min.js`: Three.js 0.187.0, çift tıkla çalışsın diye esbuild ile tek dosyada paketlenmiş hâli (`export * from 'three'`, `--bundle --minify --format=iife --global-name=THREE`)

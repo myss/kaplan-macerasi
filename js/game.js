@@ -221,7 +221,9 @@ function burst(x, y, z, color, amount) {
 const held = new Set();
 let jumpQueued = false;
 let attackQueued = false;
+let cheatQueued = false;
 window.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyC' && !e.repeat && game.playing) cheatQueued = true;
   if (e.code === 'Space') {
     if (!e.repeat) jumpQueued = true;
     e.preventDefault();
@@ -507,46 +509,66 @@ function updateBird(bird, dt) {
 
 // --- Keys, cages, rescued crocodiles ---
 
+function collectWing(wing) {
+  wing.taken = true;
+  tiger.flightSeconds += SECONDS_PER_WING;
+  burst(wing.x, wing.y, wing.z, [1, 1, 1], 30);
+  showMessage('Kanat buldun! Zıpla ve Boşluk tuşunu basılı tut, uç!', 3.5);
+  updateHud();
+}
+
+function collectKey(key) {
+  key.taken = true;
+  game.keysHeld++;
+  burst(key.x, key.y, key.z, [1, 0.8, 0.12], 25);
+  showMessage('Anahtarı buldun! Şimdi bir kafese git.');
+  updateHud();
+}
+
+function openCage(cage) {
+  game.keysHeld--;
+  game.rescued++;
+  cage.open = true;
+  burst(cage.x, cage.y + 1.5, cage.z, [0.32, 0.33, 0.38], 60);
+  burst(cage.x, cage.y + 1.5, cage.z, [0.28, 0.58, 0.24], 30);
+  followers.push({ x: cage.x, z: cage.z, yaw: 0, stride: 0 });
+  updateHud();
+  if (game.rescued === cages.length) {
+    game.levelDone = true;
+    hud.win.classList.remove('hidden');
+    document.exitPointerLock();
+    writeSave();
+  } else {
+    showMessage('Timsahı kurtardın! Artık seninle geliyor.');
+  }
+}
+
+// The cheat key: takes whatever is nearest, wherever it is. A cage only counts with a key in hand.
+function collectNearest() {
+  const candidates = [
+    ...wingPickups.filter((wing) => !wing.taken).map((target) => ({ target, collect: collectWing })),
+    ...keys.filter((key) => !key.taken).map((target) => ({ target, collect: collectKey })),
+    ...(game.keysHeld > 0 ? cages.filter((cage) => !cage.open) : []).map((target) => ({ target, collect: openCage })),
+  ];
+  const distance = ({ target }) => Math.hypot(target.x - tiger.x, target.z - tiger.z);
+  const nearest = candidates.reduce((best, c) => (!best || distance(c) < distance(best) ? c : best), null);
+  if (nearest) nearest.collect(nearest.target);
+}
+
 function updateObjectives(dt) {
   game.noKeyHintTime -= dt;
+  if (cheatQueued) collectNearest();
+  cheatQueued = false;
   for (const wing of wingPickups) {
-    if (wing.taken) continue;
-    if (Math.hypot(tiger.x - wing.x, tiger.y + 0.8 - wing.y, tiger.z - wing.z) < WING_PICKUP_RADIUS) {
-      wing.taken = true;
-      tiger.flightSeconds += SECONDS_PER_WING;
-      burst(wing.x, wing.y, wing.z, [1, 1, 1], 30);
-      showMessage('Kanat buldun! Zıpla ve Boşluk tuşunu basılı tut, uç!', 3.5);
-      updateHud();
-    }
+    if (!wing.taken && Math.hypot(tiger.x - wing.x, tiger.y + 0.8 - wing.y, tiger.z - wing.z) < WING_PICKUP_RADIUS) collectWing(wing);
   }
   for (const key of keys) {
-    if (key.taken) continue;
-    if (Math.hypot(tiger.x - key.x, tiger.y + 0.8 - key.y, tiger.z - key.z) < KEY_PICKUP_RADIUS) {
-      key.taken = true;
-      game.keysHeld++;
-      burst(key.x, key.y, key.z, [1, 0.8, 0.12], 25);
-      showMessage('Anahtarı buldun! Şimdi bir kafese git.');
-      updateHud();
-    }
+    if (!key.taken && Math.hypot(tiger.x - key.x, tiger.y + 0.8 - key.y, tiger.z - key.z) < KEY_PICKUP_RADIUS) collectKey(key);
   }
   for (const cage of cages) {
     if (cage.open || Math.hypot(tiger.x - cage.x, tiger.z - cage.z) > CAGE_OPEN_RADIUS) continue;
     if (game.keysHeld > 0) {
-      game.keysHeld--;
-      game.rescued++;
-      cage.open = true;
-      burst(cage.x, cage.y + 1.5, cage.z, [0.32, 0.33, 0.38], 60);
-      burst(cage.x, cage.y + 1.5, cage.z, [0.28, 0.58, 0.24], 30);
-      followers.push({ x: cage.x, z: cage.z, yaw: 0, stride: 0 });
-      updateHud();
-      if (game.rescued === cages.length) {
-        game.levelDone = true;
-        hud.win.classList.remove('hidden');
-        document.exitPointerLock();
-        writeSave();
-      } else {
-        showMessage('Timsahı kurtardın! Artık seninle geliyor.');
-      }
+      openCage(cage);
     } else if (game.noKeyHintTime <= 0) {
       showMessage('Bu kafes kilitli. Önce bir anahtar bul!');
       game.noKeyHintTime = 4;

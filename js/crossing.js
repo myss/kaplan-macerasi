@@ -94,6 +94,7 @@ function finishCrossing() {
   tiger.wingsOut = false;
   attackQueued = false;
   jumpQueued = false;
+  cheatQueued = false;
   writeSave();
 }
 
