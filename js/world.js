@@ -68,32 +68,32 @@ const BLOCK_COLORS = {
 // The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
 const WORLD_THEMES = [
   {
-    name: 'Orman', sky: [0.56, 0.8, 0.96], hills: 26, plant: 'leafyTree', crossing: 'swim',
+    name: 'Orman', sky: [0.56, 0.8, 0.96], hills: 26, plant: 'leafyTree', crossing: 'swim', monster: 'walkingTree',
     surface: BLOCK.GRASS, soil: BLOCK.DIRT, peak: BLOCK.STONE, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
     accents: [BLOCK.RED_FLOWER, BLOCK.YELLOW_FLOWER], trunk: BLOCK.TRUNK, crown: BLOCK.LEAF,
   },
   {
-    name: 'Çöl', sky: [0.96, 0.84, 0.62], hills: 20, plant: 'cactus', crossing: 'swim',
+    name: 'Çöl', sky: [0.96, 0.84, 0.62], hills: 20, plant: 'cactus', crossing: 'swim', monster: 'scorpion',
     surface: BLOCK.SAND, soil: BLOCK.RED_SAND, peak: BLOCK.RED_SAND, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.RED_SAND,
     accents: [BLOCK.RED_SAND, BLOCK.ROCK], trunk: BLOCK.CACTUS, crown: BLOCK.CACTUS,
   },
   {
-    name: 'Kar', sky: [0.78, 0.87, 0.95], hills: 30, plant: 'pine', crossing: 'slide',
+    name: 'Kar', sky: [0.78, 0.87, 0.95], hills: 30, plant: 'pine', crossing: 'slide', monster: 'polarBear',
     surface: BLOCK.SNOW, soil: BLOCK.STONE, peak: BLOCK.ICE, shore: BLOCK.SNOW, liquid: BLOCK.ICE, rock: BLOCK.STONE,
     accents: [BLOCK.ICE, BLOCK.STONE], trunk: BLOCK.TRUNK, crown: BLOCK.PINE,
   },
   {
-    name: 'Volkan', sky: [0.42, 0.24, 0.2], hills: 32, plant: 'deadTree', crossing: 'fly',
+    name: 'Volkan', sky: [0.42, 0.24, 0.2], hills: 32, plant: 'deadTree', crossing: 'fly', monster: 'lavaMonster',
     surface: BLOCK.ASH, soil: BLOCK.BASALT, peak: BLOCK.BASALT, shore: BLOCK.BASALT, liquid: BLOCK.LAVA, rock: BLOCK.BASALT,
     accents: [BLOCK.EMBER, BLOCK.EMBER], trunk: BLOCK.DEAD_WOOD, crown: BLOCK.DEAD_WOOD,
   },
   {
-    name: 'Dev Ev', sky: [0.6, 0.82, 0.95], hills: 10, mountains: 0, plant: 'leafyTree', crossing: 'swim', layout: 'giantHouse',
+    name: 'Dev Ev', sky: [0.6, 0.82, 0.95], hills: 10, mountains: 0, plant: 'leafyTree', crossing: 'swim', monster: 'rat', layout: 'giantHouse',
     surface: BLOCK.GRASS, soil: BLOCK.DIRT, peak: BLOCK.STONE, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
     accents: [BLOCK.RED_FLOWER, BLOCK.YELLOW_FLOWER], trunk: BLOCK.TRUNK, crown: BLOCK.LEAF,
   },
   {
-    name: 'Korsan Gemisi', sky: [0.62, 0.84, 0.96], hills: 0, crossing: 'swim', layout: 'pirateShip', openSea: true, pirateBirds: true,
+    name: 'Korsan Gemisi', sky: [0.62, 0.84, 0.96], hills: 0, crossing: 'swim', monster: 'pirateBear', layout: 'pirateShip', openSea: true, pirateBirds: true,
     surface: BLOCK.DECK, soil: BLOCK.HULL, peak: BLOCK.DECK, shore: BLOCK.DECK, liquid: BLOCK.WATER, rock: BLOCK.HULL,
     accents: [BLOCK.DECK, BLOCK.DECK],
   },
@@ -136,6 +136,7 @@ function generateTheme(level) {
       [BLOCK.GEN_TRUNK]: hslColor(hue + between(0.6, 0.8), 0.4, 0.38),
       [BLOCK.GEN_CROWN]: hslColor(hue + between(0.25, 0.75), 0.65, 0.52),
     },
+    monster: pick(['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear']),
   };
 }
 

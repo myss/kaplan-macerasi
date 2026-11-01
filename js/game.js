@@ -37,7 +37,7 @@ const ATTACK_COOLDOWN = 0.5; // counted from the start of the attack
 const ATTACK_RADIUS = 3;
 
 const canvas = document.getElementById('game');
-const frameSpheres = new Float32Array(80000 * FLOATS_PER_SPHERE);
+const frameSpheres = new Float32Array(120000 * FLOATS_PER_SPHERE);
 const renderer = createRenderer(canvas, frameSpheres);
 const models = {
   tiger: tigerModel(),
@@ -45,6 +45,12 @@ const models = {
   bird: birdModel(),
   pirateBird: birdModel({ eyePatch: true }),
   captainBird: birdModel({ eyePatch: true, captainHat: true }),
+  walkingTree: walkingTreeModel(),
+  scorpion: scorpionModel(),
+  lavaMonster: lavaMonsterModel(),
+  polarBear: uprightAnimalModel({ fur: [0.93, 0.95, 0.98], belly: [0.98, 0.98, 1], nose: [0.05, 0.05, 0.06] }),
+  pirateBear: uprightAnimalModel({ fur: [0.42, 0.26, 0.14], belly: [0.72, 0.56, 0.38], nose: [0.05, 0.05, 0.06], eyePatch: true }),
+  rat: uprightAnimalModel({ fur: [0.5, 0.45, 0.42], belly: [0.76, 0.72, 0.68], nose: [0.95, 0.55, 0.6], earSize: 0.2, snoutLength: 0.24, tail: [0.92, 0.62, 0.65] }),
   key: keyModel(),
   cage: cageModel(),
   wings: wingsModel(),
@@ -90,7 +96,7 @@ const game = {
   birdRestTime: 0,
   bonusTaken: false,
   punchReady: false,
-  birdsGone: false,
+  enemiesGone: false,
   bonusDoorOpen: 0, // 0 is shut, 1 is wide open
 };
 let world;
@@ -120,9 +126,12 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
       phase: i * 1.7, state: 'patrol', cooldown: 2 + i * 0.5, timer: 0,
       model: isCaptain ? 'captainBird' : world.theme.pirateBirds ? 'pirateBird' : 'bird',
       scale: isCaptain ? CAPTAIN_SCALE : BIRD_SCALE,
+      color: [0.46, 0.15, 0.55], defeatMessage: 'Süper! Kuşu yendin!',
       maxHits, hitsLeft: maxHits, recovery: 0,
     };
   });
+  monsters = createMonsters([...cages, ...keys]);
+  fireballs = [];
   followers.length = 0;
   particles.length = 0;
 
@@ -137,7 +146,7 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   game.rescued = 0;
   game.bonusTaken = false;
   game.punchReady = false;
-  game.birdsGone = false;
+  game.enemiesGone = false;
   game.bonusDoorOpen = 0;
 
   tiger.x = SPAWN.x;
@@ -171,7 +180,7 @@ function writeSave() {
     flightSeconds: tiger.flightSeconds,
     bonusTaken: game.bonusTaken,
     punchReady: game.punchReady,
-    birdsGone: game.birdsGone,
+    enemiesGone: game.enemiesGone,
     tiger: { x: tiger.x, y: tiger.y, z: tiger.z, yaw: tiger.yaw },
     camera: { yaw: camera.yaw, pitch: camera.pitch, distance: camera.distance },
   };
@@ -212,7 +221,7 @@ function restoreSave(save) {
   tiger.flightSeconds = save.flightSeconds ?? 0;
   game.bonusTaken = save.bonusTaken ?? false;
   game.punchReady = save.punchReady ?? false;
-  if (save.birdsGone) removeAllBirds();
+  if (save.enemiesGone ?? save.birdsGone) removeAllEnemies(); // birdsGone: its name in older saves
   game.hearts = save.hearts;
   game.keysHeld = save.keysHeld;
   game.rescued = followers.length;
@@ -470,7 +479,7 @@ function hurtTiger(fromX, fromZ) {
     tiger.z += pushZ;
   }
   if (game.hearts <= 0) {
-    showMessage('Kuşlar seni yakaladı! Başlangıca dönüyoruz.', 3);
+    showMessage('Yakalandın! Başlangıca dönüyoruz.', 3);
     game.hearts = MAX_HEARTS;
     tiger.x = SPAWN.x;
     tiger.z = SPAWN.z;
@@ -481,50 +490,51 @@ function hurtTiger(fromX, fromZ) {
       f.z = tiger.z;
     }
   } else {
-    showMessage('Ah! Kuş yaklaşınca F tuşuyla ya da tıklayarak vur!');
+    showMessage('Ah! Yaklaşınca F tuşuyla ya da tıklayarak vur!');
   }
   updateHud();
 }
 
 // --- Birds ---
 
-function defeatBird(bird) {
-  burst(bird.x, bird.y, bird.z, [0.46, 0.15, 0.55], 40);
-  bird.state = 'gone';
-  bird.timer = BIRD_RESPAWN_TIME;
-  showMessage('Süper! Kuşu yendin!', 1.5);
+function defeatEnemy(enemy) {
+  burst(enemy.x, enemy.y, enemy.z, enemy.color, 40);
+  enemy.state = 'gone';
+  enemy.timer = BIRD_RESPAWN_TIME;
+  showMessage(enemy.defeatMessage, 1.5);
 }
 
-function hitBird(bird) {
-  if (bird.recovery > 0) return;
-  bird.recovery = BIRD_RECOVERY_SECONDS;
-  bird.hitsLeft--;
-  if (bird.hitsLeft > 0) {
-    burst(bird.x, bird.y, bird.z, [0.05, 0.05, 0.06], 15);
+function hitEnemy(enemy) {
+  if (enemy.recovery > 0) return;
+  enemy.recovery = BIRD_RECOVERY_SECONDS;
+  enemy.hitsLeft--;
+  if (enemy.hitsLeft > 0) {
+    burst(enemy.x, enemy.y, enemy.z, [0.05, 0.05, 0.06], 15);
     showMessage('Kaptan çok sağlam! Bir kez daha vur!', 2);
   } else {
-    defeatBird(bird);
+    defeatEnemy(enemy);
   }
 }
 
-function removeAllBirds() {
-  game.birdsGone = true;
-  for (const bird of birds) {
-    bird.state = 'gone';
-    bird.timer = Infinity; // until the next level builds new ones
+function removeAllEnemies() {
+  game.enemiesGone = true;
+  fireballs.length = 0;
+  for (const enemy of [...birds, ...monsters]) {
+    enemy.state = 'gone';
+    enemy.timer = Infinity; // until the next level builds new ones
   }
 }
 
-// The bonus's prize: one punch at the ground ends every bird on this level.
+// The bonus's prize: one punch at the ground ends every enemy on this level.
 function groundPunch() {
   game.punchReady = false;
   tiger.groundPunchTime = GROUND_PUNCH_SECONDS;
-  for (const bird of birds) {
-    if (bird.state !== 'gone') burst(bird.x, bird.y, bird.z, [0.46, 0.15, 0.55], 25);
+  for (const enemy of [...birds, ...monsters]) {
+    if (enemy.state !== 'gone') burst(enemy.x, enemy.y, enemy.z, enemy.color, 25);
   }
-  removeAllBirds();
+  removeAllEnemies();
   burst(tiger.x, tiger.y + 0.2, tiger.z, [1, 0.8, 0.2], 60);
-  showMessage('GÜM! Bütün kuşlar yok oldu!', 3);
+  showMessage('GÜM! Bütün düşmanlar yok oldu!', 3);
   updateHud();
   writeSave();
 }
@@ -608,11 +618,11 @@ function updateBird(bird, dt) {
   // Nothing reaches through a wall, in either direction.
   if (distance >= ATTACK_RADIUS || !hasLineOfSight(bird.x, bird.y, bird.z, tiger.x, tiger.y + 0.9, tiger.z)) return;
   if (tiger.attackTime > 0) {
-    hitBird(bird);
+    hitEnemy(bird);
   } else if (distance < BIRD_HIT_RADIUS + 0.4) {
     const landingOnIt = tiger.vy < -1 && tiger.y + 0.3 > bird.y - 0.2;
     if (landingOnIt) {
-      hitBird(bird);
+      hitEnemy(bird);
       tiger.vy = JUMP_SPEED * 0.9;
     } else if (tiger.invulnerable <= 0 && distance < BIRD_HIT_RADIUS && !game.levelDone && !crossing) {
       hurtTiger(bird.x, bird.z);
@@ -767,6 +777,7 @@ function buildFrameSpheres() {
       });
     }
   }
+  count = drawMonsters(count);
   const addSphere = (x, y, z, radius, color) => {
     const at = count * FLOATS_PER_SPHERE;
     if (at + FLOATS_PER_SPHERE > frameSpheres.length) return;
@@ -964,6 +975,8 @@ function frame(now) {
       camera.yaw += dt * (game.playing ? 0.3 : 0.15);
     }
     for (const bird of birds) updateBird(bird, dt);
+    for (const monster of monsters) updateMonster(monster, dt);
+    updateFireballs(dt);
     updateFollowers(dt);
     updateParticles(dt);
 

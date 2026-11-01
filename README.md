@@ -9,7 +9,11 @@ renklerini, bitkilerini ve sıvısını üretir (Pembe Mantar Diyarı, Mor Krist
 üst katına ve geminin gözcü yerine kanatla çıkılır; gemideki kaptan kuşa iki kez vurmak gerekir.
 Her bölümde haritada görünmeyen bir bonus vardır: yüksekteki minik kulübeye yalnızca taştan taşa
 zıplayarak çıkılır, çevresinde kanatlar çalışmaz. İçindeki altın topu alıp vurma tuşuna basınca
-kaplan yere yumruk atar ve bölüm bitene kadar bütün kuşlar yok olur. Bölüm ilerledikçe kafes ve kuş sayısı artar, kuşlar hızlanır. Anahtarlar basamaklı kulelerin, spiral
+kaplan yere yumruk atar ve bölüm bitene kadar bütün düşmanlar yok olur.
+
+Kuşların yanında her dünyanın kendi yürüyen canavarı vardır: Orman'da yavaş yürüyen ağaçlar, Çöl'de
+akrepler, Kar'da kutup ayıları, Volkan'da ateş topu atan lav canavarları, Dev Ev'de fareler, gemide
+göz bandlı korsan ayılar. Ateş toplarından kaçılabilir ya da vurarak söndürülebilir. Bölüm ilerledikçe kafes ve kuş sayısı artar, kuşlar hızlanır. Anahtarlar basamaklı kulelerin, spiral
 merdivenlerin ve uçan taşların tepesindedir; dağlara zıplayarak çıkılır. Küreler kırılmaz.
 
 ## Oynamak
@@ -35,6 +39,7 @@ o tarayıcıya ve açılan adrese özeldir.
 - `js/landmarks.js`: elle tasarlanmış yerler: dev ev ve korsan gemisi
 - `js/models.js`: kaplan, timsah, kuş, anahtar ve kafes
 - `js/crossing.js`: bölümler arası geçiş animasyonu; kaplan dünyasına göre yüzer, kayar ya da uçar
+- `js/monsters.js`: her dünyanın yürüyen canavarları ve ateş topları
 - `js/game.js`: oyun kuralları, kontroller ve ekran
 - `js/utils.js`: küçük yardımcı fonksiyonlar
 - `vendor/three.min.js`: Three.js 0.187.0, çift tıkla çalışsın diye esbuild ile tek dosyada paketlenmiş hâli (`export * from 'three'`, `--bundle --minify --format=iife --global-name=THREE`)
