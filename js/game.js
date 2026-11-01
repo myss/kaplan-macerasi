@@ -13,6 +13,12 @@ const BIRD_HIT_RADIUS = 1.2;
 const BIRD_RESPAWN_TIME = 30;
 const DRAW_DISTANCE = 120; // moving things farther than this are lost in the fog
 const MOUSE_SENSITIVITY = 0.003;
+const WING_PICKUP_RADIUS = 1.8;
+const SECONDS_PER_WING = 10;
+const WING_LIFT = 32; // m/s², on top of cancelling gravity
+const MAX_CLIMB_SPEED = 6;
+const FLIGHT_START_SPEED = 2; // holding jump starts flying once the jump has slowed to this
+const MAX_FLIGHT_HEIGHT = 45;
 const SAVE_KEY = 'kaplan-macerasi-kayit';
 const SAVE_INTERVAL = 2; // seconds
 const ATTACK_DURATION = 0.35;
@@ -28,6 +34,7 @@ const models = {
   bird: birdModel(),
   key: keyModel(),
   cage: cageModel(),
+  wings: wingsModel(),
 };
 
 const hud = {
@@ -35,6 +42,7 @@ const hud = {
   hearts: document.getElementById('hearts'),
   keys: document.getElementById('keys'),
   rescued: document.getElementById('rescued'),
+  flight: document.getElementById('flight'),
   message: document.getElementById('message'),
   paused: document.getElementById('paused'),
   stats: document.getElementById('stats'),
@@ -48,6 +56,7 @@ const SPAWN = { x: 0, z: 0 };
 const tiger = {
   x: SPAWN.x, y: 0, z: SPAWN.z,
   vy: 0, yaw: 0, stride: 0, grounded: true, airTime: 0, invulnerable: 0, attackTime: 0, attackCooldown: 0,
+  flightSeconds: 0, wingsOut: false,
 };
 const camera = { yaw: Math.PI, pitch: 0.42, distance: 8 };
 const game = {
@@ -68,6 +77,7 @@ let world;
 let keys = [];
 let cages = [];
 let birds = [];
+let wingPickups = [];
 let mapBackground;
 const followers = [];
 const particles = [];
@@ -78,7 +88,8 @@ function loadLevel(level) {
 
   keys = world.keys.map((k) => ({ ...k, taken: false }));
   cages = world.cages.map((c) => ({ ...c, open: false }));
-  birds = [...cages, ...keys].map((home, i) => {
+  wingPickups = world.wings.map((w) => ({ ...w, taken: false }));
+  birds =[...cages, ...keys].map((home, i) => {
     const altitude = home.y + 5;
     return {
       homeX: home.x, homeZ: home.z, altitude,
@@ -105,6 +116,8 @@ function loadLevel(level) {
   tiger.vy = 0;
   tiger.yaw = 0;
   tiger.invulnerable = 0;
+  tiger.flightSeconds = 0;
+  tiger.wingsOut = false;
   camera.yaw = Math.PI;
 
   mapBackground = buildMapBackground();
@@ -124,6 +137,8 @@ function writeSave() {
     keysHeld: game.keysHeld,
     takenKeys: keys.flatMap((key, i) => (key.taken ? [i] : [])),
     openCages: cages.flatMap((cage, i) => (cage.open ? [i] : [])),
+    takenWings: wingPickups.flatMap((wing, i) => (wing.taken ? [i] : [])),
+    flightSeconds: tiger.flightSeconds,
     tiger: { x: tiger.x, y: tiger.y, z: tiger.z, yaw: tiger.yaw },
     camera: { yaw: camera.yaw, pitch: camera.pitch, distance: camera.distance },
   };
@@ -159,6 +174,9 @@ function restoreSave(save) {
     cages[i].open = true;
     followers.push({ x: save.tiger.x, z: save.tiger.z, yaw: 0, stride: 0 });
   }
+  // Saves from before wings existed have neither of these.
+  for (const i of save.takenWings ?? []) if (wingPickups[i]) wingPickups[i].taken = true;
+  tiger.flightSeconds = save.flightSeconds ?? 0;
   game.hearts = save.hearts;
   game.keysHeld = save.keysHeld;
   game.rescued = followers.length;
@@ -179,6 +197,12 @@ function updateHud() {
   hud.hearts.textContent = '❤️'.repeat(game.hearts) + '🖤'.repeat(MAX_HEARTS - game.hearts);
   hud.keys.textContent = `🔑 ${game.keysHeld}`;
   hud.rescued.textContent = `🐊 ${game.rescued} / ${cages.length}`;
+  updateFlightHud();
+}
+
+function updateFlightHud() {
+  const text = `🪶 ${Math.ceil(tiger.flightSeconds)} sn`;
+  if (hud.flight.textContent !== text) hud.flight.textContent = text;
 }
 
 function burst(x, y, z, color, amount) {
@@ -349,7 +373,18 @@ function updateTiger(dt) {
 
   const wasGrounded = tiger.grounded;
   tiger.vy -= GRAVITY * dt;
+  // Like a jetpack: lift only while jump is held, and only that time uses up the wings.
+  if (!wasGrounded && held.has('Space') && tiger.flightSeconds > 0 && (tiger.wingsOut || tiger.vy <= FLIGHT_START_SPEED)) {
+    tiger.wingsOut = true;
+    tiger.flightSeconds = Math.max(0, tiger.flightSeconds - dt);
+    tiger.vy = Math.min(tiger.vy + (GRAVITY + WING_LIFT) * dt, MAX_CLIMB_SPEED);
+    updateFlightHud();
+  }
   tiger.y += tiger.vy * dt;
+  if (tiger.y > MAX_FLIGHT_HEIGHT) {
+    tiger.y = MAX_FLIGHT_HEIGHT;
+    tiger.vy = Math.min(tiger.vy, 0);
+  }
   tiger.grounded = false;
   if (tiger.vy <= 0) {
     const floor = floorBelow(tiger.x, tiger.y, tiger.z);
@@ -358,6 +393,7 @@ function updateTiger(dt) {
       tiger.y = floor;
       tiger.vy = 0;
       tiger.grounded = true;
+      tiger.wingsOut = false;
     }
   } else if (world.isSolid(tiger.x, tiger.y + TIGER_HEIGHT, tiger.z)) {
     tiger.vy = 0;
@@ -472,6 +508,16 @@ function updateBird(bird, dt) {
 
 function updateObjectives(dt) {
   game.noKeyHintTime -= dt;
+  for (const wing of wingPickups) {
+    if (wing.taken) continue;
+    if (Math.hypot(tiger.x - wing.x, tiger.y + 0.8 - wing.y, tiger.z - wing.z) < WING_PICKUP_RADIUS) {
+      wing.taken = true;
+      tiger.flightSeconds += SECONDS_PER_WING;
+      burst(wing.x, wing.y, wing.z, [1, 1, 1], 30);
+      showMessage('Kanat buldun! Zıpla ve Boşluk tuşunu basılı tut, uç!', 3.5);
+      updateHud();
+    }
+  }
   for (const key of keys) {
     if (key.taken) continue;
     if (Math.hypot(tiger.x - key.x, tiger.y + 0.8 - key.y, tiger.z - key.z) < KEY_PICKUP_RADIUS) {
@@ -553,6 +599,18 @@ function buildFrameSpheres() {
       stride,
       arms: tiger.attackTime > 0 ? 1.5 : stride * 0.7,
       tail: Math.sin(game.time * 3) * 0.2,
+    });
+    if (tiger.wingsOut) {
+      count = drawModel(frameSpheres, count, models.wings, tiger.x, tiger.y, tiger.z, tiger.yaw + attackProgress * Math.PI * 2, {
+        flap: Math.sin(game.time * 16) * 0.5,
+      });
+    }
+  }
+  for (const wing of wingPickups) {
+    if (wing.taken || !isNear(wing)) continue;
+    const bob = Math.sin(game.time * 2.5) * 0.15;
+    count = drawModel(frameSpheres, count, models.wings, wing.x, wing.y + bob - 1.2, wing.z, game.time * 1.5, {
+      flap: Math.sin(game.time * 4) * 0.3,
     });
   }
   if (tiger.attackTime > 0) {
@@ -662,6 +720,11 @@ function drawMap() {
     map.fill();
   };
   map.drawImage(mapBackground, 0, 0);
+  for (const wing of wingPickups) {
+    if (wing.taken) continue;
+    dot(wing.x, wing.z, 4.5, '#333842'); // an outline, or white would vanish on the snow theme
+    dot(wing.x, wing.z, 3, '#ffffff');
+  }
   for (const key of keys) if (!key.taken) dot(key.x, key.z, 4, '#ffd21f');
   for (const cage of cages) if (!cage.open) dot(cage.x, cage.z, 5, '#333842');
   for (const bird of birds) if (bird.state !== 'gone') dot(bird.x, bird.z, 2.5, '#8a2aa0');

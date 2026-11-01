@@ -18,6 +18,7 @@ const ISLAND_RADIUS = 94; // metres
 const OBJECTIVE_RADIUS = ISLAND_RADIUS * 0.62;
 const OBJECTIVE_SEPARATION = 22;
 const MAX_CAGES = 10;
+const MAX_WINGS = 12;
 const KEY_CLIMBS = ['tower', 'stairs', 'stones'];
 // Spheres overlap their neighbours just enough to leave no holes in a flat layer.
 const SPHERE_RADIUS_FACTOR = 0.72;
@@ -291,6 +292,18 @@ function generateWorld(level) {
     return terrain[vx + vz * WORLD_SIZE] < WATER_LEVEL;
   };
 
+  // Their own random sequence, so that adding them leaves the rest of each level unchanged.
+  const wingRandom = seededRandom(20261101 + level * 7919 + 1);
+  const wings = [];
+  const wingCount = Math.min(5 + level, MAX_WINGS);
+  for (let attempt = 0; attempt < 500 && wings.length < wingCount; attempt++) {
+    const [x, z] = polar(wingRandom() * 360, 8 + Math.sqrt(wingRandom()) * ISLAND_RADIUS * 0.7);
+    const y = terrainTop(x, z);
+    const isFree = !isLiquid(x, z) && !isSolid(x, y + 0.5, z) && !isSolid(x, y + 1.5, z) && !isSolid(x, y + 2.5, z);
+    const isClear = [...cages, ...wings].every((other) => Math.hypot(x - other.x, z - other.z) > 6);
+    if (isFree && isClear) wings.push({ x, y: y + 1.2, z });
+  }
+
   // A half-resolution copy for far-away chunks: four times fewer spheres, and less shimmer.
   const coarseSize = WORLD_SIZE / 2, coarseHeight = WORLD_HEIGHT / 2;
   const coarse = new Uint8Array(coarseSize * coarseSize * coarseHeight);
@@ -368,6 +381,7 @@ function generateWorld(level) {
     chunks,
     cages,
     keys,
+    wings,
     terrain,
     terrainTop,
     isSolid,

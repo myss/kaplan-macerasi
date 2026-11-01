@@ -156,6 +156,23 @@ function birdModel() {
   };
 }
 
+// A pair of wings placed to sit on the tiger's back when drawn at the tiger's position.
+function wingsModel() {
+  const white = [1, 1, 1];
+  const wing = (side) => {
+    const spheres = [];
+    addShell(spheres, side * 0.85, 1.25, -0.36, 0.62, 0.3, 0.06, white);
+    addShell(spheres, side * 0.55, 1.0, -0.36, 0.34, 0.26, 0.05, white);
+    return spheres;
+  };
+  return {
+    parts: [
+      part(wing(1), [0.2, 1.15, -0.36], 'z', 'flap', 1),
+      part(wing(-1), [-0.2, 1.15, -0.36], 'z', 'flap', -1),
+    ],
+  };
+}
+
 function keyModel() {
   const gold = [1, 0.8, 0.12];
   const spheres = [];
