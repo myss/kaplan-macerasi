@@ -6,13 +6,14 @@
 <title>Kaplan Macerası</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #8fcdf5; font-family: "Trebuchet MS", "Segoe UI", sans-serif; }
-  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
-  #game:active { cursor: grabbing; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
   #top { position: fixed; top: 14px; left: 16px; display: flex; gap: 18px; font-size: 26px; color: #fff; text-shadow: 0 2px 4px #0008; pointer-events: none; }
   #map { position: fixed; top: 14px; right: 16px; width: 180px; height: 180px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 2px 8px #0006; pointer-events: none; }
   #stats { position: fixed; bottom: 10px; left: 16px; font-size: 13px; color: #fff; text-shadow: 0 1px 2px #000a; pointer-events: none; }
   #message { position: fixed; top: 74px; left: 50%; transform: translateX(-50%); padding: 10px 22px; border-radius: 22px; background: #000a; color: #fff; font-size: 24px; text-align: center; opacity: 0; transition: opacity .25s; pointer-events: none; }
   #message.visible { opacity: 1; }
+  #paused { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 16px 30px; border-radius: 22px; background: #000c; color: #fff; font-size: 28px; text-align: center; display: none; pointer-events: none; }
+  #paused.visible { display: block; }
   .panel { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #0005; }
   .panel.hidden { display: none; }
   .card { max-width: 520px; margin: 16px; padding: 28px 34px; border-radius: 26px; background: #fff8e8; color: #4a2c0a; text-align: center; box-shadow: 0 8px 30px #0006; }
@@ -29,6 +30,7 @@
 <div id="top"><span id="level"></span><span id="hearts"></span><span id="keys"></span><span id="rescued"></span></div>
 <canvas id="map" width="180" height="180"></canvas>
 <div id="message"></div>
+<div id="paused">Oyun durdu. Devam etmek için tıkla!</div>
 <div id="stats"></div>
 
 <div id="start" class="panel">
@@ -39,7 +41,8 @@
       <tr><th>W A S D / oklar</th><td>Yürü</td></tr>
       <tr><th>Boşluk</th><td>Zıpla</td></tr>
       <tr><th>F / tıkla</th><td>Vur (yakındaki kuşları yenersin)</td></tr>
-      <tr><th>Fare ile sürükle</th><td>Etrafına bak</td></tr>
+      <tr><th>Fareyi oynat</th><td>Etrafına bak</td></tr>
+      <tr><th>Esc</th><td>Oyunu durdur, fareyi geri al</td></tr>
       <tr><th>Haritada</th><td>🟡 anahtar · ⚫ kafes · 🟠 sen</td></tr>
     </table>
     <button id="start-button">Başla!</button>

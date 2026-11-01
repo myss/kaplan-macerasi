@@ -12,6 +12,7 @@ const MAX_HEARTS = 3;
 const BIRD_HIT_RADIUS = 1.2;
 const BIRD_RESPAWN_TIME = 30;
 const DRAW_DISTANCE = 120; // moving things farther than this are lost in the fog
+const MOUSE_SENSITIVITY = 0.003;
 const ATTACK_DURATION = 0.35;
 const ATTACK_COOLDOWN = 0.5; // counted from the start of the attack
 const ATTACK_RADIUS = 3;
@@ -33,6 +34,7 @@ const hud = {
   keys: document.getElementById('keys'),
   rescued: document.getElementById('rescued'),
   message: document.getElementById('message'),
+  paused: document.getElementById('paused'),
   stats: document.getElementById('stats'),
   start: document.getElementById('start'),
   win: document.getElementById('win'),
@@ -148,23 +150,34 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => held.delete(e.code));
 window.addEventListener('blur', () => held.clear());
 
-let dragging = false;
-let dragDistance = 0;
-canvas.addEventListener('pointerdown', (e) => {
-  dragging = true;
-  dragDistance = 0;
-  canvas.setPointerCapture(e.pointerId);
+const isMouseLocked = () => document.pointerLockElement === canvas;
+const lockMouse = () => {
+  canvas.requestPointerLock()?.catch((error) => console.warn('Fare kilidi alınamadı:', error.name, error.message));
+};
+
+// Until the lock has worked once, a refusal may mean this host never allows it, so the game runs
+// with the cursor free and every click asks again. After that, a refusal is the browser's wait of
+// about a second after Esc, and the game stays paused until a click gets the lock back.
+let hasHeldMouseLock = false;
+let mouseLockRefused = false;
+document.addEventListener('pointerlockchange', () => {
+  if (!isMouseLocked()) return;
+  hasHeldMouseLock = true;
+  mouseLockRefused = false;
 });
-// A press that barely moved is a click, which attacks; a longer one only turned the camera.
-canvas.addEventListener('pointerup', () => {
-  dragging = false;
-  if (dragDistance < 6) attackQueued = true;
+document.addEventListener('pointerlockerror', () => {
+  if (!hasHeldMouseLock) mouseLockRefused = true;
 });
-canvas.addEventListener('pointermove', (e) => {
-  if (!dragging) return;
-  dragDistance += Math.abs(e.movementX) + Math.abs(e.movementY);
-  camera.yaw -= e.movementX * 0.006;
-  camera.pitch = clamp(camera.pitch + e.movementY * 0.005, 0.08, 1.25);
+const mouseControlsGame = () => isMouseLocked() || mouseLockRefused;
+
+canvas.addEventListener('mousedown', () => {
+  if (mouseControlsGame()) attackQueued = true;
+  if (!isMouseLocked() && game.playing && !game.levelDone) lockMouse();
+});
+document.addEventListener('mousemove', (e) => {
+  if (!mouseControlsGame()) return;
+  camera.yaw -= e.movementX * MOUSE_SENSITIVITY;
+  camera.pitch = clamp(camera.pitch + e.movementY * MOUSE_SENSITIVITY, 0.08, 1.25);
 });
 canvas.addEventListener('wheel', (e) => {
   camera.distance = clamp(camera.distance + e.deltaY * 0.008, 4, 14);
@@ -174,10 +187,12 @@ canvas.addEventListener('wheel', (e) => {
 document.getElementById('start-button').addEventListener('click', () => {
   hud.start.classList.add('hidden');
   game.playing = true;
+  lockMouse();
 });
 document.getElementById('next-button').addEventListener('click', () => {
   hud.win.classList.add('hidden');
   hud.loading.classList.remove('hidden');
+  lockMouse();
   // Generating blocks the page, so give the browser a moment to show the loading panel first.
   setTimeout(() => {
     loadLevel(game.level + 1);
@@ -409,6 +424,7 @@ function updateObjectives(dt) {
       if (game.rescued === cages.length) {
         game.levelDone = true;
         hud.win.classList.remove('hidden');
+        document.exitPointerLock();
       } else {
         showMessage('Timsahı kurtardın! Artık seninle geliyor.');
       }
@@ -596,17 +612,22 @@ function frame(now) {
   statsTime += (now - lastTime) / 1000;
   statsFrames++;
   lastTime = now;
-  game.time += dt;
 
-  if (game.playing && !game.levelDone) {
-    updateTiger(dt);
-    updateObjectives(dt);
-  } else {
-    camera.yaw += dt * (game.playing ? 0.3 : 0.15);
+  // Giving the mouse back with Esc also stops the game, so the birds wait.
+  const paused = game.playing && !game.levelDone && !mouseControlsGame();
+  hud.paused.classList.toggle('visible', paused);
+  if (!paused) {
+    game.time += dt;
+    if (game.playing && !game.levelDone) {
+      updateTiger(dt);
+      updateObjectives(dt);
+    } else {
+      camera.yaw += dt * (game.playing ? 0.3 : 0.15);
+    }
+    for (const bird of birds) updateBird(bird, dt);
+    updateFollowers(dt);
+    updateParticles(dt);
   }
-  for (const bird of birds) updateBird(bird, dt);
-  updateFollowers(dt);
-  updateParticles(dt);
 
   if (game.messageTime > 0) {
     game.messageTime -= dt;

@@ -15,7 +15,8 @@ merdivenlerin ve uçan taşların tepesindedir; dağlara zıplayarak çıkılır
 - **W A S D / oklar:** yürü
 - **Boşluk:** zıpla; kuşun üstüne zıplarsan onu yenersin
 - **F / tıkla:** dönerek vur; yakındaki kuşları yener
-- **Fare ile sürükle / Q, E:** kamerayı çevir
+- **Fareyi oynat / Q, E:** kamerayı çevir
+- **Esc:** oyunu durdur, fareyi geri al; devam etmek için tıkla
 - **Fare tekerleği:** yakınlaş, uzaklaş
 
 ## Kod
