@@ -1,6 +1,6 @@
 // The trip between two levels, played by itself: the tiger runs to the shore, crosses the liquid
 // into thickening fog, and arrives at the next island. How it crosses is up to the world's theme:
-// it swims, slides, or flies with its wings out.
+// it swims, slides, flies with its wings out, or dives along above the dark deep.
 //
 // The next world is generated before the trip starts, because generating freezes the page for a
 // moment. So both worlds exist during the trip, and a white mist hides the swap between them.
@@ -52,6 +52,7 @@ function crossingHeight() {
   const surface = (WATER_LEVEL + 1) * VOXEL;
   if (world.theme.crossing === 'fly') return surface + 2.2 + Math.sin(game.time * 2.5) * 0.2;
   if (world.theme.crossing === 'slide') return surface;
+  if (world.theme.crossing === 'dive') return surface + 1.2 + Math.sin(game.time * 2) * 0.25;
   return surface - 0.75 + Math.sin(game.time * 5) * 0.06;
 }
 
@@ -64,6 +65,10 @@ function moveAlongCrossing(speed, dt) {
 
 function easeHeight(target, dt) {
   tiger.y += (target - tiger.y) * Math.min(1, dt * 10);
+}
+
+function worldFogDensity() {
+  return world.theme.fogDensity ?? BASE_FOG_DENSITY;
 }
 
 function setMist(opacity) {
@@ -87,7 +92,7 @@ function arriveAtNextWorld() {
 function finishCrossing() {
   crossing = null;
   setMist(0);
-  renderer.setFogDensity(BASE_FOG_DENSITY);
+  renderer.setFogDensity(worldFogDensity());
   tiger.y = Math.max(tiger.y, world.terrainTop(tiger.x, tiger.z)); // the easing can lag on a slope
   tiger.vy = 0;
   tiger.wingsOut = false;
@@ -136,7 +141,7 @@ function updateCrossing(dt) {
     moveAlongCrossing(CROSSING_SEA_SPEED, dt);
     easeHeight(crossingHeight(), dt);
     const progress = c.time / CROSSING_OUT_SECONDS;
-    renderer.setFogDensity(BASE_FOG_DENSITY + (THICK_FOG_DENSITY - BASE_FOG_DENSITY) * progress * progress);
+    renderer.setFogDensity(worldFogDensity() + (THICK_FOG_DENSITY - worldFogDensity()) * progress * progress);
     setMist((c.time - (CROSSING_OUT_SECONDS - MIST_SECONDS)) / MIST_SECONDS);
     if (c.time >= CROSSING_OUT_SECONDS) {
       arriveAtNextWorld();
@@ -147,13 +152,13 @@ function updateCrossing(dt) {
     moveAlongCrossing(CROSSING_SEA_SPEED, dt);
     easeHeight(crossingHeight(), dt);
     const progress = clamp(c.time / FOG_CLEAR_SECONDS, 0, 1);
-    renderer.setFogDensity(THICK_FOG_DENSITY + (BASE_FOG_DENSITY - THICK_FOG_DENSITY) * progress);
+    renderer.setFogDensity(THICK_FOG_DENSITY + (worldFogDensity() - THICK_FOG_DENSITY) * progress);
     setMist(1 - c.time / MIST_SECONDS);
     if (!world.isLiquid(tiger.x + c.dirX, tiger.z + c.dirZ)) {
       c.phase = 'land';
       c.time = 0;
       tiger.wingsOut = false;
-      renderer.setFogDensity(BASE_FOG_DENSITY);
+      renderer.setFogDensity(worldFogDensity());
       setMist(0);
     }
   } else if (c.phase === 'land') {

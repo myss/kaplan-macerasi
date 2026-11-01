@@ -45,6 +45,10 @@ const models = {
   bird: birdModel(),
   pirateBird: birdModel({ eyePatch: true }),
   captainBird: birdModel({ eyePatch: true, captainHat: true }),
+  jellyfish: jellyfishModel(),
+  shark: sharkModel(),
+  squid: squidModel(),
+  divingHelmet: divingHelmetModel(),
   walkingTree: walkingTreeModel(),
   scorpion: scorpionModel(),
   lavaMonster: lavaMonsterModel(),
@@ -128,9 +132,10 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
       homeX: home.x, homeZ: home.z, altitude, patrolRadius: home.indoors ? 3 : 7,
       x: home.x, y: altitude, z: home.z, yaw: 0,
       phase: i * 1.7, state: 'patrol', cooldown: 2 + i * 0.5, timer: 0,
-      model: isCaptain ? 'captainBird' : world.theme.pirateBirds ? 'pirateBird' : 'bird',
+      model: isCaptain ? 'captainBird' : world.theme.pirateBirds ? 'pirateBird' : world.theme.birdModel ?? 'bird',
       scale: isCaptain ? CAPTAIN_SCALE : BIRD_SCALE,
-      color: [0.46, 0.15, 0.55], defeatMessage: 'Süper! Kuşu yendin!',
+      color: world.theme.birdColor ?? [0.46, 0.15, 0.55],
+      defeatMessage: world.theme.birdDefeatMessage ?? 'Süper! Kuşu yendin!',
       maxHits, hitsLeft: maxHits, recovery: 0,
     };
   });
@@ -766,7 +771,20 @@ function updateFollowers(dt) {
   }
 }
 
+let timeSinceBubble = 0;
+
 function updateParticles(dt) {
+  if (world.theme.underwater) {
+    timeSinceBubble += dt;
+    if (timeSinceBubble > 0.35) {
+      timeSinceBubble = 0;
+      particles.push({
+        x: tiger.x, y: tiger.y + 1.9, z: tiger.z,
+        vx: (Math.random() - 0.5) * 0.4, vy: 1.6, vz: (Math.random() - 0.5) * 0.4,
+        life: 1.8, radius: 0.05 + Math.random() * 0.07, color: [0.8, 0.93, 1], floats: true,
+      });
+    }
+  }
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.life -= dt;
@@ -774,7 +792,7 @@ function updateParticles(dt) {
       particles.splice(i, 1);
       continue;
     }
-    p.vy -= GRAVITY * 0.6 * dt;
+    if (!p.floats) p.vy -= GRAVITY * 0.6 * dt;
     p.x += p.vx * dt;
     p.y += p.vy * dt;
     p.z += p.vz * dt;
@@ -797,6 +815,9 @@ function buildFrameSpheres() {
       arms: tiger.attackTime > 0 || tiger.groundPunchTime > 0 ? 1.5 : stride * 0.7,
       tail: Math.sin(game.time * 3) * 0.2,
     });
+    if (world.theme.underwater) {
+      count = drawModel(frameSpheres, count, models.divingHelmet, tiger.x, tiger.y, tiger.z, tiger.yaw + attackProgress * Math.PI * 2);
+    }
     if (tiger.wingsOut) {
       count = drawModel(frameSpheres, count, models.wings, tiger.x, tiger.y, tiger.z, tiger.yaw + attackProgress * Math.PI * 2, {
         flap: Math.sin(game.time * 16) * 0.5,

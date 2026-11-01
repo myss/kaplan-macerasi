@@ -140,6 +140,7 @@ function createRenderer(canvas, dynamicData) {
 
     three.setClearColor(new THREE.Color(...world.theme.sky));
     material.uniforms.uSky.value.set(...world.theme.sky);
+    material.uniforms.uFogDensity.value = world.theme.fogDensity ?? BASE_FOG_DENSITY;
 
     const staticBuffer = new THREE.InstancedInterleavedBuffer(world.sphereData, FLOATS_PER_SPHERE);
     chunkMeshes = world.chunks.map((chunk) => {

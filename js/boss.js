@@ -53,6 +53,11 @@ const BOSS_KINDS = {
     ball: { count: 2, speed: 7, radius: 1, color: [1.5, 0.65, 0.08], putOutMessage: 'Ateşi söndürdün!', burst: [0.85, 0.85, 0.88] },
     spin: { radius: 6.5, turnsPerSecond: 0.9, color: [1.4, 0.55, 0.08], grabs: false },
   },
+  squid: {
+    name: 'Dev Kalamar', scale: 2.4, speed: 2.2, lungeSpeed: 11, moves: ['throw', 'spin', 'lunge'],
+    ball: { count: 3, speed: 7, radius: 0.55, color: [0.05, 0.03, 0.12], putOutMessage: 'Mürekkebi dağıttın!', burst: [0.1, 0.06, 0.2] },
+    spin: { radius: 7, turnsPerSecond: 0.55, color: [0.84, 0.3, 0.36], grabs: true },
+  },
 };
 
 let boss = null;
@@ -77,7 +82,7 @@ function startBossFight() {
   }
   hud.mist.style.opacity = 1;
 
-  const kind = world.theme.monster;
+  const kind = world.theme.boss ?? world.theme.monster;
   boss = { kind, ...BOSS_KINDS[kind], lives: BOSS_LIVES, mistFade: 1 };
   placeBoss();
   updateBossHud();

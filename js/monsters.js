@@ -8,6 +8,7 @@ const MONSTER_KINDS = {
   lavaMonster: { speed: 1.5, scale: 1.2, color: [1, 0.45, 0.08], defeatMessage: 'Süper! Lav canavarını yendin!', throwsFire: true },
   rat: { speed: 5.2, scale: 0.9, color: [0.5, 0.45, 0.42], defeatMessage: 'Süper! Fareyi yendin!' },
   pirateBear: { speed: 3.6, scale: 1.2, color: [0.42, 0.26, 0.14], defeatMessage: 'Süper! Korsan ayıyı yendin!' },
+  shark: { speed: 4, scale: 1.2, color: [0.42, 0.5, 0.58], defeatMessage: 'Süper! Köpekbalığını yendin!' },
 };
 
 const MONSTER_SEE_RADIUS = 14;

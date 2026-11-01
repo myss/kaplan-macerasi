@@ -33,6 +33,7 @@ const BLOCK = {
   GEN_SURFACE: 21, GEN_SOIL: 22, GEN_PEAK: 23, GEN_SHORE: 24, GEN_LIQUID: 25, GEN_ROCK: 26,
   GEN_ACCENT_A: 27, GEN_ACCENT_B: 28, GEN_TRUNK: 29, GEN_CROWN: 30,
   HOUSE_WALL: 31, ROOF: 32, WOOD_FLOOR: 33, FURNITURE: 34, DECK: 35, HULL: 36, SAIL: 37, FLAG: 38,
+  SEABED: 39, ABYSS: 40, KELP: 41, CORAL_PINK: 42, CORAL_ORANGE: 43, SHELL: 44,
 };
 const BLOCK_COLORS = {
   [BLOCK.GRASS]: [0.36, 0.72, 0.28],
@@ -63,6 +64,12 @@ const BLOCK_COLORS = {
   [BLOCK.HULL]: [0.36, 0.2, 0.11],
   [BLOCK.SAIL]: [0.97, 0.95, 0.88],
   [BLOCK.FLAG]: [0.08, 0.08, 0.09],
+  [BLOCK.SEABED]: [0.76, 0.72, 0.52],
+  [BLOCK.ABYSS]: [0.03, 0.12, 0.28],
+  [BLOCK.KELP]: [0.14, 0.52, 0.3],
+  [BLOCK.CORAL_PINK]: [0.98, 0.42, 0.56],
+  [BLOCK.CORAL_ORANGE]: [0.98, 0.56, 0.2],
+  [BLOCK.SHELL]: [0.98, 0.93, 0.82],
 };
 
 // The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
@@ -96,6 +103,12 @@ const WORLD_THEMES = [
     name: 'Korsan Gemisi', sky: [0.62, 0.84, 0.96], hills: 0, crossing: 'swim', monster: 'pirateBear', layout: 'pirateShip', openSea: true, pirateBirds: true,
     surface: BLOCK.DECK, soil: BLOCK.HULL, peak: BLOCK.DECK, shore: BLOCK.DECK, liquid: BLOCK.WATER, rock: BLOCK.HULL,
     accents: [BLOCK.DECK, BLOCK.DECK],
+  },
+  {
+    name: 'Deniz Altı', sky: [0.08, 0.36, 0.58], fogDensity: 0.0011, hills: 22, plant: 'seaPlant', crossing: 'dive', underwater: true,
+    monster: 'shark', boss: 'squid', birdModel: 'jellyfish', birdColor: [0.95, 0.5, 0.8], birdDefeatMessage: 'Süper! Denizanasını yendin!',
+    surface: BLOCK.SEABED, soil: BLOCK.SEABED, peak: BLOCK.ROCK, shore: BLOCK.SEABED, liquid: BLOCK.ABYSS, rock: BLOCK.ROCK,
+    accents: [BLOCK.SHELL, BLOCK.CORAL_PINK], trunk: BLOCK.KELP, crown: BLOCK.KELP,
   },
 ];
 
@@ -283,6 +296,23 @@ function generateWorld(level) {
       for (const side of [-1, 1]) {
         const y = top + height - 4 - Math.floor(random() * 3);
         for (let i = 1; i <= 5; i++) stampBlob(vx + side * i, y + i, vz, 1, 1, 1, theme.trunk);
+      }
+    },
+    seaPlant(vx, top, vz) {
+      if (random() < 0.45) {
+        const coral = random() < 0.5 ? BLOCK.CORAL_PINK : BLOCK.CORAL_ORANGE;
+        for (let branch = 0; branch < 5; branch++) {
+          const [x, z] = polar(random() * 360, 1 + random() * 5);
+          const height = 4 + Math.floor(random() * 8);
+          for (let y = 1; y <= height; y++) stampBlob(vx + Math.round(x * y / height), top + y, vz + Math.round(z * y / height), 1, 1, 1, coral);
+        }
+      } else {
+        const height = 14 + Math.floor(random() * 22);
+        const bend = random() * 6;
+        for (let y = 1; y <= height; y++) {
+          const sway = Math.round(Math.sin(y * 0.3 + bend) * 2);
+          stampBlob(vx + sway, top + y, vz, 1, 1, 2, theme.crown);
+        }
       }
     },
     mushroom(vx, top, vz) {

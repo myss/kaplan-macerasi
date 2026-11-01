@@ -307,6 +307,91 @@ function lavaMonsterModel() {
   };
 }
 
+// Stands around its own centre, like the bird it replaces, and uses the same 'wings' pose.
+function jellyfishModel() {
+  const pink = [0.95, 0.5, 0.8], pale = [1, 0.75, 0.9], black = [0.05, 0.05, 0.06], white = [0.98, 0.97, 0.92];
+  const body = [];
+  addShell(body, 0, 0.15, 0, 0.48, 0.34, 0.48, (nx, ny) => (ny < -0.1 ? pale : pink));
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.16, 0.2, 0.42, 0.08, white);
+    addSphere(body, side * 0.16, 0.2, 0.48, 0.045, black);
+  }
+  const tentacle = (x, z, sign) => {
+    const spheres = [];
+    for (let i = 0; i < 11; i++) addSphere(spheres, x, -0.1 - i * 0.09, z, 0.05, pale);
+    return part(spheres, [x, -0.1, z], 'x', 'wings', sign);
+  };
+  const parts = [part(body)];
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    parts.push(tentacle(Math.cos(a) * 0.28, Math.sin(a) * 0.28, i % 2 ? 1 : -1));
+  }
+  return { parts };
+}
+
+// Drawn at the floor below it, with its own height built in, because the walking code keeps it there.
+function sharkModel() {
+  const grey = [0.42, 0.5, 0.58], belly = [0.9, 0.92, 0.94], white = [0.98, 0.98, 0.95], black = [0.05, 0.05, 0.06], dark = [0.3, 0.36, 0.42];
+  const y = 0.85;
+  const body = [];
+  addShell(body, 0, y, 0, 0.36, 0.38, 1.05, (nx, ny) => (ny < -0.25 ? belly : grey));
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.25, y + 0.14, 0.72, 0.08, white);
+    addSphere(body, side * 0.28, y + 0.14, 0.76, 0.05, black);
+    addShell(body, side * 0.58, y - 0.22, 0.1, 0.34, 0.05, 0.2, dark);
+  }
+  for (let i = -4; i <= 4; i++) addSphere(body, i * 0.05, y - 0.16 - Math.abs(i) * -0.008, 0.98 - Math.abs(i) * 0.03, 0.035, white); // teeth
+  for (let i = 0; i < 8; i++) {
+    for (let j = 0; j <= 7 - i; j++) addSphere(body, 0, y + 0.38 + i * 0.08, -0.05 + j * 0.07 - i * 0.03, 0.05, dark); // the fin on its back
+  }
+  const tail = [];
+  addShell(tail, 0, y, -1.1, 0.12, 0.14, 0.3, grey);
+  addShell(tail, 0, y + 0.3, -1.42, 0.05, 0.34, 0.16, dark);
+  addShell(tail, 0, y - 0.16, -1.36, 0.05, 0.2, 0.12, dark);
+  return { parts: [part(body), part(tail, [0, y, -0.85], 'x', 'stride', 0.5)] };
+}
+
+function squidModel() {
+  const red = [0.84, 0.3, 0.36], dark = [0.6, 0.18, 0.26], pale = [0.98, 0.72, 0.72], white = [0.98, 0.97, 0.92], black = [0.05, 0.05, 0.06];
+  const body = [];
+  addShell(body, 0, 1.9, 0, 0.55, 0.95, 0.55, (nx, ny) => (Math.sin(nx * 9 + ny * 7) > 0.6 ? dark : red));
+  addShell(body, 0, 2.95, 0, 0.75, 0.16, 0.2, dark); // the fins at the top
+  addShell(body, 0, 1.05, 0, 0.45, 0.32, 0.45, red);
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.28, 1.12, 0.36, 0.17, white);
+    addSphere(body, side * 0.3, 1.12, 0.48, 0.09, black);
+  }
+  const parts = [part(body)];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const spheres = [];
+    for (let j = 0; j < 12; j++) {
+      const reach = 0.3 + j * 0.07;
+      addSphere(spheres, Math.cos(a) * reach, 0.85 - j * 0.07, Math.sin(a) * reach, 0.1 - j * 0.004, j % 3 === 0 ? pale : red);
+    }
+    parts.push(part(spheres, [Math.cos(a) * 0.3, 0.85, Math.sin(a) * 0.3], 'x', 'stride', i % 2 ? 0.6 : -0.6));
+  }
+  return { parts };
+}
+
+// A brass diving helmet that leaves the tiger's face showing. Drawn at the tiger's position.
+function divingHelmetModel() {
+  const brass = [0.86, 0.66, 0.26], dark = [0.45, 0.32, 0.12];
+  const shell = [];
+  addShell(shell, 0, 1.54, 0.03, 0.45, 0.44, 0.44, brass);
+  const spheres = [];
+  for (let i = 0; i < shell.length; i += FLOATS_PER_SPHERE) {
+    const inFaceWindow = shell[i + 2] > 0.2 && Math.abs(shell[i + 1] - 1.55) < 0.27 && Math.abs(shell[i]) < 0.34;
+    if (!inFaceWindow) spheres.push(...shell.slice(i, i + FLOATS_PER_SPHERE));
+  }
+  for (let i = 0; i < 26; i++) {
+    const a = (i / 26) * Math.PI * 2;
+    addSphere(spheres, Math.cos(a) * 0.36, 1.55 + Math.sin(a) * 0.3, 0.42, 0.05, dark);
+    addSphere(spheres, Math.cos(a) * 0.44, 1.12, 0.03 + Math.sin(a) * 0.42, 0.07, dark);
+  }
+  return { parts: [part(spheres)] };
+}
+
 // A door hanging from its hinge at x = 0, drawn at the hinge's position.
 function bonusDoorModel() {
   const wood = [0.55, 0.32, 0.16], gold = [1, 0.8, 0.12];
