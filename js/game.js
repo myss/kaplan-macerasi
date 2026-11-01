@@ -49,6 +49,7 @@ const hud = {
   start: document.getElementById('start'),
   win: document.getElementById('win'),
   loading: document.getElementById('loading'),
+  mist: document.getElementById('mist'),
   map: document.getElementById('map').getContext('2d'),
 };
 
@@ -82,8 +83,8 @@ let mapBackground;
 const followers = [];
 const particles = [];
 
-function loadLevel(level) {
-  world = generateWorld(level);
+function loadLevel(level, generatedWorld = generateWorld(level)) {
+  world = generatedWorld;
   renderer.loadWorld(world);
 
   keys = world.keys.map((k) => ({ ...k, taken: false }));
@@ -290,7 +291,7 @@ document.getElementById('next-button').addEventListener('click', () => {
   lockMouse();
   // Generating blocks the page, so give the browser a moment to show the loading panel first.
   setTimeout(() => {
-    loadLevel(game.level + 1);
+    startCrossing(generateWorld(game.level + 1));
     hud.loading.classList.add('hidden');
   }, 50);
 });
@@ -473,7 +474,7 @@ function updateBird(bird, dt) {
     moveY = bird.altitude + Math.sin(bird.phase * 1.3) * 0.6 - bird.y;
     moveZ = bird.homeZ + Math.sin(a) * 7 - bird.z;
     speed = 5;
-    if (game.playing && bird.cooldown <= 0 && Math.hypot(toTigerX, toTigerZ) < game.birdSeeRadius) {
+    if (game.playing && !game.levelDone && !crossing && bird.cooldown <= 0 && Math.hypot(toTigerX, toTigerZ) < game.birdSeeRadius) {
       bird.state = 'swoop';
       bird.timer = 3.5;
     }
@@ -496,7 +497,7 @@ function updateBird(bird, dt) {
     if (landingOnIt) {
       defeatBird(bird);
       tiger.vy = JUMP_SPEED * 0.9;
-    } else if (tiger.invulnerable <= 0 && distance < BIRD_HIT_RADIUS && !game.levelDone) {
+    } else if (tiger.invulnerable <= 0 && distance < BIRD_HIT_RADIUS && !game.levelDone && !crossing) {
       hurtTiger(bird.x, bird.z);
       bird.state = 'patrol';
       bird.cooldown = game.birdRestTime;
@@ -560,10 +561,14 @@ function updateFollowers(dt) {
     const distance = Math.hypot(dx, dz);
     if (distance > 3) {
       const step = Math.min(distance - 3, WALK_SPEED * 1.1 * dt);
-      f.x += (dx / distance) * step;
-      f.z += (dz / distance) * step;
-      f.stride += dt * 10;
-      f.yaw = Math.atan2(dx, dz);
+      const x = f.x + (dx / distance) * step, z = f.z + (dz / distance) * step;
+      // Rescued crocodiles stay on the island and watch the tiger go.
+      if (!world.isLiquid(x, z)) {
+        f.x = x;
+        f.z = z;
+        f.stride += dt * 10;
+        f.yaw = Math.atan2(dx, dz);
+      }
     }
     leader = f;
   }
@@ -758,11 +763,13 @@ function frame(now) {
   lastTime = now;
 
   // Giving the mouse back with Esc also stops the game, so the birds wait.
-  const paused = game.playing && !game.levelDone && !mouseControlsGame();
+  const paused = game.playing && !game.levelDone && !crossing && !mouseControlsGame();
   hud.paused.classList.toggle('visible', paused);
   if (!paused) {
     game.time += dt;
-    if (game.playing && !game.levelDone) {
+    if (crossing) {
+      updateCrossing(dt);
+    } else if (game.playing && !game.levelDone) {
       updateTiger(dt);
       updateObjectives(dt);
     } else {

@@ -4,6 +4,8 @@
 const FLOATS_PER_SPHERE = 7; // x, y, z, radius, r, g, b
 const MAX_SHADOWS = 12;
 const COARSE_DISTANCE = 35;
+const BASE_FOG_DENSITY = 0.00012;
+const THICK_FOG_DENSITY = 0.003;
 
 const SPHERE_VERTEX_SHADER = `
 in vec3 position;
@@ -49,6 +51,7 @@ uniform mat4 projectionMatrix;
 uniform mat4 uCameraToWorld;
 uniform vec3 uLightDir;
 uniform vec3 uSky;
+uniform float uFogDensity;
 uniform vec4 uShadows[${MAX_SHADOWS}];
 uniform int uShadowCount;
 out vec4 outColor;
@@ -81,7 +84,7 @@ void main() {
   }
   color *= shade;
 
-  float fog = 1.0 - exp(-t * t * 0.00012);
+  float fog = 1.0 - exp(-t * t * uFogDensity);
   outColor = vec4(mix(color, uSky, fog), 1.0);
 }`;
 
@@ -103,6 +106,7 @@ function createRenderer(canvas, dynamicData) {
       uCameraToWorld: { value: camera.matrixWorld },
       uLightDir: { value: new THREE.Vector3() },
       uSky: { value: new THREE.Vector3() },
+      uFogDensity: { value: BASE_FOG_DENSITY },
       uShadows: { value: Array.from({ length: MAX_SHADOWS }, () => new THREE.Vector4()) },
       uShadowCount: { value: 0 },
     },
@@ -187,5 +191,9 @@ function createRenderer(canvas, dynamicData) {
     return three.info.render.triangles / 2;
   }
 
-  return { loadWorld, render };
+  const setFogDensity = (density) => {
+    material.uniforms.uFogDensity.value = density;
+  };
+
+  return { loadWorld, setFogDensity, render };
 }
