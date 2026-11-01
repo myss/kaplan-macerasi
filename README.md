@@ -9,7 +9,7 @@ renklerini, bitkilerini ve sıvısını üretir (Pembe Mantar Diyarı, Mor Krist
 üst katına ve geminin gözcü yerine kanatla çıkılır; gemideki kaptan kuşa iki kez vurmak gerekir.
 Her bölümde haritada görünmeyen bir bonus vardır: yüksekteki minik kulübeye yalnızca taştan taşa
 zıplayarak çıkılır, çevresinde kanatlar çalışmaz. İçindeki altın topu alıp vurma tuşuna basınca
-kaplan yere yumruk atar ve bölüm bitene kadar bütün düşmanlar yok olur.
+kaplan yere yumruk atar ve bölüm bitene kadar bütün kuşlar yok olur; canavarlar kalır.
 
 Kuşların yanında her dünyanın kendi yürüyen canavarı vardır: Orman'da yavaş yürüyen ağaçlar, Çöl'de
 akrepler, Kar'da kutup ayıları, Volkan'da ateş topu atan lav canavarları, Dev Ev'de fareler, gemide

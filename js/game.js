@@ -96,7 +96,7 @@ const game = {
   birdRestTime: 0,
   bonusTaken: false,
   punchReady: false,
-  enemiesGone: false,
+  birdsGone: false,
   bonusDoorOpen: 0, // 0 is shut, 1 is wide open
 };
 let world;
@@ -146,7 +146,7 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   game.rescued = 0;
   game.bonusTaken = false;
   game.punchReady = false;
-  game.enemiesGone = false;
+  game.birdsGone = false;
   game.bonusDoorOpen = 0;
 
   tiger.x = SPAWN.x;
@@ -180,7 +180,7 @@ function writeSave() {
     flightSeconds: tiger.flightSeconds,
     bonusTaken: game.bonusTaken,
     punchReady: game.punchReady,
-    enemiesGone: game.enemiesGone,
+    birdsGone: game.birdsGone,
     tiger: { x: tiger.x, y: tiger.y, z: tiger.z, yaw: tiger.yaw },
     camera: { yaw: camera.yaw, pitch: camera.pitch, distance: camera.distance },
   };
@@ -221,7 +221,7 @@ function restoreSave(save) {
   tiger.flightSeconds = save.flightSeconds ?? 0;
   game.bonusTaken = save.bonusTaken ?? false;
   game.punchReady = save.punchReady ?? false;
-  if (save.enemiesGone ?? save.birdsGone) removeAllEnemies(); // birdsGone: its name in older saves
+  if (save.birdsGone || save.enemiesGone) removeAllBirds(); // enemiesGone: its name in some saves
   game.hearts = save.hearts;
   game.keysHeld = save.keysHeld;
   game.rescued = followers.length;
@@ -516,25 +516,24 @@ function hitEnemy(enemy) {
   }
 }
 
-function removeAllEnemies() {
-  game.enemiesGone = true;
-  fireballs.length = 0;
-  for (const enemy of [...birds, ...monsters]) {
-    enemy.state = 'gone';
-    enemy.timer = Infinity; // until the next level builds new ones
+function removeAllBirds() {
+  game.birdsGone = true;
+  for (const bird of birds) {
+    bird.state = 'gone';
+    bird.timer = Infinity; // until the next level builds new ones
   }
 }
 
-// The bonus's prize: one punch at the ground ends every enemy on this level.
+// The bonus's prize: one punch at the ground ends every bird on this level. Monsters stay.
 function groundPunch() {
   game.punchReady = false;
   tiger.groundPunchTime = GROUND_PUNCH_SECONDS;
-  for (const enemy of [...birds, ...monsters]) {
-    if (enemy.state !== 'gone') burst(enemy.x, enemy.y, enemy.z, enemy.color, 25);
+  for (const bird of birds) {
+    if (bird.state !== 'gone') burst(bird.x, bird.y, bird.z, bird.color, 25);
   }
-  removeAllEnemies();
+  removeAllBirds();
   burst(tiger.x, tiger.y + 0.2, tiger.z, [1, 0.8, 0.2], 60);
-  showMessage('GÜM! Bütün düşmanlar yok oldu!', 3);
+  showMessage('GÜM! Bütün kuşlar yok oldu!', 3);
   updateHud();
   writeSave();
 }
