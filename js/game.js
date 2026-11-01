@@ -284,8 +284,12 @@ const held = new Set();
 let jumpQueued = false;
 let attackQueued = false;
 let cheatQueued = false;
+let bossCheatQueued = false;
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyO' && !e.repeat && game.playing) cheatQueued = true;
+  if (e.code === 'KeyO' && !e.repeat && game.playing) {
+    if (e.shiftKey) bossCheatQueued = true;
+    else cheatQueued = true;
+  }
   if (e.code === 'Space') {
     if (!e.repeat) jumpQueued = true;
     e.preventDefault();
@@ -705,13 +709,9 @@ function completeLevel() {
   writeSave();
 }
 
-// The cheat key: beats a boss, or else takes whatever is nearest, wherever it is. A cage only counts
-// with a key in hand.
+// The cheat key: takes whatever is nearest, wherever it is. A cage only counts with a key in hand.
+// A boss takes Shift as well, so that pressing it again and again cannot skip one by accident.
 function collectNearest() {
-  if (boss) {
-    defeatBoss();
-    return;
-  }
   const candidates = [
     ...wingPickups.filter((wing) => !wing.taken).map((target) => ({ target, collect: collectWing })),
     ...keys.filter((key) => !key.taken).map((target) => ({ target, collect: collectKey })),
@@ -741,8 +741,11 @@ function updateBonus(dt) {
 function updateObjectives(dt) {
   game.noKeyHintTime -= dt;
   updateBonus(dt);
-  if (cheatQueued) collectNearest();
+  if (cheatQueued && !boss) collectNearest();
   cheatQueued = false;
+  if (bossCheatQueued && boss) defeatBoss();
+  bossCheatQueued = false;
+  if (game.levelDone) return;
   for (const wing of wingPickups) {
     const distance = Math.hypot(tiger.x - wing.x, tiger.y + 0.8 - wing.y, tiger.z - wing.z);
     if (!wing.taken && distance < WING_PICKUP_RADIUS) collectWing(wing);

@@ -99,6 +99,7 @@ function finishCrossing() {
   attackQueued = false;
   jumpQueued = false;
   cheatQueued = false;
+  bossCheatQueued = false;
   writeSave();
 }
 
