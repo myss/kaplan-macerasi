@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kaplan Macerası</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8fcdf5; font-family: "Trebuchet MS", "Segoe UI", sans-serif; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  #game:active { cursor: grabbing; }
+  #top { position: fixed; top: 14px; left: 16px; display: flex; gap: 18px; font-size: 26px; color: #fff; text-shadow: 0 2px 4px #0008; pointer-events: none; }
+  #map { position: fixed; top: 14px; right: 16px; width: 180px; height: 180px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 2px 8px #0006; pointer-events: none; }
+  #stats { position: fixed; bottom: 10px; left: 16px; font-size: 13px; color: #fff; text-shadow: 0 1px 2px #000a; pointer-events: none; }
+  #message { position: fixed; top: 74px; left: 50%; transform: translateX(-50%); padding: 10px 22px; border-radius: 22px; background: #000a; color: #fff; font-size: 24px; text-align: center; opacity: 0; transition: opacity .25s; pointer-events: none; }
+  #message.visible { opacity: 1; }
+  .panel { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #0005; }
+  .panel.hidden { display: none; }
+  .card { max-width: 520px; margin: 16px; padding: 28px 34px; border-radius: 26px; background: #fff8e8; color: #4a2c0a; text-align: center; box-shadow: 0 8px 30px #0006; }
+  .card h1 { margin: 0 0 10px; font-size: 44px; color: #e8710a; }
+  .card p { font-size: 20px; line-height: 1.4; margin: 10px 0; }
+  .card table { margin: 14px auto; font-size: 18px; border-spacing: 12px 4px; text-align: left; }
+  .card th { font-weight: 700; white-space: nowrap; }
+  button { margin-top: 12px; padding: 12px 36px; border: 0; border-radius: 18px; background: #e8710a; color: #fff; font: inherit; font-size: 26px; font-weight: 700; cursor: pointer; }
+  button:hover { background: #ff8a1f; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="top"><span id="hearts"></span><span id="keys"></span><span id="rescued"></span></div>
+<canvas id="map" width="180" height="180"></canvas>
+<div id="message"></div>
+<div id="stats"></div>
+
+<div id="start" class="panel">
+  <div class="card">
+    <h1>Kaplan Macerası</h1>
+    <p>Kötü kuşlar timsahları kafeslere kilitledi! Anahtarları bul, kafesleri aç, timsahları kurtar.</p>
+    <table>
+      <tr><th>W A S D / oklar</th><td>Yürü</td></tr>
+      <tr><th>Boşluk</th><td>Zıpla (kuşun üstüne zıplarsan onu yenersin)</td></tr>
+      <tr><th>Fare ile sürükle</th><td>Etrafına bak</td></tr>
+      <tr><th>Haritada</th><td>🟡 anahtar · ⚫ kafes · 🟠 sen</td></tr>
+    </table>
+    <button id="start-button">Başla!</button>
+  </div>
+</div>
+
+<div id="win" class="panel hidden">
+  <div class="card">
+    <h1>Kazandın! 🎉</h1>
+    <p>Bütün timsahları kurtardın. Aferin kaplan!</p>
+    <button id="again-button">Tekrar oyna</button>
+  </div>
+</div>
+
+<script src="js/math.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/world.js"></script>
+<script src="js/models.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
