@@ -467,7 +467,7 @@ function updateTiger(dt) {
   return moving;
 }
 
-function hurtTiger(fromX, fromZ) {
+function hurtTiger(fromX, fromZ, message = 'Ah! Yaklaşınca F tuşuyla ya da tıklayarak vur!') {
   game.hearts--;
   tiger.invulnerable = 2;
   tiger.vy = 6;
@@ -490,7 +490,7 @@ function hurtTiger(fromX, fromZ) {
       f.z = tiger.z;
     }
   } else {
-    showMessage('Ah! Yaklaşınca F tuşuyla ya da tıklayarak vur!');
+    showMessage(message);
   }
   updateHud();
 }

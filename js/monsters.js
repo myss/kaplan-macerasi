@@ -132,7 +132,9 @@ function updateMonster(monster, dt) {
   if (tiger.attackTime > 0 && distance < ATTACK_RADIUS + 0.5) {
     hitEnemy(monster);
   } else if (tiger.vy < -1 && flatDistance < 1.5 && dy > monster.scale) {
-    hitEnemy(monster);
+    // A lava monster is too hot to land on: it burns the tiger instead of going down.
+    if (!monster.throwsFire) hitEnemy(monster);
+    else if (tiger.invulnerable <= 0) hurtTiger(monster.x, monster.z, 'Ay, çok sıcak! Lav canavarına basma, uzaktan vur!');
     tiger.vy = JUMP_SPEED * 0.9;
   } else if (tiger.invulnerable <= 0 && flatDistance < MONSTER_CONTACT_RADIUS && Math.abs(dy) < 2) {
     hurtTiger(monster.x, monster.z);
