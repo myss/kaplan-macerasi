@@ -166,7 +166,6 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
       model: isCaptain ? 'captainBird' : world.theme.pirateBirds ? 'pirateBird' : world.theme.birdModel ?? 'bird',
       scale: isCaptain ? CAPTAIN_SCALE : BIRD_SCALE,
       color: world.theme.birdColor ?? [0.46, 0.15, 0.55],
-      defeatMessage: world.theme.birdDefeatMessage ?? 'Süper! Kuşu yendin!',
       maxHits, hitsLeft: maxHits, recovery: 0,
     };
   });
@@ -594,7 +593,6 @@ function defeatEnemy(enemy) {
   burst(enemy.x, enemy.y, enemy.z, enemy.color, 40);
   enemy.state = 'gone';
   enemy.timer = BIRD_RESPAWN_TIME;
-  showMessage(enemy.defeatMessage, 1.5);
 }
 
 function hitEnemy(enemy) {

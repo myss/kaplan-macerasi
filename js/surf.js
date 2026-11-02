@@ -136,7 +136,6 @@ function updateSurfDolphins(dt, speed) {
     if (tiger.attackTime > 0 && Math.abs(dolphin.ahead) < ATTACK_RADIUS && Math.abs(tiger.x - x) < ATTACK_RADIUS) {
       dolphin.gone = true;
       burst(x, SURF_SEA_Y + dolphinHeight, tiger.z + dolphin.ahead, [0.45, 0.62, 0.78], 30);
-      showMessage('Süper! Yunusu kaçırdın!', 1.5);
     } else if (isAlongside && surf.height < dolphinHeight + 1.2) {
       dolphin.gone = true;
       hurtSurfer('Ah! Yunus seni düşürüyordu!');

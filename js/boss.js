@@ -34,17 +34,17 @@ const STUCK_SPEED_FACTOR = 0.35;
 const BOSS_KINDS = {
   walkingTree: {
     name: 'Dev Yürüyen Ağaç', scale: 3.4, speed: 1.2, moves: ['throw', 'spin'],
-    ball: { count: 3, speed: 6.5, radius: 0.42, color: [1.2, 0.12, 0.1], putOutMessage: 'Elmayı parçaladın!', burst: [0.9, 0.15, 0.1] },
+    ball: { count: 3, speed: 6.5, radius: 0.42, color: [1.2, 0.12, 0.1], burst: [0.9, 0.15, 0.1] },
     spin: { radius: 7, turnsPerSecond: 0.4, color: [0.42, 0.27, 0.14], grabs: true },
   },
   scorpion: { name: 'Dev Akrep', scale: 2.6, speed: 2.6, lungeSpeed: 11, moves: ['sting', 'lunge', 'slam'] },
   polarBear: {
     name: 'Dev Kutup Ayısı', scale: 2.8, speed: 2.4, lungeSpeed: 11, moves: ['throw', 'lunge'],
-    ball: { count: 3, speed: 8, radius: 0.5, color: [1.1, 1.1, 1.15], putOutMessage: 'Kartopunu parçaladın!', burst: [0.95, 0.97, 1] },
+    ball: { count: 3, speed: 8, radius: 0.5, color: [1.1, 1.1, 1.15], burst: [0.95, 0.97, 1] },
   },
   pirateBear: {
     name: 'Dev Korsan Ayı', scale: 2.8, speed: 2.4, lungeSpeed: 11, moves: ['throw', 'lunge'],
-    ball: { count: 3, speed: 8, radius: 0.5, color: [1.2, 0.72, 0.1], putOutMessage: 'Balı patlattın!', burst: [1, 0.7, 0.1], sticky: true },
+    ball: { count: 3, speed: 8, radius: 0.5, color: [1.2, 0.72, 0.1], burst: [1, 0.7, 0.1], sticky: true },
   },
   rat: {
     name: 'Dev Fare', scale: 2.6, speed: 3.4, lungeSpeed: 13, moves: ['spin', 'lunge'],
@@ -52,16 +52,16 @@ const BOSS_KINDS = {
   },
   lavaMonster: {
     name: 'Dev Lav Canavarı', scale: 2.4, speed: 1.8, moves: ['throw', 'spin'], burnsOnLanding: true,
-    ball: { count: 2, speed: 7, radius: 1, color: [1.5, 0.65, 0.08], putOutMessage: 'Ateşi söndürdün!', burst: [0.85, 0.85, 0.88] },
+    ball: { count: 2, speed: 7, radius: 1, color: [1.5, 0.65, 0.08], burst: [0.85, 0.85, 0.88] },
     spin: { radius: 6.5, turnsPerSecond: 0.9, color: [1.4, 0.55, 0.08], grabs: false },
   },
   worm: {
     name: 'Dev Solucan', scale: 2.3, speed: 2.4, lungeSpeed: 12, moves: ['throw', 'lunge', 'slam'],
-    ball: { count: 3, speed: 7, radius: 0.55, color: [0.42, 0.28, 0.16], putOutMessage: 'Toprağı dağıttın!', burst: [0.42, 0.28, 0.16] },
+    ball: { count: 3, speed: 7, radius: 0.55, color: [0.42, 0.28, 0.16], burst: [0.42, 0.28, 0.16] },
   },
   squid: {
     name: 'Dev Kalamar', scale: 2.4, speed: 2.2, lungeSpeed: 11, moves: ['throw', 'spin', 'lunge'],
-    ball: { count: 3, speed: 7, radius: 0.55, color: [0.05, 0.03, 0.12], putOutMessage: 'Mürekkebi dağıttın!', burst: [0.1, 0.06, 0.2] },
+    ball: { count: 3, speed: 7, radius: 0.55, color: [0.05, 0.03, 0.12], burst: [0.1, 0.06, 0.2] },
     spin: { radius: 7, turnsPerSecond: 0.55, color: [0.84, 0.3, 0.36], grabs: true },
   },
 };
@@ -185,7 +185,7 @@ function throwBossBalls() {
       x: boss.x, y, z: boss.z, life: FIREBALL_LIFE_SECONDS,
       vx: Math.sin(a) * ball.speed, vy: rise * ball.speed, vz: Math.cos(a) * ball.speed,
       radius: ball.radius, color: ball.color, hitRadius: ball.radius + 0.7,
-      putOutMessage: ball.putOutMessage, burst: ball.burst, sticky: ball.sticky,
+      burst: ball.burst, sticky: ball.sticky,
     });
   }
 }

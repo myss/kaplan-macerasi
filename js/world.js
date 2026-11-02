@@ -114,7 +114,7 @@ const WORLD_THEMES = [
   },
   {
     name: 'Deniz dibi zindanı', sky: [0.08, 0.36, 0.58], fogDensity: 0.0011, hills: 22, plant: 'seaPlant', crossing: 'dive', underwater: true,
-    monster: 'shark', boss: 'squid', birdModel: 'jellyfish', birdColor: [0.95, 0.5, 0.8], birdDefeatMessage: 'Süper! Denizanasını yendin!',
+    monster: 'shark', boss: 'squid', birdModel: 'jellyfish', birdColor: [0.95, 0.5, 0.8],
     birdSpeedFactor: 0.5,
     surface: BLOCK.SEABED, soil: BLOCK.SEABED, peak: BLOCK.ROCK, shore: BLOCK.SEABED, liquid: BLOCK.ABYSS, rock: BLOCK.ROCK,
     accents: [BLOCK.SHELL, BLOCK.CORAL_PINK], trunk: BLOCK.KELP, crown: BLOCK.KELP,

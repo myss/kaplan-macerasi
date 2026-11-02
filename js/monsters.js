@@ -2,15 +2,15 @@
 // pass through anything, and the lava monster throws fireballs the tiger can dodge or put out.
 
 const MONSTER_KINDS = {
-  walkingTree: { speed: 1.6, scale: 1.5, color: [0.16, 0.56, 0.22], defeatMessage: 'Süper! Yürüyen ağacı yendin!' },
-  scorpion: { speed: 3.2, scale: 1.1, color: [0.72, 0.42, 0.14], defeatMessage: 'Süper! Akrebi yendin!' },
-  polarBear: { speed: 3.6, scale: 1.2, color: [0.93, 0.95, 0.98], defeatMessage: 'Süper! Kutup ayısını yendin!' },
-  lavaMonster: { speed: 1.5, scale: 1.2, color: [1, 0.45, 0.08], defeatMessage: 'Süper! Lav canavarını yendin!', throwsFire: true },
-  rat: { speed: 5.2, scale: 0.9, color: [0.5, 0.45, 0.42], defeatMessage: 'Süper! Fareyi yendin!' },
-  pirateBear: { speed: 3.6, scale: 1.2, color: [0.42, 0.26, 0.14], defeatMessage: 'Süper! Korsan ayıyı yendin!' },
-  shark: { speed: 4, scale: 1.2, color: [0.42, 0.5, 0.58], defeatMessage: 'Süper! Köpekbalığını yendin!' },
-  mole: { speed: 2.6, scale: 1, color: [0.3, 0.22, 0.2], defeatMessage: 'Süper! Köstebeği yendin!' },
-  ant: { speed: 4.6, scale: 1.2, color: [0.5, 0.14, 0.08], defeatMessage: 'Süper! Karıncayı yendin!' },
+  walkingTree: { speed: 1.6, scale: 1.5, color: [0.16, 0.56, 0.22] },
+  scorpion: { speed: 3.2, scale: 1.1, color: [0.72, 0.42, 0.14] },
+  polarBear: { speed: 3.6, scale: 1.2, color: [0.93, 0.95, 0.98] },
+  lavaMonster: { speed: 1.5, scale: 1.2, color: [1, 0.45, 0.08], throwsFire: true },
+  rat: { speed: 5.2, scale: 0.9, color: [0.5, 0.45, 0.42] },
+  pirateBear: { speed: 3.6, scale: 1.2, color: [0.42, 0.26, 0.14] },
+  shark: { speed: 4, scale: 1.2, color: [0.42, 0.5, 0.58] },
+  mole: { speed: 2.6, scale: 1, color: [0.3, 0.22, 0.2] },
+  ant: { speed: 4.6, scale: 1.2, color: [0.5, 0.14, 0.08] },
 };
 
 const MONSTER_SEE_RADIUS = 14;
@@ -160,7 +160,6 @@ function updateFireballs(dt) {
     if (!isOut && tiger.attackTime > 0 && distance < ATTACK_RADIUS) {
       isOut = true;
       burst(ball.x, ball.y, ball.z, ball.burst ?? [0.85, 0.85, 0.88], 20);
-      showMessage(ball.putOutMessage ?? 'Ateşi söndürdün!', 1.5);
     } else if (!isOut && distance < (ball.hitRadius ?? FIREBALL_HIT_RADIUS) && !crossing && !game.levelDone) {
       isOut = true;
       if (ball.sticky) {
