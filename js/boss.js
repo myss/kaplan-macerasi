@@ -27,8 +27,6 @@ const GRAB_SECONDS = 1.5;
 const GRAB_ORBIT_METRES = 3;
 const FLING_SPEED = 13;
 const FLING_SECONDS = 0.45;
-const HONEY_STUCK_SECONDS = 2.5;
-const STUCK_SPEED_FACTOR = 0.35;
 const BOSS_TOP_REACH = 0.6; // how far above its head the tiger's feet can be and still touch a boss
 
 // spin.grabs: caught and whirled around unharmed, then flung into a lost life. Otherwise it burns on touch.
@@ -45,7 +43,7 @@ const BOSS_KINDS = {
   },
   pirateBear: {
     name: 'Dev Korsan Ayı', scale: 2.8, speed: 2.4, lungeSpeed: 11, moves: ['throw', 'lunge'],
-    ball: { count: 3, speed: 8, radius: 0.5, color: [1.2, 0.72, 0.1], burst: [1, 0.7, 0.1], sticky: true },
+    ball: { count: 3, speed: 8, radius: 0.5, color: [1.2, 0.72, 0.1], burst: [1, 0.7, 0.1], stick: HONEY_STICK },
   },
   rat: {
     name: 'Dev Fare', scale: 2.6, speed: 3.4, lungeSpeed: 13, moves: ['spin', 'lunge'],
@@ -192,7 +190,7 @@ function throwBossBalls() {
       x: boss.x, y, z: boss.z, life: FIREBALL_LIFE_SECONDS,
       vx: Math.sin(a) * ball.speed, vy: rise * ball.speed, vz: Math.cos(a) * ball.speed,
       radius: ball.radius, color: ball.color, hitRadius: ball.radius + 0.7,
-      burst: ball.burst, sticky: ball.sticky,
+      burst: ball.burst, stick: ball.stick,
     });
   }
 }

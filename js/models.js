@@ -422,6 +422,15 @@ function antModel() {
   return { parts: [part(body), legs(1, 1), legs(-1, -1)] };
 }
 
+// Drawn over the ant until the first hit knocks it off.
+function antArmorModel() {
+  const steel = [0.34, 0.37, 0.42], edge = [0.2, 0.22, 0.26];
+  const spheres = [];
+  addShell(spheres, 0, 0.53, -0.5, 0.35, 0.28, 0.47, (nx, ny, nz) => (Math.abs(nz) < 0.2 ? edge : steel));
+  addShell(spheres, 0, 0.6, 0.48, 0.3, 0.2, 0.25, steel);
+  return { parts: [part(spheres)] };
+}
+
 function wormModel() {
   const pink = [0.92, 0.58, 0.6], band = [0.78, 0.42, 0.46], white = [0.98, 0.97, 0.92], black = [0.05, 0.05, 0.06], mouth = [0.45, 0.1, 0.14];
   const body = [];

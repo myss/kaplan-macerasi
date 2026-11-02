@@ -12,9 +12,12 @@ Her bölümde haritada görünmeyen bir bonus vardır: yüksekteki minik kulübe
 zıplayarak çıkılır, çevresinde kanatlar çalışmaz. İçindeki altın topu alıp vurma tuşuna basınca
 kaplan yere yumruk atar ve bölüm bitene kadar bütün kuşlar yok olur; canavarlar kalır.
 
-Kuşların yanında her dünyanın kendi yürüyen canavarı vardır: ormanda yavaş yürüyen ağaçlar, çölde
-akrepler, Kar Vadisi'nde kutup ayıları, Cehennem Köyü'nde ateş topu atan lav canavarları, dev evde fareler,
-gemide göz bandlı korsan ayılar. Ateş toplarından kaçılabilir ya da vurarak söndürülebilir.
+Kuşların yanında her dünyanın kendi yürüyen canavarı vardır ve her birinin kendine özgü bir özelliği vardır:
+yürüyen ağaçların yerde ilerleyen kökü kaplanı bir an tutar (üstünden zıplanır), akrepler yavaşlatan zehir atar,
+kutup ayıları titreyip karınları üstünde kayar, lav canavarları ateş topu atar, fareler sürüyle gezer ve biri
+yenilince diğerleri kaçar, korsan ayılar yapıştıran bal atar, köpekbalıklarının yalnızca yüzgeci görünür ve yakına
+gelince ısırmak için fırlar, köstebekler yerin altından kaplanın yanında çıkar (toprak önce kabarır), karıncaların
+zırhı vardır ve iki kez vurmak gerekir. Atılan her şeyden kaçılabilir ya da vurarak yok edilebilir.
 
 Bütün timsahlar kurtarılınca o dünyanın canavarının devi gelir: 3 canı vardır, kaplanın 3 canı biterse
 o da baştan başlar. Her boss'un kendi hamleleri vardır: ağaç elma atar ve köküyle döner, akrep sokar,

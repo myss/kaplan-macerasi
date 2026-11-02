@@ -59,6 +59,7 @@ const models = {
   squid: squidModel(),
   divingHelmet: divingHelmetModel(),
   ant: antModel(),
+  antArmor: antArmorModel(),
   mole: uprightAnimalModel({ fur: [0.3, 0.22, 0.2], belly: [0.5, 0.38, 0.32], nose: [0.95, 0.55, 0.6], earSize: 0.05, snoutLength: 0.12 }),
   worm: wormModel(),
   surfboard: surfboardModel(),
@@ -105,7 +106,7 @@ const tiger = {
   x: SPAWN.x, y: 0, z: SPAWN.z,
   vy: 0, yaw: 0, stride: 0, grounded: true, airTime: 0, invulnerable: 0, attackTime: 0, attackCooldown: 0,
   flightSeconds: 0, wingsOut: false, inNoWingsZone: false, groundPunchTime: 0,
-  stuckTime: 0, flingTime: 0, flingX: 0, flingZ: 0,
+  stuckTime: 0, stuckSpeedFactor: 1, flingTime: 0, flingX: 0, flingZ: 0,
 };
 const camera = { yaw: Math.PI, pitch: 0.42, distance: 8 };
 const game = {
@@ -167,6 +168,7 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
       scale: isCaptain ? CAPTAIN_SCALE : BIRD_SCALE,
       color: world.theme.birdColor ?? [0.46, 0.15, 0.55],
       maxHits, hitsLeft: maxHits, recovery: 0,
+      toughMessage: isCaptain ? 'Kaptan çok sağlam! Bir kez daha vur!' : null,
     };
   });
   monsters = createMonsters([...cages, ...keys]);
@@ -483,7 +485,7 @@ function updateTiger(dt) {
     const dirX = -sin * forward + cos * right;
     const dirZ = -cos * forward - sin * right;
     const length = Math.hypot(dirX, dirZ);
-    const speed = tiger.stuckTime > 0 ? WALK_SPEED * STUCK_SPEED_FACTOR : running ? WALK_SPEED * RUN_SPEED_FACTOR : WALK_SPEED;
+    const speed = tiger.stuckTime > 0 ? WALK_SPEED * tiger.stuckSpeedFactor : running ? WALK_SPEED * RUN_SPEED_FACTOR : WALK_SPEED;
     const stepX = (dirX / length) * speed * dt;
     const stepZ = (dirZ / length) * speed * dt;
     // Pushed up under an overhang by the ground rising, the tiger is blocked wherever it turns. So
@@ -601,6 +603,7 @@ function defeatEnemy(enemy) {
   enemy.state = 'gone';
   enemy.timer = BIRD_RESPAWN_TIME;
   playSound('enemyDown');
+  if (enemy.swarm) scareSwarm(enemy);
 }
 
 function hitEnemy(enemy) {
@@ -610,7 +613,7 @@ function hitEnemy(enemy) {
   if (enemy.hitsLeft > 0) {
     burst(enemy.x, enemy.y, enemy.z, [0.05, 0.05, 0.06], 15);
     playSound('enemyHit');
-    showMessage('Kaptan çok sağlam! Bir kez daha vur!', 2);
+    if (enemy.toughMessage) showMessage(enemy.toughMessage, 2);
   } else {
     defeatEnemy(enemy);
   }
