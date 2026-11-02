@@ -31,10 +31,13 @@ window.addEventListener('pointerdown', (e) => {
 document.addEventListener('pointerup', () => {
   if (touchControls) startAudio();
 });
+// A long press must not open the browser's menu, wherever the finger is.
+document.addEventListener('contextmenu', (e) => {
+  if (touchControls) e.preventDefault();
+});
 
 const touchLayer = document.getElementById('touch-controls');
 touchLayer.addEventListener('pointerdown', () => { touchPaused = false; });
-touchLayer.addEventListener('contextmenu', (e) => e.preventDefault());
 
 for (const button of touchLayer.querySelectorAll('[data-key]')) {
   const release = () => {
