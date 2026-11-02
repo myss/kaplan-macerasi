@@ -28,16 +28,17 @@ window.addEventListener('pointerdown', (e) => {
   if (e.pointerType === 'touch' && !touchControls) setTouchControls(true);
 }, { capture: true });
 // A finger only counts as permission for sound when it lifts.
-document.addEventListener('pointerup', () => {
-  if (touchControls) startAudio();
-});
-// A long press must not open the browser's menu, wherever the finger is.
+document.addEventListener('touchend', startAudio);
+// A long press must not open the browser's menu or start selecting, wherever the finger is.
 document.addEventListener('contextmenu', (e) => {
   if (touchControls) e.preventDefault();
 });
+document.addEventListener('selectstart', (e) => e.preventDefault());
+const keepTouchFromBrowser = (e) => e.preventDefault();
 
 const touchLayer = document.getElementById('touch-controls');
 touchLayer.addEventListener('pointerdown', () => { touchPaused = false; });
+touchLayer.addEventListener('touchstart', keepTouchFromBrowser, { passive: false });
 
 for (const button of touchLayer.querySelectorAll('[data-key]')) {
   const release = () => {
@@ -94,8 +95,10 @@ pad.addEventListener('pointercancel', () => holdPadKeys([]));
 
 const lookSurface = document.getElementById('game');
 let lookPointer = null, lookX = 0, lookY = 0;
+lookSurface.addEventListener('touchstart', keepTouchFromBrowser, { passive: false });
 lookSurface.addEventListener('pointerdown', (e) => {
   if (!touchControls) return;
+  touchPaused = false;
   lookSurface.setPointerCapture(e.pointerId);
   lookPointer = e.pointerId;
   lookX = e.clientX;
