@@ -41,7 +41,8 @@ o tarayıcıya ve açılan adrese özeldir.
 - **Boşluk:** zıpla; kuşun üstüne zıplarsan onu yenersin
 - **Boşluk'u basılı tut:** kanat aldıysan uç; her kanat 10 saniye uçurur, süre yalnızca uçarken azalır
 - **F / tıkla:** dönerek vur; yakındaki kuşları yener
-- **Fareyi oynat / Q, E:** kamerayı çevir
+- **Q:** yön tuşuyla birlikte hızlı koş; tek başına basınca kaplan olduğu yerde koşar
+- **Fareyi oynat:** kamerayı çevir
 - **Esc:** oyunu durdur, fareyi geri al; devam etmek için tıkla, baştan başlamak için düğmeye bas
 - **Fare tekerleği:** yakınlaş, uzaklaş
 - **O (hile):** en yakındaki anahtarı veya kanadı alır, anahtar varsa kafesi açar

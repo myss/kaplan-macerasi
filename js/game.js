@@ -1,6 +1,10 @@
 const GRAVITY = 20;
 const JUMP_SPEED = 8;
 const WALK_SPEED = 7.5;
+const WALK_STRIDE_RATE = 12;
+const RUN_SPEED_FACTOR = 1.6;
+const RUN_STRIDE_RATE = 22;
+const RUN_LEG_SWING = 1.1;
 const STEP_HEIGHT = 0.6; // anything taller has to be jumped onto
 const TIGER_RADIUS = 0.4;
 const TIGER_HEIGHT = 1.9;
@@ -464,16 +468,17 @@ function updateTiger(dt) {
   if (held.has('KeyS') || held.has('ArrowDown')) forward -= 1;
   if (held.has('KeyD') || held.has('ArrowRight')) right += 1;
   if (held.has('KeyA') || held.has('ArrowLeft')) right -= 1;
-  if (held.has('KeyQ')) camera.yaw += dt * 1.8;
-  if (held.has('KeyE')) camera.yaw -= dt * 1.8;
 
+  const running = held.has('KeyQ');
   const moving = right !== 0 || forward !== 0;
+  // Without a direction, the run key runs on the spot.
+  if (moving || running) tiger.stride += dt * (running ? RUN_STRIDE_RATE : WALK_STRIDE_RATE);
   if (moving) {
     const sin = Math.sin(camera.yaw), cos = Math.cos(camera.yaw);
     const dirX = -sin * forward + cos * right;
     const dirZ = -cos * forward - sin * right;
     const length = Math.hypot(dirX, dirZ);
-    const speed = tiger.stuckTime > 0 ? WALK_SPEED * STUCK_SPEED_FACTOR : WALK_SPEED;
+    const speed = tiger.stuckTime > 0 ? WALK_SPEED * STUCK_SPEED_FACTOR : running ? WALK_SPEED * RUN_SPEED_FACTOR : WALK_SPEED;
     const stepX = (dirX / length) * speed * dt;
     const stepZ = (dirZ / length) * speed * dt;
     // Pushed up under an overhang by the ground rising, the tiger is blocked wherever it turns. So
@@ -488,7 +493,6 @@ function updateTiger(dt) {
     let turn = targetYaw - tiger.yaw;
     turn = Math.atan2(Math.sin(turn), Math.cos(turn));
     tiger.yaw += turn * Math.min(1, dt * 12);
-    tiger.stride += dt * 12;
   }
 
   tiger.airTime = tiger.grounded ? 0 : tiger.airTime + dt;
@@ -872,7 +876,8 @@ function buildFrameSpheres() {
   const attackProgress = tiger.attackTime > 0 ? 1 - tiger.attackTime / ATTACK_DURATION : 0;
   if (!blink) {
     const isSwimming = world.theme.underwater && !tiger.grounded;
-    const stride = isSwimming ? Math.sin(game.time * 9) * 1.1 : tiger.grounded ? swing(tiger.stride) : 0.6;
+    const groundStride = held.has('KeyQ') ? Math.sin(tiger.stride) * RUN_LEG_SWING : swing(tiger.stride);
+    const stride = isSwimming ? Math.sin(game.time * 9) * 1.1 : tiger.grounded ? groundStride : 0.6;
     count = drawModel(frameSpheres, count, models.tiger, tiger.x, tiger.y, tiger.z, tiger.yaw + attackProgress * Math.PI * 2, {
       stride,
       arms: tiger.attackTime > 0 || tiger.groundPunchTime > 0 ? 1.5 : stride * 0.7,
