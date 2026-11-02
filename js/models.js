@@ -28,6 +28,15 @@ function part(spheres, pivot = [0, 0, 0], axis = null, poseKey = null, sign = 1)
   return { spheres, pivot, axis, poseKey, sign };
 }
 
+// The height of a model's highest point in its rest pose, before any scale.
+function modelTop(model) {
+  let top = 0;
+  for (const { spheres } of model.parts) {
+    for (let i = 0; i < spheres.length; i += FLOATS_PER_SPHERE) top = Math.max(top, spheres[i + 1] + spheres[i + 3]);
+  }
+  return top;
+}
+
 function tigerModel() {
   const orange = [0.97, 0.56, 0.1], black = [0.09, 0.07, 0.06], white = [0.98, 0.95, 0.88];
   const pink = [0.95, 0.5, 0.55];

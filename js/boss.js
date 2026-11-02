@@ -29,6 +29,7 @@ const FLING_SPEED = 13;
 const FLING_SECONDS = 0.45;
 const HONEY_STUCK_SECONDS = 2.5;
 const STUCK_SPEED_FACTOR = 0.35;
+const BOSS_TOP_REACH = 0.6; // how far above its head the tiger's feet can be and still touch a boss
 
 // spin.grabs: caught and whirled around unharmed, then flung into a lost life. Otherwise it burns on touch.
 const BOSS_KINDS = {
@@ -98,7 +99,10 @@ function startBossFight() {
   const kind = world.theme.boss ?? world.theme.monster;
   const maxLives = bossLivesForLevel();
   const { speed, lungeSpeed } = BOSS_KINDS[kind];
-  boss = { kind, ...BOSS_KINDS[kind], speed: speed * game.speedFactor, lungeSpeed: lungeSpeed * game.speedFactor, maxLives, lives: maxLives, mistFade: 1 };
+  boss = {
+    kind, ...BOSS_KINDS[kind], speed: speed * game.speedFactor, lungeSpeed: lungeSpeed * game.speedFactor, maxLives, lives: maxLives, mistFade: 1,
+    height: modelTop(models[kind]) * BOSS_KINDS[kind].scale,
+  };
   placeBoss();
   updateBossHud();
   playSound('bossArrive');
@@ -353,9 +357,10 @@ function updateBossFight(dt) {
   const flatDistance = Math.hypot(tiger.x - boss.x, tiger.z - boss.z);
   const dy = tiger.y - boss.y;
   const bodyRadius = boss.scale * 0.45;
-  if (tiger.attackTime > 0 && flatDistance < ATTACK_RADIUS + bodyRadius && Math.abs(dy) < boss.scale * 2.2) {
+  const isAboveHead = dy > boss.height + BOSS_TOP_REACH;
+  if (tiger.attackTime > 0 && flatDistance < ATTACK_RADIUS + bodyRadius && dy > -boss.scale * 2.2 && !isAboveHead) {
     hitBoss();
-  } else if (tiger.vy < -1 && flatDistance < bodyRadius + 0.8 && dy > boss.scale) {
+  } else if (tiger.vy < -1 && flatDistance < bodyRadius + 0.8 && dy > boss.scale && !isAboveHead) {
     if (!boss.burnsOnLanding) hitBoss();
     else bossHurtsTiger('Ay, çok sıcak! Üstüne basma, vur!');
     if (boss) tiger.vy = JUMP_SPEED * 0.9;
