@@ -83,17 +83,17 @@ const BLOCK_COLORS = {
 // The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
 const WORLD_THEMES = [
   {
-    name: 'Orman', sky: [0.56, 0.8, 0.96], hills: 26, plant: 'leafyTree', crossing: 'swim', monster: 'walkingTree',
+    name: 'Canlı Ağaçlar Ormanı', sky: [0.56, 0.8, 0.96], hills: 26, plant: 'leafyTree', crossing: 'swim', monster: 'walkingTree',
     surface: BLOCK.GRASS, soil: BLOCK.DIRT, peak: BLOCK.STONE, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
     accents: [BLOCK.RED_FLOWER, BLOCK.YELLOW_FLOWER], trunk: BLOCK.TRUNK, crown: BLOCK.LEAF,
   },
   {
-    name: 'Çöl', sky: [0.96, 0.84, 0.62], hills: 20, plant: 'cactus', crossing: 'swim', monster: 'scorpion',
+    name: 'Akrepler Çölü', sky: [0.96, 0.84, 0.62], hills: 20, plant: 'cactus', crossing: 'swim', monster: 'scorpion',
     surface: BLOCK.SAND, soil: BLOCK.RED_SAND, peak: BLOCK.RED_SAND, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.RED_SAND,
     accents: [BLOCK.RED_SAND, BLOCK.ROCK], trunk: BLOCK.CACTUS, crown: BLOCK.CACTUS,
   },
   {
-    name: 'Kar', sky: [0.78, 0.87, 0.95], hills: 30, plant: 'pine', crossing: 'slide', monster: 'polarBear',
+    name: 'Kar Vadisi', sky: [0.78, 0.87, 0.95], hills: 30, plant: 'pine', crossing: 'slide', monster: 'polarBear',
     surface: BLOCK.SNOW, soil: BLOCK.STONE, peak: BLOCK.ICE, shore: BLOCK.SNOW, liquid: BLOCK.ICE, rock: BLOCK.STONE,
     accents: [BLOCK.ICE, BLOCK.STONE], trunk: BLOCK.TRUNK, crown: BLOCK.PINE,
   },
@@ -103,29 +103,29 @@ const WORLD_THEMES = [
     accents: [BLOCK.EMBER, BLOCK.EMBER], trunk: BLOCK.DEAD_WOOD, crown: BLOCK.DEAD_WOOD,
   },
   {
-    name: 'Dev Ev', sky: [0.6, 0.82, 0.95], hills: 10, mountains: 0, plant: 'leafyTree', crossing: 'swim', monster: 'rat', layout: 'giantHouse',
+    name: 'Dev ev', sky: [0.6, 0.82, 0.95], hills: 10, mountains: 0, plant: 'leafyTree', crossing: 'swim', monster: 'rat', layout: 'giantHouse',
     surface: BLOCK.GRASS, soil: BLOCK.DIRT, peak: BLOCK.STONE, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
     accents: [BLOCK.RED_FLOWER, BLOCK.YELLOW_FLOWER], trunk: BLOCK.TRUNK, crown: BLOCK.LEAF,
   },
   {
-    name: 'Korsan Gemisi', sky: [0.62, 0.84, 0.96], hills: 0, crossing: 'swim', monster: 'pirateBear', layout: 'pirateShip', openSea: true, pirateBirds: true,
+    name: 'Korsanlar gemisi', sky: [0.62, 0.84, 0.96], hills: 0, crossing: 'swim', monster: 'pirateBear', layout: 'pirateShip', openSea: true, pirateBirds: true,
     surface: BLOCK.DECK, soil: BLOCK.HULL, peak: BLOCK.DECK, shore: BLOCK.DECK, liquid: BLOCK.WATER, rock: BLOCK.HULL,
     accents: [BLOCK.DECK, BLOCK.DECK],
   },
   {
-    name: 'Deniz Altı', sky: [0.08, 0.36, 0.58], fogDensity: 0.0011, hills: 22, plant: 'seaPlant', crossing: 'dive', underwater: true,
+    name: 'Deniz dibi zindanı', sky: [0.08, 0.36, 0.58], fogDensity: 0.0011, hills: 22, plant: 'seaPlant', crossing: 'dive', underwater: true,
     monster: 'shark', boss: 'squid', birdModel: 'jellyfish', birdColor: [0.95, 0.5, 0.8], birdDefeatMessage: 'Süper! Denizanasını yendin!',
     birdSpeedFactor: 0.5,
     surface: BLOCK.SEABED, soil: BLOCK.SEABED, peak: BLOCK.ROCK, shore: BLOCK.SEABED, liquid: BLOCK.ABYSS, rock: BLOCK.ROCK,
     accents: [BLOCK.SHELL, BLOCK.CORAL_PINK], trunk: BLOCK.KELP, crown: BLOCK.KELP,
   },
   {
-    name: 'Sörf', sky: [0.55, 0.82, 0.98], fogDensity: 0.0005, hills: 0, crossing: 'swim', openSea: true, surf: true,
+    name: 'Zorlu Sörf', sky: [0.55, 0.82, 0.98], fogDensity: 0.0005, hills: 0, crossing: 'swim', openSea: true, surf: true,
     surface: BLOCK.WATER, soil: BLOCK.WATER, peak: BLOCK.WATER, shore: BLOCK.WATER, liquid: BLOCK.WATER, rock: BLOCK.WATER,
     accents: [BLOCK.WATER, BLOCK.WATER],
   },
   {
-    name: 'Yer Altı', sky: [0.06, 0.04, 0.03], fogDensity: 0.0009, hills: 0, crossing: 'dig', layout: 'tunnels', underground: true, noBirds: true,
+    name: 'Yer Dibi Şehri', sky: [0.06, 0.04, 0.03], fogDensity: 0.0009, hills: 0, crossing: 'dig', layout: 'tunnels', underground: true, noBirds: true,
     monsters: ['mole', 'ant'], boss: 'worm', walledBoss: true,
     surface: BLOCK.EARTH, soil: BLOCK.EARTH, deep: BLOCK.EARTH, peak: BLOCK.EARTH, shore: BLOCK.TUNNEL_FLOOR, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
     accents: [BLOCK.EARTH, BLOCK.EARTH], trunk: BLOCK.DIRT,
@@ -485,6 +485,41 @@ function generateWorld(level) {
 
   // The hidden bonus: a spiral of floating stones up to a tiny shed. Its own random sequence, for
   // the same reason as the wings below. Its spot is far from the middle and clear of everything.
+  // Whatever a clearing cut off from the ground would hang in the air, so it goes too. Anything
+  // that reaches the edge of the area counts as attached: it may well be held up from outside.
+  const removeFloatingPieces = (cx, cz, reach) => {
+    const attached = new Set();
+    const stack = [];
+    const visit = (x, y, z) => {
+      if (y < 0 || y >= WORLD_HEIGHT) return;
+      const key = index(x, y, z);
+      if (attached.has(key) || voxels[key] === BLOCK.EMPTY || voxels[key] === theme.liquid) return;
+      attached.add(key);
+      stack.push([x, y, z]);
+    };
+    for (let z = cz - reach; z <= cz + reach; z++) {
+      for (let x = cx - reach; x <= cx + reach; x++) {
+        const isEdge = Math.abs(x - cx) === reach || Math.abs(z - cz) === reach;
+        visit(x, terrain[x + z * WORLD_SIZE], z);
+        for (let y = isEdge ? 0 : WORLD_HEIGHT; y < WORLD_HEIGHT; y++) visit(x, y, z);
+      }
+    }
+    while (stack.length > 0) {
+      const [x, y, z] = stack.pop();
+      for (const [dx, dy, dz] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) {
+        if (Math.abs(x + dx - cx) <= reach && Math.abs(z + dz - cz) <= reach) visit(x + dx, y + dy, z + dz);
+      }
+    }
+    for (let z = cz - reach; z <= cz + reach; z++) {
+      for (let x = cx - reach; x <= cx + reach; x++) {
+        for (let y = terrain[x + z * WORLD_SIZE] + 1; y < WORLD_HEIGHT; y++) {
+          const key = index(x, y, z);
+          if (voxels[key] !== theme.liquid && !attached.has(key)) voxels[key] = BLOCK.EMPTY;
+        }
+      }
+    }
+  };
+
   const placeBonus = () => {
     const bonusRandom = seededRandom(20261101 + level * 7919 + 3);
     const isGoodBonusSpot = (x, z, maxSlope) => {
@@ -514,6 +549,7 @@ function generateWorld(level) {
           stampBox(vx, terrain[vx + vz * WORLD_SIZE] + 1, vz, vx, WORLD_HEIGHT - 1, vz, BLOCK.EMPTY);
         }
       }
+      removeFloatingPieces(bonusX, bonusZ, reach + 24);
     }
     let stoneTop = terrain[bonusX + BONUS_SPIRAL_RADIUS + bonusZ * WORLD_SIZE];
     for (let i = 0; stoneTop + 4 < BONUS_PLATFORM_TOP; i++) {

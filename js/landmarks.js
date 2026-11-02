@@ -231,7 +231,7 @@ function buildHomeVillage(api) {
         stampBlob(cx + side * 6, floor + 14, cz - 20, 3, 3, 3, BLOCK.SHELL);
         stampBlob(cx + side * 6, floor + 14, cz - 23, 1, 1, 1, BLOCK.FLAG);
         // A claw held out on each side of the mouth.
-        for (let i = 0; i <= 10; i++) stampBlob(cx + side * (12 + i * 0.6), floor + 5, cz - 8 - i * 1.5, 2, 2, 2, shell);
+        for (let i = 0; i <= 10; i++) stampBlob(cx + side * Math.round(12 + i * 0.6), floor + 5, cz - 8 - Math.round(i * 1.5), 2, 2, 2, shell);
         stampBlob(cx + side * 20, floor + 6, cz - 28, 5, 3, 7, dark);
         stampBlob(cx + side * 17, floor + 6, cz - 34, 1, 2, 4, dark);
         stampBlob(cx + side * 23, floor + 6, cz - 34, 1, 2, 4, dark);
@@ -245,7 +245,7 @@ function buildHomeVillage(api) {
         const radius = Math.round(5 - t * 3);
         stampBlob(cx, floor + 14 + Math.round(Math.sin(t * 2.6) * 22), cz + 25 - Math.round(t * t * 22) + Math.round(Math.sin(t * 2.6) * 10), radius, radius, radius, i % 3 === 0 ? dark : shell);
       }
-      stampBlob(cx, floor + 24, cz - 2, 2, 4, 2, BLOCK.FLAG);
+      stampBlob(cx, floor + 25, cz + 6, 2, 4, 2, BLOCK.FLAG);
       return { radius: 1.8, portal: [1.4, 0.8, 0.25] };
     },
     iceCave(cx, floor, cz) {

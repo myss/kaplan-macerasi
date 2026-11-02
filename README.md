@@ -3,21 +3,18 @@
 Her şeyi kürelerden yapılmış üç boyutlu bir macera oyunu.
 
 Kötü kuşlar timsahları kafeslere kilitledi. Kaplan anahtarları bulup kafesleri açar ve timsahları
-kurtarır. Bölüm bitince yeni bir dünyaya geçilir. Dünyalar bölüm numarasından üretilir, yani bölümler
-sonsuzdur: ilk dokuzu Orman, Çöl, Kar, Volkan, Dev Ev, Korsan Gemisi, Deniz Altı (kaplan başlıkla
-dalar; kanat gerekmez, Boşluk'u basılı tutunca yüzer; yavaş denizanaları, köpekbalıkları ve dev kalamar
-vardır) ve Sörf'tür (bambaşka oynanır: kaplan üç şeritte kendiliğinden ilerler, kayalardan, şamandıralardan
-ve yunuslardan kaçar; sonunda balinanın gölgesinden kaçar, balinaya vurulamaz) ve Yer Altı'dır (haritada
-görünen tüneller, köstebekler, karıncalar ve dev solucan), sonrakiler kendi
-renklerini, bitkilerini ve sıvısını üretir (Pembe Mantar Diyarı, Mor Kristal Vadisi gibi). Dev Ev'in
-üst katına ve geminin gözcü yerine kanatla çıkılır; gemideki kaptan kuşa iki kez vurmak gerekir.
+kurtarır. Dokuz dünya vardır: Canlı Ağaçlar Ormanı, Akrepler Çölü, Kar Vadisi, Cehennem Köyü, Dev ev,
+Korsanlar gemisi, Deniz dibi zindanı (kaplan başlıkla dalar; kanat gerekmez, Boşluk'u basılı tutunca yüzer; yavaş denizanaları, köpekbalıkları ve dev kalamar
+vardır), Zorlu Sörf (bambaşka oynanır: kaplan üç şeritte kendiliğinden ilerler, kayalardan, şamandıralardan
+ve yunuslardan kaçar; sonunda balinanın gölgesinden kaçar, balinaya vurulamaz) ve Yer Dibi Şehri (haritada
+görünen tüneller, köstebekler, karıncalar ve dev solucan). Dev evin üst katına ve geminin gözcü yerine kanatla çıkılır; gemideki kaptan kuşa iki kez vurmak gerekir.
 Her bölümde haritada görünmeyen bir bonus vardır: yüksekteki minik kulübeye yalnızca taştan taşa
 zıplayarak çıkılır, çevresinde kanatlar çalışmaz. İçindeki altın topu alıp vurma tuşuna basınca
 kaplan yere yumruk atar ve bölüm bitene kadar bütün kuşlar yok olur; canavarlar kalır.
 
-Kuşların yanında her dünyanın kendi yürüyen canavarı vardır: Orman'da yavaş yürüyen ağaçlar, Çöl'de
-akrepler, Kar'da kutup ayıları, Volkan'da ateş topu atan lav canavarları, Dev Ev'de fareler, gemide
-göz bandlı korsan ayılar. Ateş toplarından kaçılabilir ya da vurarak söndürülebilir.
+Kuşların yanında her dünyanın kendi yürüyen canavarı vardır: ormanda yavaş yürüyen ağaçlar, çölde
+akrepler, Kar Vadisi'nde kutup ayıları, Cehennem Köyü'nde ateş topu atan lav canavarları, dev evde fareler,
+gemide göz bandlı korsan ayılar. Ateş toplarından kaçılabilir ya da vurarak söndürülebilir.
 
 Bütün timsahlar kurtarılınca o dünyanın canavarının devi gelir: 3 canı vardır, kaplanın 3 canı biterse
 o da baştan başlar. Her boss'un kendi hamleleri vardır: ağaç elma atar ve köküyle döner, akrep sokar,
@@ -27,9 +24,9 @@ Dönen kök ve kuyruk yakalayıp fırlatır; üstünden zıplanarak kurtulunur. 
 merdivenlerin ve uçan taşların tepesindedir; dağlara zıplayarak çıkılır. Küreler kırılmaz.
 
 Oyun Ana Sayfa köyünde başlar. Her dünyanın yanında adı yazan bir tabela ve kendi girişi vardır: ağaç kovuğu
-(Orman), dev akrebin ağzı (Çöl), buz mağarası (Kar), minik volkan (Cehennem Köyü), minik ev (Dev Ev), kıyıdaki
-küçük gemi (Korsan Gemisi), su
-dolu kuyu (Deniz Altı), sonu su olan mağara (Sörf) ve köstebek deliği (Yer Altı). Bitirilen dünyaya
+(orman), dev akrebin ağzı (çöl), buz mağarası (Kar Vadisi), minik volkan (Cehennem Köyü), minik ev (Dev ev), kıyıdaki
+küçük gemi (Korsanlar gemisi), su
+dolu kuyu (Deniz dibi zindanı), sonu su olan mağara (Zorlu Sörf) ve köstebek deliği (Yer Dibi Şehri). Bitirilen dünyaya
 yeniden girince zor seviyesi oynanır. Bölüm bitince kaplan Ana Sayfa'ya döner; Esc menüsünden de dönülür.
 
 ## Oynamak
