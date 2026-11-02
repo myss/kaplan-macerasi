@@ -176,6 +176,7 @@ const HOME_ENTRANCES = [
   { level: 4, build: 'volcano', x: -24, z: 38 },
   { level: 5, build: 'tinyHouse', x: 0, z: 38 },
   { level: 6, build: 'shoreBoat', x: 30, z: 38, onShore: true }, // moored at the first water east of x
+  { surprise: true, build: 'surpriseDoor', x: 24, z: 38 }, // leads to whichever generated world is next
   { level: 7, build: 'waterWell', x: -24, z: 60 },
   { level: 8, build: 'surfCave', x: 0, z: 60 },
   { level: 9, build: 'moleHole', x: 24, z: 60 },
@@ -267,6 +268,16 @@ function buildHomeVillage(api) {
       box(cx + 6, floor + 18, cz + 6, cx + 9, floor + 34, cz + 9, BLOCK.STONE);
       return { radius: 1.8, portal: [1.3, 0.9, 0.5] };
     },
+    // A free-standing door in every colour, to go through.
+    surpriseDoor(cx, floor, cz) {
+      const colors = [BLOCK.RED_FLOWER, BLOCK.CORAL_ORANGE, BLOCK.YELLOW_FLOWER, BLOCK.GRASS, BLOCK.WATER, BLOCK.CORAL_PINK];
+      const frame = (y, x) => colors[Math.floor((y + Math.abs(x)) / 3) % colors.length];
+      for (let y = 1; y <= 18; y++) {
+        for (const side of [-1, 1]) box(cx + side * 8, floor + y, cz - 2, cx + side * 6, floor + y, cz + 2, frame(y, 7));
+      }
+      for (let x = -8; x <= 8; x++) box(cx + x, floor + 19, cz - 2, cx + x, floor + 21, cz + 2, frame(19, x));
+      return { radius: 1.6, portal: [1.4, 0.5, 1.3] };
+    },
     // Afloat by the shore, with a gangway up from the beach. `cx` is where the land ends.
     shoreBoat(cx, floor, cz) {
       const DECK = WATER_LEVEL + 5;
@@ -317,7 +328,7 @@ function buildHomeVillage(api) {
   };
 
   const out = { cages: [], keys: [], wings: [], mapShapes: [], entrances: [] };
-  for (const { level, build, x, z, onShore } of HOME_ENTRANCES) {
+  for (const { level, build, x, z, onShore, surprise } of HOME_ENTRANCES) {
     let vx = toVoxel(x);
     const vz = toVoxel(z);
     if (onShore) {
@@ -327,7 +338,7 @@ function buildHomeVillage(api) {
     const { radius, portal, maxY = Infinity, offsetY = 0.9, portalAt = 0, portalVx = vx, floorAt = floor } = BUILDERS[build](vx, floor, vz);
     const signX = onShore ? api.toMetres(vx - 6) : x + 6;
     out.entrances.push({
-      level, build, x: api.toMetres(portalVx), z: z + portalAt, y: floorY(floorAt) + offsetY, radius, portal, maxY,
+      level, surprise, build, x: api.toMetres(portalVx), z: z + portalAt, y: floorY(floorAt) + offsetY, radius, portal, maxY,
       signX, signZ: onShore ? z - 4 : z - 8.5,
     });
   }

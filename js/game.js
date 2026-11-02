@@ -32,7 +32,9 @@ const FLIGHT_START_SPEED = 2; // holding jump starts flying once the jump has sl
 const MAX_FLIGHT_HEIGHT = 45;
 const BIRD_PATROL_SPEED = 5;
 const HARD_SPEED_FACTOR = 1.3;
-const BIRD_TOP_SPEED = 7.2; // just slower than the tiger, so running away always remains possible
+const SURPRISE_SPEED_STEP = 0.07; // each surprise world is this much faster than the one before
+const SURPRISE_TOP_SPEED_FACTOR = 1.6;
+const ENEMY_TOP_SPEED = 7.2; // just slower than the tiger, so running away always remains possible
 const SAVE_KEY = 'kaplan-macerasi-kayit';
 const SAVE_INTERVAL = 2; // seconds
 const ATTACK_DURATION = 0.35;
@@ -107,6 +109,7 @@ const game = {
   levelDone: false,
   level: HOME_LEVEL,
   hard: false,
+  speedFactor: 1,
   completed: [], // the levels finished at least once, which are harder from then on
   leaving: false,
   hearts: MAX_HEARTS,
@@ -137,6 +140,9 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   world = generatedWorld;
   renderer.loadWorld(world);
   game.hard = game.completed.includes(level);
+  game.speedFactor = level >= FIRST_SURPRISE_LEVEL
+    ? Math.min(1 + (level - FIRST_SURPRISE_LEVEL) * SURPRISE_SPEED_STEP, SURPRISE_TOP_SPEED_FACTOR)
+    : game.hard ? HARD_SPEED_FACTOR : 1;
   game.leaving = false;
   if (!crossing) hud.mist.style.opacity = 0; // leaving in the middle of a boss's flash must not keep it
   homeSigns = [];
@@ -169,8 +175,8 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   followers.length = 0;
   particles.length = 0;
 
-  const birdSpeedFactor = (world.theme.birdSpeedFactor ?? 1) * (game.hard ? HARD_SPEED_FACTOR : 1);
-  game.birdSpeed = Math.min((5 + (level - 1) * 0.35) * birdSpeedFactor, BIRD_TOP_SPEED);
+  const birdSpeedFactor = (world.theme.birdSpeedFactor ?? 1) * game.speedFactor;
+  game.birdSpeed = Math.min((5 + (level - 1) * 0.35) * birdSpeedFactor, ENEMY_TOP_SPEED);
   game.birdPatrolSpeed = BIRD_PATROL_SPEED * birdSpeedFactor;
   game.birdSeeRadius = Math.min(16 + (level - 1) * 1.5, 28);
   game.birdRestTime = Math.max(4 - (level - 1) * 0.3, 1.5);
@@ -197,7 +203,8 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   mapBackground = buildMapBackground();
   updateHud();
   const hardNote = game.hard ? ' · Zor' : '';
-  const levelName = world.theme.home ? 'Bir kapıya gir!' : `${level}. Bölüm: ${world.theme.name}${hardNote}`;
+  const levelTitle = level >= FIRST_SURPRISE_LEVEL ? `Sürpriz ${level - FIRST_SURPRISE_LEVEL + 1}` : `${level}. Bölüm`;
+  const levelName = world.theme.home ? 'Bir kapıya gir!' : `${levelTitle}: ${world.theme.name}${hardNote}`;
   showMessage(`${levelName}${world.theme.underwater ? '. Boşluk\'u basılı tut, yüz!' : ''}`, 3);
   hud.homeButton.hidden = Boolean(world.theme.home);
   if (world.theme.home) createHomeSigns();
@@ -280,7 +287,8 @@ function showMessage(text, seconds = 2.5) {
 }
 
 function updateHud() {
-  hud.level.textContent = world.theme.home ? '🏠 Ana Sayfa' : `🌍 ${game.level}. Bölüm${game.hard ? ' · Zor' : ''}`;
+  const levelTitle = game.level >= FIRST_SURPRISE_LEVEL ? `Sürpriz ${game.level - FIRST_SURPRISE_LEVEL + 1}` : `${game.level}. Bölüm`;
+  hud.level.textContent = world.theme.home ? '🏠 Ana Sayfa' : `🌍 ${levelTitle}${game.hard ? ' · Zor' : ''}`;
   hud.hearts.textContent = '❤️'.repeat(game.hearts) + '🖤'.repeat(MAX_HEARTS - game.hearts);
   const hasNoCages = world.theme.surf || world.theme.home;
   hud.keys.textContent = hasNoCages ? '' : `🔑 ${game.keysHeld}`;
@@ -1031,7 +1039,8 @@ function drawMap() {
   };
   map.drawImage(mapBackground, 0, 0);
   for (const entrance of world.entrances) {
-    dot(entrance.x, entrance.z, 4.5, game.completed.includes(entrance.level) ? '#2ecc40' : '#ff4136');
+    const color = entrance.surprise ? '#d65cff' : game.completed.includes(entrance.level) ? '#2ecc40' : '#ff4136';
+    dot(entrance.x, entrance.z, 4.5, color);
   }
   for (const wing of wingPickups) {
     if (wing.taken) continue;

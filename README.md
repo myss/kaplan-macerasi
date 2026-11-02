@@ -27,7 +27,8 @@ Oyun Ana Sayfa köyünde başlar. Her dünyanın yanında adı yazan bir tabela 
 (orman), dev akrebin ağzı (çöl), buz mağarası (Kar Vadisi), minik volkan (Cehennem Köyü), minik ev (Dev ev), kıyıdaki
 küçük gemi (Korsanlar gemisi), su
 dolu kuyu (Deniz dibi zindanı), sonu su olan mağara (Zorlu Sörf) ve köstebek deliği (Yer Dibi Şehri). Bitirilen dünyaya
-yeniden girince zor seviyesi oynanır. Bölüm bitince kaplan Ana Sayfa'ya döner; Esc menüsünden de dönülür.
+yeniden girince zor seviyesi oynanır. Sürpriz Kapısı ise her seferinde yeni, kendi renkleri ve bitkisiyle
+üretilmiş bir dünyaya açılır; her bitirişte hızlanır, boss'un canı ve canavar çeşidi artar. Bölüm bitince kaplan Ana Sayfa'ya döner; Esc menüsünden de dönülür.
 
 ## Oynamak
 

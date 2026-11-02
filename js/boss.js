@@ -10,6 +10,7 @@
 
 const BOSS_LIVES = 3;
 const BOSS_HARD_LIVES = 5;
+const BOSS_SURPRISE_TOP_LIVES = 8;
 const BOSS_ARENA = { x: 0, z: -13 };
 const BOSS_RECOVERY_SECONDS = 0.6;
 const BOSS_LOW_REACH = 0.9; // a sweep or ring passes under a tiger whose feet are higher than this
@@ -67,6 +68,13 @@ const BOSS_KINDS = {
 
 let boss = null;
 
+function bossLivesForLevel() {
+  if (game.level >= FIRST_SURPRISE_LEVEL) {
+    return Math.min(BOSS_LIVES + Math.floor((game.level - FIRST_SURPRISE_LEVEL) / 2), BOSS_SURPRISE_TOP_LIVES);
+  }
+  return game.hard ? BOSS_HARD_LIVES : BOSS_LIVES;
+}
+
 function startBossFight() {
   // Nothing but the boss from here on.
   for (const enemy of [...birds, ...monsters]) {
@@ -88,10 +96,9 @@ function startBossFight() {
   hud.mist.style.opacity = 1;
 
   const kind = world.theme.boss ?? world.theme.monster;
-  const maxLives = game.hard ? BOSS_HARD_LIVES : BOSS_LIVES;
+  const maxLives = bossLivesForLevel();
   const { speed, lungeSpeed } = BOSS_KINDS[kind];
-  const hardness = game.hard ? HARD_SPEED_FACTOR : 1;
-  boss = { kind, ...BOSS_KINDS[kind], speed: speed * hardness, lungeSpeed: lungeSpeed * hardness, maxLives, lives: maxLives, mistFade: 1 };
+  boss = { kind, ...BOSS_KINDS[kind], speed: speed * game.speedFactor, lungeSpeed: lungeSpeed * game.speedFactor, maxLives, lives: maxLives, mistFade: 1 };
   placeBoss();
   updateBossHud();
   showMessage(`${boss.name} geldi! ${maxLives} kez vur!`, 3.5);

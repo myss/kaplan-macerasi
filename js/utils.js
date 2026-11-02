@@ -12,6 +12,15 @@ function hslColor(hue, saturation, lightness) {
   return [channel(0), channel(8), channel(4)];
 }
 
+function shuffled(list, random) {
+  const result = [...list];
+  for (let i = result.length - 1; i > 0; i--) {
+    const k = Math.floor(random() * (i + 1));
+    [result[i], result[k]] = [result[k], result[i]];
+  }
+  return result;
+}
+
 // Fixed seed: everyone gets the same world on every run.
 function seededRandom(seed) {
   let a = seed >>> 0;

@@ -132,6 +132,12 @@ const WORLD_THEMES = [
   },
 ];
 
+const FIRST_SURPRISE_LEVEL = WORLD_THEMES.length + 1;
+const SURPRISE_MONSTER_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'shark', 'mole', 'ant'];
+const SURPRISE_BOSS_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'worm', 'squid'];
+const SURPRISE_MIN_MONSTER_KINDS = 2;
+const SURPRISE_MAX_MONSTER_KINDS = 6;
+
 const HOME_THEME = {
   name: 'Ana Sayfa', sky: [0.56, 0.8, 0.96], hills: 10, mountains: 0, plant: 'leafyTree', crossing: 'swim', layout: 'homeVillage', noBirds: true, home: true,
   surface: BLOCK.GRASS, soil: BLOCK.DIRT, peak: BLOCK.STONE, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
@@ -175,7 +181,12 @@ function generateTheme(level) {
       [BLOCK.GEN_TRUNK]: hslColor(hue + between(0.6, 0.8), 0.4, 0.38),
       [BLOCK.GEN_CROWN]: hslColor(hue + between(0.25, 0.75), 0.65, 0.52),
     },
-    monster: pick(['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear']),
+    boss: pick(SURPRISE_BOSS_KINDS),
+    // One more kind of monster for every other world, as they get harder.
+    monsters: shuffled(SURPRISE_MONSTER_KINDS, random).slice(0, Math.min(
+      SURPRISE_MIN_MONSTER_KINDS + Math.floor((level - FIRST_SURPRISE_LEVEL) / 2),
+      SURPRISE_MAX_MONSTER_KINDS,
+    )),
   };
 }
 

@@ -180,7 +180,7 @@ function updateWhale(dt) {
     return;
   }
   const toTiger = tiger.x - whale.shadowX;
-  const shadowSpeed = WHALE_SHADOW_SPEED * (game.hard ? HARD_SPEED_FACTOR : 1);
+  const shadowSpeed = WHALE_SHADOW_SPEED * game.speedFactor;
   whale.shadowX += Math.sign(toTiger) * Math.min(Math.abs(toTiger), shadowSpeed * dt);
   if (Math.abs(tiger.x - whale.shadowX) < WHALE_SHADOW_RADIUS) {
     whale.inShadow += dt;
@@ -226,7 +226,7 @@ function updateSurf(dt) {
   tiger.invulnerable = Math.max(0, tiger.invulnerable - dt);
 
   const progress = surf.distance / SURF_GOAL_METRES;
-  const speed = (SURF_START_SPEED + (SURF_TOP_SPEED - SURF_START_SPEED) * progress) * (game.hard ? HARD_SPEED_FACTOR : 1);
+  const speed = (SURF_START_SPEED + (SURF_TOP_SPEED - SURF_START_SPEED) * progress) * game.speedFactor;
   surf.distance += speed * dt;
   tiger.z = (surf.distance % SURF_LOOP_METRES) - SURF_LOOP_METRES / 2;
   camera.yaw = Math.PI;

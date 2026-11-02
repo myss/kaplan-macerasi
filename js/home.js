@@ -1,5 +1,6 @@
 // The home village. Walking into an entrance plays that world. A world already finished plays at
-// its harder level, and the wooden sign beside its entrance says so.
+// its harder level, and the wooden sign beside its entrance says so. The surprise door leads to a
+// new generated world each time one is finished, and each is harder than the one before.
 
 const SIGN_DOT = 0.085;
 const SIGN_LINE_ROWS = 10;
@@ -33,6 +34,16 @@ const SIGN_FONT = {
   V: '#...#,#...#,#...#,#...#,.#.#.,.#.#.,..#..',
   Y: '#...#,#...#,.#.#.,..#..,..#..,..#..,..#..',
   Z: '#####,....#,...#.,..#..,.#...,#....,#####',
+  0: '.###.,#...#,#..##,#.#.#,##..#,#...#,.###.',
+  1: '..#..,.##..,..#..,..#..,..#..,..#..,.###.',
+  2: '.###.,#...#,....#,...#.,..#..,.#...,#####',
+  3: '####.,....#,....#,.###.,....#,....#,####.',
+  4: '...#.,..##.,.#.#.,#..#.,#####,...#.,...#.',
+  5: '#####,#....,####.,....#,....#,#...#,.###.',
+  6: '.###.,#....,#....,####.,#...#,#...#,.###.',
+  7: '#####,....#,...#.,..#..,..#..,..#..,..#..',
+  8: '.###.,#...#,#...#,.###.,#...#,#...#,.###.',
+  9: '.###.,#...#,#...#,.####,....#,....#,.###.',
 };
 const SIGN_LETTER_MARKS = {
   Ç: ['C', 'cedilla'], Ş: ['S', 'cedilla'], Ö: ['O', 'dots'], Ü: ['U', 'dots'], İ: ['I', 'dot'], Ğ: ['G', 'breve'],
@@ -105,7 +116,9 @@ function createHomeSigns() {
     x: entrance.signX,
     z: entrance.signZ,
     y: world.terrainTop(entrance.signX, entrance.signZ),
-    model: signModel(themeForLevel(entrance.level).name, game.completed.includes(entrance.level)),
+    model: entrance.surprise
+      ? signModel(`Sürpriz Kapısı ${nextSurpriseLevel() - FIRST_SURPRISE_LEVEL + 1}`, false)
+      : signModel(themeForLevel(entrance.level).name, game.completed.includes(entrance.level)),
   }));
 }
 
@@ -120,11 +133,16 @@ function goToLevel(level) {
   }, 50);
 }
 
+// Each generated world is one further on than the last one finished.
+function nextSurpriseLevel() {
+  return Math.max(FIRST_SURPRISE_LEVEL - 1, ...game.completed) + 1;
+}
+
 function updateHome() {
   if (game.leaving) return;
   for (const entrance of world.entrances) {
     if (Math.hypot(tiger.x - entrance.x, tiger.z - entrance.z) < entrance.radius && tiger.y < entrance.maxY) {
-      goToLevel(entrance.level);
+      goToLevel(entrance.surprise ? nextSurpriseLevel() : entrance.level);
       return;
     }
   }
