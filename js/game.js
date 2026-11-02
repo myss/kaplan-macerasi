@@ -328,31 +328,33 @@ let attackQueued = false;
 let cheatQueued = false;
 let bossCheatQueued = false;
 let surfLaneQueue = 0; // -1 or +1: a lane change waiting for the surf level to carry it out
-window.addEventListener('keydown', (e) => {
-  if (surf && !e.repeat) {
+function pressKey(code) {
+  if (surf) {
     // Facing +z, the right-hand lane is towards -x.
-    if (e.code === 'KeyD' || e.code === 'ArrowRight') surfLaneQueue = -1;
-    if (e.code === 'KeyA' || e.code === 'ArrowLeft') surfLaneQueue = 1;
+    if (code === 'KeyD' || code === 'ArrowRight') surfLaneQueue = -1;
+    if (code === 'KeyA' || code === 'ArrowLeft') surfLaneQueue = 1;
   }
+  if (code === 'Space') jumpQueued = true;
+  if (code === 'KeyF') attackQueued = true;
+  if (code === 'KeyM') showMessage(toggleMute() ? 'Ses kapalı' : 'Ses açık', 1.5);
+  held.add(code);
+}
+window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyO' && !e.repeat && game.playing) {
     if (e.shiftKey) bossCheatQueued = true;
     else cheatQueued = true;
   }
-  if (e.code === 'Space') {
-    if (!e.repeat) jumpQueued = true;
-    e.preventDefault();
-  }
-  if (e.code === 'KeyF' && !e.repeat) attackQueued = true;
-  if (e.code === 'KeyM' && !e.repeat) showMessage(toggleMute() ? 'Ses kapalı' : 'Ses açık', 1.5);
-  if (e.code.startsWith('Arrow')) e.preventDefault();
-  held.add(e.code);
+  if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+  if (e.repeat) held.add(e.code);
+  else pressKey(e.code);
 });
 window.addEventListener('keyup', (e) => held.delete(e.code));
 window.addEventListener('blur', () => held.clear());
 
 const isMouseLocked = () => document.pointerLockElement === canvas;
-const lockMouse = () => {
-  canvas.requestPointerLock()?.catch((error) => console.warn('Fare kilidi alınamadı:', error.name, error.message));
+const grabControls = () => {
+  if (touchControls) touchPaused = false;
+  else canvas.requestPointerLock()?.catch((error) => console.warn('Fare kilidi alınamadı:', error.name, error.message));
 };
 
 // Until the lock has worked once, a refusal may mean this host never allows it, so the game runs
@@ -368,12 +370,12 @@ document.addEventListener('pointerlockchange', () => {
 document.addEventListener('pointerlockerror', () => {
   if (!hasHeldMouseLock) mouseLockRefused = true;
 });
-const mouseControlsGame = () => isMouseLocked() || mouseLockRefused;
+const mouseControlsGame = () => !touchControls && (isMouseLocked() || mouseLockRefused);
 
 canvas.addEventListener('mousedown', () => {
   startAudio();
   if (mouseControlsGame()) attackQueued = true;
-  if (!isMouseLocked() && game.playing && !game.levelDone) lockMouse();
+  if (!isMouseLocked() && game.playing && !game.levelDone) grabControls();
 });
 document.addEventListener('mousemove', (e) => {
   if (!mouseControlsGame()) return;
@@ -389,7 +391,7 @@ document.getElementById('start-button').addEventListener('click', () => {
   hud.start.classList.add('hidden');
   game.playing = true;
   startAudio();
-  lockMouse();
+  grabControls();
 });
 function startOver() {
   if (!confirm('Emin misin? Kayıtlı oyunun ve bitirdiğin bölümler silinecek, Ana Sayfa\'dan başlayacaksın.')) return;
@@ -399,7 +401,7 @@ function startOver() {
   hud.start.classList.add('hidden');
   hud.loading.classList.remove('hidden');
   startAudio();
-  lockMouse();
+  grabControls();
   setTimeout(() => {
     loadLevel(HOME_LEVEL);
     hud.loading.classList.add('hidden');
@@ -407,7 +409,7 @@ function startOver() {
   }, 50);
 }
 hud.homeButton.addEventListener('click', () => {
-  lockMouse();
+  grabControls();
   goToLevel(HOME_LEVEL);
 });
 for (const button of document.querySelectorAll('.start-over')) button.addEventListener('click', startOver);
@@ -415,7 +417,7 @@ window.addEventListener('pagehide', writeSave);
 document.getElementById('win-home-button').addEventListener('click', () => {
   hud.win.classList.add('hidden');
   hud.loading.classList.remove('hidden');
-  lockMouse();
+  grabControls();
   // Generating blocks the page, so give the browser a moment to show the loading panel first.
   setTimeout(() => {
     startCrossing(generateWorld(HOME_LEVEL));
@@ -773,7 +775,7 @@ function completeLevel() {
   playSound('win');
   if (!game.completed.includes(game.level)) game.completed.push(game.level);
   hud.win.classList.remove('hidden');
-  document.exitPointerLock();
+  document.exitPointerLock?.();
   writeSave();
 }
 
@@ -1102,8 +1104,9 @@ function frame(now) {
   statsFrames++;
   lastTime = now;
 
-  // Giving the mouse back with Esc also stops the game, so the birds wait.
-  const paused = game.playing && !game.levelDone && !crossing && !mouseControlsGame();
+  // Giving the mouse back with Esc also stops the game, so the birds wait. The pause button does the
+  // same for the on-screen controls.
+  const paused = game.playing && !game.levelDone && !crossing && (touchControls ? touchPaused : !mouseControlsGame());
   hud.paused.classList.toggle('visible', paused);
   setAudioPaused(paused);
   updateMusic();

@@ -34,6 +34,27 @@
   #paused .start-over { color: #ddd; pointer-events: auto; }
   #home-button { display: block; margin: 14px auto 0; font-size: 22px; padding: 10px 26px; pointer-events: auto; }
   #home-button[hidden] { display: none; }
+  #touch-controls { display: none; }
+  .touch-only { display: none; }
+  body.touch #touch-controls { display: block; }
+  body.touch .touch-only { display: block; }
+  body.touch .card table, body.touch #stats { display: none; }
+  body.touch #game { touch-action: none; }
+  body.touch #map { width: 120px; height: 120px; }
+  #touch-controls > * { position: fixed; display: flex; align-items: center; justify-content: center; border: 3px solid #fffc; border-radius: 50%; background: #0005; color: #fff; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; cursor: pointer; }
+  #touch-controls .pressed { background: #e8710acc; }
+  #touch-pad { left: 20px; bottom: 20px; width: 170px; height: 170px; }
+  #touch-pad span { position: absolute; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 30px; pointer-events: none; }
+  #touch-pad [data-arrow="KeyW"] { top: 2px; left: 54px; }
+  #touch-pad [data-arrow="KeyS"] { bottom: 2px; left: 54px; }
+  #touch-pad [data-arrow="KeyA"] { left: 2px; top: 54px; }
+  #touch-pad [data-arrow="KeyD"] { right: 2px; top: 54px; }
+  #touch-jump { right: 20px; bottom: 20px; width: 92px; height: 92px; font-size: 38px; }
+  #touch-attack { right: 124px; bottom: 28px; width: 78px; height: 78px; font-size: 34px; }
+  #touch-run { right: 44px; bottom: 124px; width: 68px; height: 68px; font-size: 30px; }
+  #touch-pause { left: 16px; top: 60px; width: 48px; height: 48px; font-size: 22px; }
+  #touch-mute { left: 74px; top: 60px; width: 48px; height: 48px; font-size: 22px; }
+  @media (max-width: 700px) { body.touch #boss-bar { bottom: 220px; } }
 </style>
 </head>
 <body>
@@ -41,6 +62,16 @@
 <div id="top"><span id="level"></span><span id="hearts"></span><span id="keys"></span><span id="rescued"></span><span id="flight"></span><span id="punch"></span></div>
 <canvas id="map" width="180" height="180"></canvas>
 <div id="message"></div>
+<div id="touch-controls">
+  <div id="touch-pad" role="group" aria-label="Yürü">
+    <span data-arrow="KeyW">▲</span><span data-arrow="KeyS">▼</span><span data-arrow="KeyA">◀</span><span data-arrow="KeyD">▶</span>
+  </div>
+  <div id="touch-jump" data-key="Space" role="button" aria-label="Zıpla">⬆️</div>
+  <div id="touch-attack" data-key="KeyF" role="button" aria-label="Vur">👊</div>
+  <div id="touch-run" data-key="KeyQ" role="button" aria-label="Hızlı koş">💨</div>
+  <div id="touch-pause" role="button" aria-label="Oyunu durdur">⏸️</div>
+  <div id="touch-mute" data-key="KeyM" role="button" aria-label="Sesi aç, kapat">🔊</div>
+</div>
 <div id="paused">
   Oyun durdu. Devam etmek için tıkla!
   <button id="home-button">🏠 Ana Sayfa</button>
@@ -63,6 +94,7 @@
       <tr><th>Esc</th><td>Oyunu durdur, fareyi geri al</td></tr>
       <tr><th>Haritada</th><td>🟡 anahtar · ⚫ kafes · ⚪ kanat · 🟠 sen</td></tr>
     </table>
+    <p class="touch-only">Soldaki oklarla yürü. ⬆️ zıplar, kanat bulduysan basılı tutunca uçar. 👊 vurur, 💨 hızlı koşturur. Parmağını ekranda kaydırarak etrafına bak.</p>
     <button id="start-button">Başla!</button>
     <button id="new-game-button" class="start-over" hidden>Baştan başla</button>
   </div>
@@ -94,6 +126,7 @@
 <script src="js/boss.js"></script>
 <script src="js/surf.js"></script>
 <script src="js/home.js"></script>
+<script src="js/touch.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>

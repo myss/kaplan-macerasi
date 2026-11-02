@@ -51,6 +51,9 @@ o tarayıcıya ve açılan adrese özeldir.
 - **M:** sesi aç, kapat
 - **O (hile):** en yakındaki anahtarı veya kanadı alır, anahtar varsa kafesi açar
 - **Shift+O (hile):** boss'u geçer
+- **Home:** ekran düğmelerini aç, kapat
+
+Fare olmayan cihazlarda ekran düğmeleri kendiliğinden görünür; farenin de olduğu cihazlarda ekrana ilk dokunuşta açılır. Soldaki oklar yürütür, sağdaki düğmeler zıplatır, vurur ve hızlı koşturur; parmağı ekranda kaydırmak kamerayı çevirir. ⏸️ oyunu durdurur.
 
 ## Kod
 
@@ -64,6 +67,7 @@ o tarayıcıya ve açılan adrese özeldir.
 - `js/surf.js`: sörf bölümü ve balina
 - `js/home.js`: Ana Sayfa köyü; girişler ve isim yazıları
 - `js/audio.js`: ses efektleri ve dünyaların müzikleri; hepsi kodla üretilir, ses dosyası yoktur
+- `js/touch.js`: fare olmadan oynamak için ekran düğmeleri
 - `js/game.js`: oyun kuralları, kontroller ve ekran
 - `js/utils.js`: küçük yardımcı fonksiyonlar
 - `vendor/three.min.js`: Three.js 0.187.0, çift tıkla çalışsın diye esbuild ile tek dosyada paketlenmiş hâli (`export * from 'three'`, `--bundle --minify --format=iife --global-name=THREE`)
