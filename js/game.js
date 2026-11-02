@@ -31,6 +31,8 @@ const MAX_CLIMB_SPEED = 6;
 const FLIGHT_START_SPEED = 2; // holding jump starts flying once the jump has slowed to this
 const MAX_FLIGHT_HEIGHT = 45;
 const BIRD_PATROL_SPEED = 5;
+const HARD_SPEED_FACTOR = 1.3;
+const BIRD_TOP_SPEED = 7.2; // just slower than the tiger, so running away always remains possible
 const SAVE_KEY = 'kaplan-macerasi-kayit';
 const SAVE_INTERVAL = 2; // seconds
 const ATTACK_DURATION = 0.35;
@@ -88,6 +90,7 @@ const hud = {
   bossBar: document.getElementById('boss-bar'),
   bossName: document.getElementById('boss-name'),
   bossFill: document.getElementById('boss-fill'),
+  homeButton: document.getElementById('home-button'),
   map: document.getElementById('map').getContext('2d'),
 };
 
@@ -102,7 +105,10 @@ const camera = { yaw: Math.PI, pitch: 0.42, distance: 8 };
 const game = {
   playing: false,
   levelDone: false,
-  level: 1,
+  level: HOME_LEVEL,
+  hard: false,
+  completed: [], // the levels finished at least once, which are harder from then on
+  leaving: false,
   hearts: MAX_HEARTS,
   keysHeld: 0,
   rescued: 0,
@@ -130,6 +136,10 @@ const particles = [];
 function loadLevel(level, generatedWorld = generateWorld(level)) {
   world = generatedWorld;
   renderer.loadWorld(world);
+  game.hard = game.completed.includes(level);
+  game.leaving = false;
+  if (!crossing) hud.mist.style.opacity = 0; // leaving in the middle of a boss's flash must not keep it
+  homeSigns = [];
 
   keys = world.keys.map((k) => ({ ...k, taken: false }));
   cages = world.cages.map((c) => ({ ...c, open: false }));
@@ -159,9 +169,8 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   followers.length = 0;
   particles.length = 0;
 
-  // Birds stay just slower than the tiger, so running away always remains possible.
-  const birdSpeedFactor = world.theme.birdSpeedFactor ?? 1;
-  game.birdSpeed = Math.min(5 + (level - 1) * 0.35, 7.2) * birdSpeedFactor;
+  const birdSpeedFactor = (world.theme.birdSpeedFactor ?? 1) * (game.hard ? HARD_SPEED_FACTOR : 1);
+  game.birdSpeed = Math.min((5 + (level - 1) * 0.35) * birdSpeedFactor, BIRD_TOP_SPEED);
   game.birdPatrolSpeed = BIRD_PATROL_SPEED * birdSpeedFactor;
   game.birdSeeRadius = Math.min(16 + (level - 1) * 1.5, 28);
   game.birdRestTime = Math.max(4 - (level - 1) * 0.3, 1.5);
@@ -187,18 +196,23 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
 
   mapBackground = buildMapBackground();
   updateHud();
-  showMessage(`${level}. Bölüm: ${world.theme.name}${world.theme.underwater ? '. Boşluk\'u basılı tut, yüz!' : ''}`, 3);
+  const hardNote = game.hard ? ' · Zor' : '';
+  const levelName = world.theme.home ? 'Bir kapıya gir!' : `${level}. Bölüm: ${world.theme.name}${hardNote}`;
+  showMessage(`${levelName}${world.theme.underwater ? '. Boşluk\'u basılı tut, yüz!' : ''}`, 3);
+  hud.homeButton.hidden = Boolean(world.theme.home);
+  if (world.theme.home) createHomeSigns();
   if (world.theme.surf) startSurf(Boolean(crossing));
 }
 
 // --- Saving ---
 
 // A level is rebuilt from its number, so only what the player changed needs storing. Birds start
-// over. A finished level saves as the start of the next one.
+// over. A finished level saves as being back home.
 function writeSave() {
   if (!game.playing) return;
-  const save = game.levelDone ? { level: game.level + 1 } : {
+  const save = game.levelDone ? { level: HOME_LEVEL, completed: game.completed } : {
     level: game.level,
+    completed: game.completed,
     hearts: game.hearts,
     keysHeld: game.keysHeld,
     takenKeys: keys.flatMap((key, i) => (key.taken ? [i] : [])),
@@ -221,7 +235,7 @@ function writeSave() {
 function readSave() {
   try {
     const save = JSON.parse(localStorage.getItem(SAVE_KEY));
-    return Number.isInteger(save?.level) && save.level >= 1 ? save : null;
+    return Number.isInteger(save?.level) && save.level >= HOME_LEVEL ? save : null;
   } catch {
     return null;
   }
@@ -266,16 +280,17 @@ function showMessage(text, seconds = 2.5) {
 }
 
 function updateHud() {
-  hud.level.textContent = `🌍 ${game.level}. Bölüm`;
+  hud.level.textContent = world.theme.home ? '🏠 Ana Sayfa' : `🌍 ${game.level}. Bölüm${game.hard ? ' · Zor' : ''}`;
   hud.hearts.textContent = '❤️'.repeat(game.hearts) + '🖤'.repeat(MAX_HEARTS - game.hearts);
-  hud.keys.textContent = world.theme.surf ? '' : `🔑 ${game.keysHeld}`;
-  hud.rescued.textContent = world.theme.surf ? '' : `🐊 ${game.rescued} / ${cages.length}`;
+  const hasNoCages = world.theme.surf || world.theme.home;
+  hud.keys.textContent = hasNoCages ? '' : `🔑 ${game.keysHeld}`;
+  hud.rescued.textContent = hasNoCages ? '' : `🐊 ${game.rescued} / ${cages.length}`;
   hud.punch.textContent = game.punchReady ? '⭐ Yumruk hazır!' : '';
   updateFlightHud();
 }
 
 function updateFlightHud() {
-  const hasNoWings = world.theme.underwater || world.theme.surf || world.theme.underground;
+  const hasNoWings = world.theme.underwater || world.theme.surf || world.theme.underground || world.theme.home;
   const text = hasNoWings ? '' : `🪶 ${Math.ceil(tiger.flightSeconds)} sn`;
   if (hud.flight.textContent !== text) hud.flight.textContent = text;
 }
@@ -359,27 +374,32 @@ document.getElementById('start-button').addEventListener('click', () => {
   lockMouse();
 });
 function startOver() {
-  if (!confirm('Emin misin? Kayıtlı oyunun silinecek ve 1. bölümden başlayacaksın.')) return;
+  if (!confirm('Emin misin? Kayıtlı oyunun ve bitirdiğin bölümler silinecek, Ana Sayfa\'dan başlayacaksın.')) return;
   game.playing = false; // or a save in the meantime would bring the old game back
   clearSave();
+  game.completed = [];
   hud.start.classList.add('hidden');
   hud.loading.classList.remove('hidden');
   lockMouse();
   setTimeout(() => {
-    loadLevel(1);
+    loadLevel(HOME_LEVEL);
     hud.loading.classList.add('hidden');
     game.playing = true;
   }, 50);
 }
+hud.homeButton.addEventListener('click', () => {
+  lockMouse();
+  goToLevel(HOME_LEVEL);
+});
 for (const button of document.querySelectorAll('.start-over')) button.addEventListener('click', startOver);
 window.addEventListener('pagehide', writeSave);
-document.getElementById('next-button').addEventListener('click', () => {
+document.getElementById('win-home-button').addEventListener('click', () => {
   hud.win.classList.add('hidden');
   hud.loading.classList.remove('hidden');
   lockMouse();
   // Generating blocks the page, so give the browser a moment to show the loading panel first.
   setTimeout(() => {
-    startCrossing(generateWorld(game.level + 1));
+    startCrossing(generateWorld(HOME_LEVEL));
     hud.loading.classList.add('hidden');
   }, 50);
 });
@@ -482,7 +502,7 @@ function updateTiger(dt) {
   }
   attackQueued = false;
 
-  const inNoWingsZone = Math.hypot(tiger.x - world.bonus.x, tiger.z - world.bonus.z) < BONUS_NO_WINGS_RADIUS;
+  const inNoWingsZone = world.bonus && Math.hypot(tiger.x - world.bonus.x, tiger.z - world.bonus.z) < BONUS_NO_WINGS_RADIUS;
   const canRise = world.theme.underwater || tiger.flightSeconds > 0;
   if (inNoWingsZone && !tiger.inNoWingsZone && canRise && !game.bonusTaken) {
     showMessage(world.theme.underwater ? 'Burada yüzemezsin, zıplaman lazım!' : 'Burada kanatlar çalışmıyor!');
@@ -722,6 +742,7 @@ function openCage(cage) {
 
 function completeLevel() {
   game.levelDone = true;
+  if (!game.completed.includes(game.level)) game.completed.push(game.level);
   hud.win.classList.remove('hidden');
   document.exitPointerLock();
   writeSave();
@@ -742,6 +763,7 @@ function collectNearest() {
 
 function updateBonus(dt) {
   const { bonus } = world;
+  if (!bonus) return;
   const doorDistance = Math.hypot(tiger.x - bonus.x, tiger.y - bonus.doorY, tiger.z - bonus.doorZ);
   const doorTarget = doorDistance < BONUS_DOOR_OPEN_RADIUS ? 1 : 0;
   game.bonusDoorOpen += (doorTarget - game.bonusDoorOpen) * Math.min(1, dt * 5);
@@ -860,6 +882,7 @@ function buildFrameSpheres() {
   count = drawMonsters(count);
   count = drawBoss(count);
   count = drawSurf(count);
+  if (world.theme.home) count = drawHome(count);
   const addSphere = (x, y, z, radius, color) => {
     const at = count * FLOATS_PER_SPHERE;
     if (at + FLOATS_PER_SPHERE > frameSpheres.length) return;
@@ -1007,6 +1030,9 @@ function drawMap() {
     map.fill();
   };
   map.drawImage(mapBackground, 0, 0);
+  for (const entrance of world.entrances) {
+    dot(entrance.x, entrance.z, 4.5, game.completed.includes(entrance.level) ? '#2ecc40' : '#ff4136');
+  }
   for (const wing of wingPickups) {
     if (wing.taken) continue;
     dot(wing.x, wing.z, 4.5, '#333842'); // an outline, or white would vanish on the snow theme
@@ -1057,6 +1083,7 @@ function frame(now) {
       updateTiger(dt);
       updateObjectives(dt);
       updateBossFight(dt);
+      if (world.theme.home) updateHome();
     } else {
       camera.yaw += dt * (game.playing ? 0.3 : 0.15);
     }
@@ -1092,10 +1119,11 @@ function frame(now) {
 }
 
 const savedGame = readSave();
-loadLevel(savedGame ? savedGame.level : 1);
+game.completed = savedGame?.completed ?? [];
+loadLevel(savedGame ? savedGame.level : HOME_LEVEL);
 if (savedGame) {
   restoreSave(savedGame);
-  document.getElementById('start-button').textContent = `Devam et (${savedGame.level}. Bölüm)`;
+  document.getElementById('start-button').textContent = savedGame.level === HOME_LEVEL ? 'Devam et (Ana Sayfa)' : `Devam et (${savedGame.level}. Bölüm)`;
   document.getElementById('new-game-button').hidden = false;
 }
 requestAnimationFrame(frame);

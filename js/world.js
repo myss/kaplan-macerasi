@@ -20,6 +20,7 @@ const OBJECTIVE_SEPARATION = 22;
 const MAX_CAGES = 10;
 const MAX_WINGS = 12;
 const KEY_CLIMBS = ['tower', 'stairs', 'stones'];
+const HOME_LEVEL = 0;
 const SURF_WAVE_PERIOD = 40;
 const BONUS_PLATFORM_TOP = 100; // 25 m up
 const BONUS_SPIRAL_RADIUS = 20;
@@ -35,7 +36,7 @@ const BLOCK = {
   GEN_ACCENT_A: 27, GEN_ACCENT_B: 28, GEN_TRUNK: 29, GEN_CROWN: 30,
   HOUSE_WALL: 31, ROOF: 32, WOOD_FLOOR: 33, FURNITURE: 34, DECK: 35, HULL: 36, SAIL: 37, FLAG: 38,
   SEABED: 39, ABYSS: 40, KELP: 41, CORAL_PINK: 42, CORAL_ORANGE: 43, SHELL: 44, FOAM: 45,
-  EARTH: 46, TUNNEL_FLOOR: 47, GLOW: 48,
+  EARTH: 46, TUNNEL_FLOOR: 47, GLOW: 48, SCORPION: 49,
 };
 const BLOCK_COLORS = {
   [BLOCK.GRASS]: [0.36, 0.72, 0.28],
@@ -76,6 +77,7 @@ const BLOCK_COLORS = {
   [BLOCK.EARTH]: [0.36, 0.25, 0.16],
   [BLOCK.TUNNEL_FLOOR]: [0.62, 0.48, 0.3],
   [BLOCK.GLOW]: [1.5, 1.25, 0.5],
+  [BLOCK.SCORPION]: [0.72, 0.42, 0.14],
 };
 
 // The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
@@ -96,7 +98,7 @@ const WORLD_THEMES = [
     accents: [BLOCK.ICE, BLOCK.STONE], trunk: BLOCK.TRUNK, crown: BLOCK.PINE,
   },
   {
-    name: 'Volkan', sky: [0.42, 0.24, 0.2], hills: 32, plant: 'deadTree', crossing: 'fly', monster: 'lavaMonster',
+    name: 'Cehennem Köyü', sky: [0.42, 0.24, 0.2], hills: 32, plant: 'deadTree', crossing: 'fly', monster: 'lavaMonster',
     surface: BLOCK.ASH, soil: BLOCK.BASALT, peak: BLOCK.BASALT, shore: BLOCK.BASALT, liquid: BLOCK.LAVA, rock: BLOCK.BASALT,
     accents: [BLOCK.EMBER, BLOCK.EMBER], trunk: BLOCK.DEAD_WOOD, crown: BLOCK.DEAD_WOOD,
   },
@@ -129,6 +131,12 @@ const WORLD_THEMES = [
     accents: [BLOCK.EARTH, BLOCK.EARTH], trunk: BLOCK.DIRT,
   },
 ];
+
+const HOME_THEME = {
+  name: 'Ana Sayfa', sky: [0.56, 0.8, 0.96], hills: 10, mountains: 0, plant: 'leafyTree', crossing: 'swim', layout: 'homeVillage', noBirds: true, home: true,
+  surface: BLOCK.GRASS, soil: BLOCK.DIRT, peak: BLOCK.STONE, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
+  accents: [BLOCK.RED_FLOWER, BLOCK.YELLOW_FLOWER], trunk: BLOCK.TRUNK, crown: BLOCK.LEAF,
+};
 
 const PLANT_PLACE_NAMES = {
   leafyTree: 'Orman', cactus: 'Çöl', pine: 'Çam Tepeleri', deadTree: 'Bozkır',
@@ -172,6 +180,7 @@ function generateTheme(level) {
 }
 
 function themeForLevel(level) {
+  if (level === HOME_LEVEL) return HOME_THEME;
   return level <= WORLD_THEMES.length ? WORLD_THEMES[level - 1] : generateTheme(level);
 }
 
@@ -524,7 +533,7 @@ function generateWorld(level) {
       stoneTop,
     };
   };
-  const bonus = theme.surf ? null : placeBonus();
+  const bonus = theme.surf || theme.home ? null : placeBonus();
 
   // Their own random sequence, so that adding them leaves the rest of each level unchanged.
   const wingRandom = seededRandom(20261101 + level * 7919 + 1);
@@ -622,6 +631,7 @@ function generateWorld(level) {
     wings,
     bonus,
     mapShapes: builtLayout ? builtLayout.mapShapes : [],
+    entrances: builtLayout?.entrances ?? [],
     terrain,
     terrainTop,
     isSolid,

@@ -166,7 +166,182 @@ function buildTunnels(api) {
   return out;
 }
 
+// The home village: every world has its own way in, all facing the middle of the village, where the
+// tiger starts. Doors face -z. An entrance takes the tiger once it is within `radius` of its middle
+// and lower than `maxY`, which for the pits means having dropped in.
+const HOME_ENTRANCES = [
+  { level: 1, build: 'treeHollow', x: -24, z: 16 },
+  { level: 2, build: 'giantScorpion', x: 0, z: 16 },
+  { level: 3, build: 'iceCave', x: 24, z: 16 },
+  { level: 4, build: 'volcano', x: -24, z: 38 },
+  { level: 5, build: 'tinyHouse', x: 0, z: 38 },
+  { level: 6, build: 'shoreBoat', x: 30, z: 38, onShore: true }, // moored at the first water east of x
+  { level: 7, build: 'waterWell', x: -24, z: 60 },
+  { level: 8, build: 'surfCave', x: 0, z: 60 },
+  { level: 9, build: 'moleHole', x: 24, z: 60 },
+];
+
+function buildHomeVillage(api) {
+  const { box, stampBlob, toVoxel, floorY, terrainAt, EMPTY } = api;
+
+  // The upper half of a ball: unlike a whole ball, carving it out leaves the ground in place.
+  const dome = (cx, floor, cz, radius, block) => {
+    for (let y = 0; y <= radius; y++) {
+      for (let z = -radius; z <= radius; z++) {
+        for (let x = -radius; x <= radius; x++) {
+          if (x * x + y * y + z * z <= radius * radius) box(cx + x, floor + 1 + y, cz + z, cx + x, floor + 1 + y, cz + z, block);
+        }
+      }
+    }
+  };
+  const disc = (cx, y, cz, radius, block) => {
+    for (let z = -radius; z <= radius; z++) {
+      for (let x = -radius; x <= radius; x++) {
+        if (x * x + z * z <= radius * radius) box(cx + x, y, cz + z, cx + x, y, cz + z, block);
+      }
+    }
+  };
+  const cave = (cx, floor, cz, block) => {
+    dome(cx, floor, cz, 15, block);
+    dome(cx, floor, cz, 13, EMPTY);
+    box(cx - 4, floor + 1, cz - 16, cx + 4, floor + 10, cz - 11, EMPTY);
+  };
+
+  const BUILDERS = {
+    treeHollow(cx, floor, cz) {
+      for (let y = 1; y <= 34; y++) disc(cx, floor + y, cz, 11, BLOCK.TRUNK);
+      stampBlob(cx, floor + 46, cz, 24, 18, 24, BLOCK.LEAF);
+      for (let y = 1; y <= 12; y++) disc(cx, floor + y, cz, 8, EMPTY);
+      box(cx - 4, floor + 1, cz - 12, cx + 4, floor + 10, cz - 7, EMPTY);
+      return { radius: 1.8, portal: [0.2, 1, 0.45] };
+    },
+    // Facing the village with its mouth open, wide enough to walk into.
+    giantScorpion(cx, floor, cz) {
+      const shell = BLOCK.SCORPION, dark = BLOCK.RED_SAND;
+      stampBlob(cx, floor + 8, cz + 3, 15, 11, 21, shell);
+      stampBlob(cx, floor + 8, cz - 16, 11, 9, 8, shell);
+      stampBlob(cx, floor + 7, cz + 3, 12, 7, 17, EMPTY);
+      box(cx - 12, floor, cz - 14, cx + 12, floor, cz + 20, BLOCK.SAND);
+      box(cx - 5, floor + 1, cz - 26, cx + 5, floor + 10, cz - 8, EMPTY);
+      for (let x = -5; x <= 5; x += 2) {
+        box(cx + x, floor + 9, cz - 24, cx + x, floor + 10, cz - 24, BLOCK.SHELL);
+        if (Math.abs(x) > 2) box(cx + x, floor + 1, cz - 24, cx + x, floor + 2, cz - 24, BLOCK.SHELL);
+      }
+      for (const side of [-1, 1]) {
+        stampBlob(cx + side * 6, floor + 14, cz - 20, 3, 3, 3, BLOCK.SHELL);
+        stampBlob(cx + side * 6, floor + 14, cz - 23, 1, 1, 1, BLOCK.FLAG);
+        // A claw held out on each side of the mouth.
+        for (let i = 0; i <= 10; i++) stampBlob(cx + side * (12 + i * 0.6), floor + 5, cz - 8 - i * 1.5, 2, 2, 2, shell);
+        stampBlob(cx + side * 20, floor + 6, cz - 28, 5, 3, 7, dark);
+        stampBlob(cx + side * 17, floor + 6, cz - 34, 1, 2, 4, dark);
+        stampBlob(cx + side * 23, floor + 6, cz - 34, 1, 2, 4, dark);
+        for (const z of [-4, 6, 16]) {
+          for (let i = 0; i <= 8; i++) stampBlob(cx + side * (14 + i), floor + 7 - i, cz + z, 1, 1, 1, dark);
+        }
+      }
+      // The tail curls up over the back, ending in the sting.
+      for (let i = 0; i <= 22; i++) {
+        const t = i / 22;
+        const radius = Math.round(5 - t * 3);
+        stampBlob(cx, floor + 14 + Math.round(Math.sin(t * 2.6) * 22), cz + 25 - Math.round(t * t * 22) + Math.round(Math.sin(t * 2.6) * 10), radius, radius, radius, i % 3 === 0 ? dark : shell);
+      }
+      stampBlob(cx, floor + 24, cz - 2, 2, 4, 2, BLOCK.FLAG);
+      return { radius: 1.8, portal: [1.4, 0.8, 0.25] };
+    },
+    iceCave(cx, floor, cz) {
+      cave(cx, floor, cz, BLOCK.ICE);
+      return { radius: 1.8, portal: [0.6, 1, 1.4] };
+    },
+    volcano(cx, floor, cz) {
+      for (let i = 0; i < 12; i++) disc(cx, floor + 1 + i, cz, 26 - Math.round(i * 1.5), i % 3 === 2 ? BLOCK.BASALT : BLOCK.ASH);
+      for (let y = 0; y <= 13; y++) disc(cx, floor + y, cz, 6, EMPTY);
+      disc(cx, floor - 1, cz, 6, BLOCK.LAVA);
+      return { radius: 1.3, portal: [1.5, 0.55, 0.1], maxY: floorY(floor) + 0.2, offsetY: -0.1 };
+    },
+    tinyHouse(cx, floor, cz) {
+      box(cx - 13, floor + 1, cz - 13, cx + 13, floor + 16, cz + 13, BLOCK.HOUSE_WALL);
+      box(cx - 11, floor + 1, cz - 11, cx + 11, floor + 15, cz + 11, EMPTY);
+      box(cx - 4, floor + 1, cz - 14, cx + 4, floor + 11, cz - 11, EMPTY);
+      box(cx - 12, floor, cz - 12, cx + 12, floor, cz + 12, BLOCK.WOOD_FLOOR);
+      for (let layer = 0; layer < 15; layer++) box(cx - 16 + layer, floor + 17 + layer, cz - 15, cx + 16 - layer, floor + 17 + layer, cz + 15, BLOCK.ROOF);
+      box(cx + 6, floor + 18, cz + 6, cx + 9, floor + 34, cz + 9, BLOCK.STONE);
+      return { radius: 1.8, portal: [1.3, 0.9, 0.5] };
+    },
+    // Afloat by the shore, with a gangway up from the beach. `cx` is where the land ends.
+    shoreBoat(cx, floor, cz) {
+      const DECK = WATER_LEVEL + 5;
+      const bowX = cx + 3, sternX = bowX + 44, middleX = bowX + 22;
+      for (let x = cx - 1; x < bowX; x++) {
+        for (let z = -4; z <= 4; z++) api.setColumn(x, cz + z, floor, BLOCK.WOOD_FLOOR, BLOCK.HULL);
+      }
+      for (let x = bowX; x <= sternX; x++) {
+        const halfWidth = Math.round(11 * Math.sqrt(Math.max(0, 1 - ((x - middleX) / 25) ** 2)));
+        for (let z = -halfWidth; z <= halfWidth; z++) {
+          api.setColumn(x, cz + z, DECK, BLOCK.DECK, BLOCK.HULL);
+          if (Math.abs(z) >= halfWidth - 1) box(x, DECK + 1, cz + z, x, DECK + 2, cz + z, BLOCK.HULL);
+        }
+      }
+      // A gap in the rail at the bow, where the gangway comes up in steps low enough to walk.
+      box(bowX, DECK + 1, cz - 4, bowX + 4, DECK + 2, cz + 4, EMPTY);
+      const steps = Math.ceil((DECK - floor) / 2);
+      for (let step = 0; step < steps; step++) {
+        const x = cx - 2 + step * 2;
+        box(x, floor + 1, cz - 4, x + 1, floor + (step + 1) * 2, cz + 4, BLOCK.WOOD_FLOOR);
+      }
+      box(middleX + 8, DECK + 1, cz - 1, middleX + 10, DECK + 40, cz + 1, BLOCK.HULL);
+      box(middleX + 10, DECK + 14, cz - 9, middleX + 10, DECK + 30, cz + 9, BLOCK.SAIL);
+      box(middleX + 4, DECK + 34, cz, middleX + 8, DECK + 40, cz, BLOCK.FLAG);
+      return { radius: 1.8, portal: [0.2, 0.6, 1.3], portalVx: middleX, floorAt: DECK };
+    },
+    waterWell(cx, floor, cz) {
+      for (let y = 1; y <= 4; y++) {
+        disc(cx, floor + y, cz, 9, BLOCK.STONE);
+        disc(cx, floor + y, cz, 6, EMPTY);
+      }
+      for (let y = 0; y >= -6; y--) disc(cx, floor + y, cz, 6, y === 0 ? BLOCK.WATER : EMPTY);
+      return { radius: 1.4, portal: [0.2, 0.75, 1.4], maxY: floorY(floor) - 0.2, offsetY: -0.9 };
+    },
+    surfCave(cx, floor, cz) {
+      box(cx - 9, floor + 1, cz - 20, cx + 9, floor + 13, cz + 20, BLOCK.ROCK);
+      box(cx - 6, floor + 1, cz - 21, cx + 6, floor + 11, cz + 17, EMPTY);
+      box(cx - 6, floor, cz + 3, cx + 6, floor, cz + 17, BLOCK.WATER);
+      box(cx - 6, floor - 1, cz + 3, cx + 6, floor - 1, cz + 17, BLOCK.FLAG);
+      return { radius: 1.8, portal: [0.45, 0.9, 1.3], portalAt: 2.5 };
+    },
+    moleHole(cx, floor, cz) {
+      for (let y = 1; y <= 3; y++) disc(cx, floor + y, cz, 12 - y, BLOCK.DIRT);
+      for (let y = 3; y >= -7; y--) disc(cx, floor + y, cz, 6, EMPTY);
+      disc(cx, floor - 8, cz, 6, BLOCK.FLAG);
+      return { radius: 1.4, portal: [0.75, 0.5, 0.25], maxY: floorY(floor) - 0.5, offsetY: -1.2 };
+    },
+  };
+
+  const out = { cages: [], keys: [], wings: [], mapShapes: [], entrances: [] };
+  for (const { level, build, x, z, onShore } of HOME_ENTRANCES) {
+    let vx = toVoxel(x);
+    const vz = toVoxel(z);
+    if (onShore) {
+      while (terrainAt(vx, vz) >= WATER_LEVEL) vx++;
+    }
+    const floor = terrainAt(onShore ? vx - 1 : vx, vz);
+    const { radius, portal, maxY = Infinity, offsetY = 0.9, portalAt = 0, portalVx = vx, floorAt = floor } = BUILDERS[build](vx, floor, vz);
+    const signX = onShore ? api.toMetres(vx - 6) : x + 6;
+    out.entrances.push({
+      level, build, x: api.toMetres(portalVx), z: z + portalAt, y: floorY(floorAt) + offsetY, radius, portal, maxY,
+      signX, signZ: onShore ? z - 4 : z - 8.5,
+    });
+  }
+  return out;
+}
+
 const LAYOUTS = {
+  homeVillage: {
+    pads: HOME_ENTRANCES.filter(({ onShore }) => !onShore).map(({ x, z }) => ({ x, z, inner: 7, outer: 10 })),
+    outsidePairs: 0,
+    randomWings: 0,
+    build: buildHomeVillage,
+  },
+
   tunnels: {
     pads: [],
     outsidePairs: 0,

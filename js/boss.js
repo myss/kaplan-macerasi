@@ -9,6 +9,7 @@
 //   slam  - jumps and lands on its belly, sending a low ring outwards; jump over it
 
 const BOSS_LIVES = 3;
+const BOSS_HARD_LIVES = 5;
 const BOSS_ARENA = { x: 0, z: -13 };
 const BOSS_RECOVERY_SECONDS = 0.6;
 const BOSS_LOW_REACH = 0.9; // a sweep or ring passes under a tiger whose feet are higher than this
@@ -87,10 +88,13 @@ function startBossFight() {
   hud.mist.style.opacity = 1;
 
   const kind = world.theme.boss ?? world.theme.monster;
-  boss = { kind, ...BOSS_KINDS[kind], lives: BOSS_LIVES, mistFade: 1 };
+  const maxLives = game.hard ? BOSS_HARD_LIVES : BOSS_LIVES;
+  const { speed, lungeSpeed } = BOSS_KINDS[kind];
+  const hardness = game.hard ? HARD_SPEED_FACTOR : 1;
+  boss = { kind, ...BOSS_KINDS[kind], speed: speed * hardness, lungeSpeed: lungeSpeed * hardness, maxLives, lives: maxLives, mistFade: 1 };
   placeBoss();
   updateBossHud();
-  showMessage(`${boss.name} geldi! ${BOSS_LIVES} kez vur!`, 3.5);
+  showMessage(`${boss.name} geldi! ${maxLives} kez vur!`, 3.5);
 }
 
 function placeBoss() {
@@ -106,7 +110,7 @@ function updateBossHud() {
   hud.bossBar.classList.toggle('hidden', !boss);
   if (!boss) return;
   hud.bossName.textContent = `${boss.name}: ${boss.lives}`;
-  hud.bossFill.style.width = `${(boss.lives / BOSS_LIVES) * 100}%`;
+  hud.bossFill.style.width = `${(boss.lives / boss.maxLives) * 100}%`;
 }
 
 function endBossFight() {
@@ -116,7 +120,7 @@ function endBossFight() {
 
 // The tiger lost all its lives, so this boss goes back to the start too.
 function restartBossFight() {
-  boss.lives = BOSS_LIVES;
+  boss.lives = boss.maxLives;
   placeBoss();
   fireballs.length = 0;
   camera.yaw = 0;

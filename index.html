@@ -32,6 +32,8 @@
   .start-over:hover { background: none; }
   .start-over[hidden] { display: none; }
   #paused .start-over { color: #ddd; pointer-events: auto; }
+  #home-button { display: block; margin: 14px auto 0; font-size: 22px; padding: 10px 26px; pointer-events: auto; }
+  #home-button[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -41,9 +43,9 @@
 <div id="message"></div>
 <div id="paused">
   Oyun durdu. Devam etmek için tıkla!
+  <button id="home-button">🏠 Ana Sayfa</button>
   <button class="start-over">Baştan başla</button>
-</div>
-<div id="boss-bar" class="hidden"><div id="boss-name"></div><div id="boss-track"><div id="boss-fill"></div></div></div>
+</div><div id="boss-bar" class="hidden"><div id="boss-name"></div><div id="boss-track"><div id="boss-fill"></div></div></div>
 <div id="mist"></div>
 <div id="stats"></div>
 
@@ -68,7 +70,7 @@
   <div class="card">
     <h1>Bölüm bitti! 🎉</h1>
     <p>Bütün timsahları kurtardın. Aferin kaplan! Ama başka dünyalarda da timsahlar var...</p>
-    <button id="next-button">Sonraki bölüm</button>
+    <button id="win-home-button">🏠 Ana Sayfa</button>
   </div>
 </div>
 
@@ -88,6 +90,7 @@
 <script src="js/monsters.js"></script>
 <script src="js/boss.js"></script>
 <script src="js/surf.js"></script>
+<script src="js/home.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>

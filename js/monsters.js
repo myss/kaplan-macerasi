@@ -44,6 +44,7 @@ function createMonsters(homes) {
       if (Number.isFinite(y) && isFarFromStart && !isBlocked(x, y, z)) {
         created.push({
           kind, ...MONSTER_KINDS[kind],
+          speed: MONSTER_KINDS[kind].speed * (game.hard ? HARD_SPEED_FACTOR : 1),
           x, y, z, homeX: x, homeY: y, homeZ: z, yaw: a, stride: 0,
           state: 'wander', timer: 0, cooldown: 1 + random() * 3, fireCooldown: 1 + random() * FIRE_THROW_SECONDS,
           turnIn: 0, maxHits: 1, hitsLeft: 1, recovery: 0,

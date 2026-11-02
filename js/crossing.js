@@ -153,8 +153,8 @@ function updateCrossing(dt) {
       if (world.theme.surf) {
         finishCrossing(); // no shore to reach: it rides off at once
         placeSurfTiger();
-      } else if (world.theme.underground) {
-        finishCrossing(); // nor underground, where it starts in the middle room
+      } else if (world.theme.underground || world.theme.home) {
+        finishCrossing(); // both start in their middle, not at the shore
         tiger.x = SPAWN.x;
         tiger.z = SPAWN.z;
         tiger.y = world.terrainTop(SPAWN.x, SPAWN.z);

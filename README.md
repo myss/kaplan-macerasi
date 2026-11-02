@@ -26,6 +26,12 @@ atar), fare kuyruğuyla döner ve ısırır, lav canavarı dev ateş topu atar v
 Dönen kök ve kuyruk yakalayıp fırlatır; üstünden zıplanarak kurtulunur. Bölüm ilerledikçe kafes ve kuş sayısı artar, kuşlar hızlanır. Anahtarlar basamaklı kulelerin, spiral
 merdivenlerin ve uçan taşların tepesindedir; dağlara zıplayarak çıkılır. Küreler kırılmaz.
 
+Oyun Ana Sayfa köyünde başlar. Her dünyanın yanında adı yazan bir tabela ve kendi girişi vardır: ağaç kovuğu
+(Orman), dev akrebin ağzı (Çöl), buz mağarası (Kar), minik volkan (Cehennem Köyü), minik ev (Dev Ev), kıyıdaki
+küçük gemi (Korsan Gemisi), su
+dolu kuyu (Deniz Altı), sonu su olan mağara (Sörf) ve köstebek deliği (Yer Altı). Bitirilen dünyaya
+yeniden girince zor seviyesi oynanır. Bölüm bitince kaplan Ana Sayfa'ya döner; Esc menüsünden de dönülür.
+
 ## Oynamak
 
 `index.html` dosyasına çift tıklayın. Kurulum gerekmez, tarayıcının WebGL2 desteklemesi yeterlidir.
@@ -53,6 +59,7 @@ o tarayıcıya ve açılan adrese özeldir.
 - `js/monsters.js`: her dünyanın yürüyen canavarları ve ateş topları
 - `js/boss.js`: bölüm sonu boss'ları ve hamleleri
 - `js/surf.js`: sörf bölümü ve balina
+- `js/home.js`: Ana Sayfa köyü; girişler ve isim yazıları
 - `js/game.js`: oyun kuralları, kontroller ve ekran
 - `js/utils.js`: küçük yardımcı fonksiyonlar
 - `vendor/three.min.js`: Three.js 0.187.0, çift tıkla çalışsın diye esbuild ile tek dosyada paketlenmiş hâli (`export * from 'three'`, `--bundle --minify --format=iife --global-name=THREE`)
