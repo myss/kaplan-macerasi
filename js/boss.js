@@ -101,6 +101,7 @@ function startBossFight() {
   boss = { kind, ...BOSS_KINDS[kind], speed: speed * game.speedFactor, lungeSpeed: lungeSpeed * game.speedFactor, maxLives, lives: maxLives, mistFade: 1 };
   placeBoss();
   updateBossHud();
+  playSound('bossArrive');
   showMessage(`${boss.name} geldi! ${maxLives} kez vur!`, 3.5);
 }
 
@@ -147,6 +148,7 @@ function hitBoss() {
   boss.recovery = BOSS_RECOVERY_SECONDS;
   boss.lives--;
   burst(boss.x, boss.y + boss.scale, boss.z, [1, 0.85, 0.3], 20);
+  playSound('bossHit');
   updateBossHud();
   if (boss.lives <= 0) defeatBoss();
 }
@@ -175,6 +177,7 @@ function turnBossToTiger(dt) {
 
 function throwBossBalls() {
   const { ball } = boss;
+  playSound('fire');
   const y = boss.y + boss.scale * 1.4;
   const ahead = Math.atan2(tiger.x - boss.x, tiger.z - boss.z);
   const flat = Math.hypot(tiger.x - boss.x, tiger.z - boss.z) || 1;
@@ -194,6 +197,7 @@ function startBossMove() {
   boss.move = boss.moves[boss.nextMove++ % boss.moves.length];
   boss.state = 'telegraph';
   boss.timer = BOSS_TELEGRAPH_SECONDS[boss.move];
+  playSound('warn');
   if (boss.move === 'sting') boss.mark = { x: tiger.x, z: tiger.z };
   if (boss.move === 'spin' || boss.move === 'slam') showMessage('Zıpla!', 1.5);
 }

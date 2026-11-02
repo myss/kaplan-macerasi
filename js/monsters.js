@@ -57,6 +57,7 @@ function createMonsters(homes) {
 }
 
 function throwFireball(monster) {
+  playSound('fire');
   const y = monster.y + 1.7 * monster.scale;
   const toX = tiger.x - monster.x, toY = tiger.y + 0.9 - y, toZ = tiger.z - monster.z;
   const length = Math.hypot(toX, toY, toZ) || 1;
@@ -160,11 +161,13 @@ function updateFireballs(dt) {
     if (!isOut && tiger.attackTime > 0 && distance < ATTACK_RADIUS) {
       isOut = true;
       burst(ball.x, ball.y, ball.z, ball.burst ?? [0.85, 0.85, 0.88], 20);
+      playSound('putOut');
     } else if (!isOut && distance < (ball.hitRadius ?? FIREBALL_HIT_RADIUS) && !crossing && !game.levelDone) {
       isOut = true;
       if (ball.sticky) {
         // Honey does not hurt: the tiger eats it, and is left sticky and slow.
         tiger.stuckTime = HONEY_STUCK_SECONDS;
+        playSound('honey');
         showMessage('Mmm, bal! Ama yapış yapış oldun, yavaşladın!', 2.5);
       } else if (tiger.invulnerable <= 0) {
         hurtTiger(ball.x, ball.z);

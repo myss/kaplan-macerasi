@@ -87,6 +87,7 @@ function startWhale() {
   surf.obstacles = [];
   surf.dolphins = [];
   surf.whale = { timeLeft: WHALE_ESCAPE_SECONDS, shadowX: tiger.x + 6, inShadow: 0, blast: 0 };
+  playSound('bossArrive');
   showMessage('Altından dev bir gölge geliyor! Gölgede kalma!', 4);
 }
 
@@ -101,6 +102,7 @@ function hurtSurfer(message) {
   if (tiger.invulnerable > 0) return;
   tiger.invulnerable = 2;
   game.hearts--;
+  playSound('hurt');
   if (game.hearts > 0) {
     showMessage(message, 2);
   } else {
@@ -136,6 +138,7 @@ function updateSurfDolphins(dt, speed) {
     if (tiger.attackTime > 0 && Math.abs(dolphin.ahead) < ATTACK_RADIUS && Math.abs(tiger.x - x) < ATTACK_RADIUS) {
       dolphin.gone = true;
       burst(x, SURF_SEA_Y + dolphinHeight, tiger.z + dolphin.ahead, [0.45, 0.62, 0.78], 30);
+      playSound('enemyDown');
     } else if (isAlongside && surf.height < dolphinHeight + 1.2) {
       dolphin.gone = true;
       hurtSurfer('Ah! Yunus seni düşürüyordu!');
@@ -207,7 +210,10 @@ function updateSurf(dt) {
   const toLane = SURF_LANES[surf.lane] - tiger.x;
   tiger.x += Math.sign(toLane) * Math.min(Math.abs(toLane), SURF_LANE_SPEED * dt);
 
-  if (jumpQueued && surf.height === 0) surf.vy = JUMP_SPEED;
+  if (jumpQueued && surf.height === 0) {
+    surf.vy = JUMP_SPEED;
+    playSound('jump');
+  }
   jumpQueued = false;
   surf.vy -= GRAVITY * dt;
   surf.height = Math.max(0, surf.height + surf.vy * dt);

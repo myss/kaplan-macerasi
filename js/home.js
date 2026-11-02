@@ -125,6 +125,7 @@ function createHomeSigns() {
 // Generating blocks the page, so the browser first gets a moment to show the loading panel.
 function goToLevel(level) {
   game.leaving = true;
+  playSound('portal');
   hud.loading.classList.remove('hidden');
   hud.win.classList.add('hidden');
   setTimeout(() => {

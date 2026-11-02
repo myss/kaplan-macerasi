@@ -341,6 +341,7 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
   }
   if (e.code === 'KeyF' && !e.repeat) attackQueued = true;
+  if (e.code === 'KeyM' && !e.repeat) showMessage(toggleMute() ? 'Ses kapalı' : 'Ses açık', 1.5);
   if (e.code.startsWith('Arrow')) e.preventDefault();
   held.add(e.code);
 });
@@ -384,6 +385,7 @@ canvas.addEventListener('wheel', (e) => {
 document.getElementById('start-button').addEventListener('click', () => {
   hud.start.classList.add('hidden');
   game.playing = true;
+  startAudio();
   lockMouse();
 });
 function startOver() {
@@ -393,6 +395,7 @@ function startOver() {
   game.completed = [];
   hud.start.classList.add('hidden');
   hud.loading.classList.remove('hidden');
+  startAudio();
   lockMouse();
   setTimeout(() => {
     loadLevel(HOME_LEVEL);
@@ -501,6 +504,7 @@ function updateTiger(dt) {
     tiger.vy = JUMP_SPEED;
     tiger.grounded = false;
     tiger.airTime = 1;
+    playSound('jump');
   }
   jumpQueued = false;
 
@@ -512,6 +516,7 @@ function updateTiger(dt) {
   } else if (attackQueued && tiger.attackCooldown <= 0) {
     tiger.attackTime = ATTACK_DURATION;
     tiger.attackCooldown = ATTACK_COOLDOWN;
+    playSound('swing');
   }
   attackQueued = false;
 
@@ -560,6 +565,7 @@ function updateTiger(dt) {
 
 function hurtTiger(fromX, fromZ, message = 'Ah! Yaklaşınca F tuşuyla ya da tıklayarak vur!') {
   game.hearts--;
+  playSound('hurt');
   tiger.invulnerable = 2;
   tiger.vy = 6;
   tiger.grounded = false;
@@ -593,6 +599,7 @@ function defeatEnemy(enemy) {
   burst(enemy.x, enemy.y, enemy.z, enemy.color, 40);
   enemy.state = 'gone';
   enemy.timer = BIRD_RESPAWN_TIME;
+  playSound('enemyDown');
 }
 
 function hitEnemy(enemy) {
@@ -601,6 +608,7 @@ function hitEnemy(enemy) {
   enemy.hitsLeft--;
   if (enemy.hitsLeft > 0) {
     burst(enemy.x, enemy.y, enemy.z, [0.05, 0.05, 0.06], 15);
+    playSound('enemyHit');
     showMessage('Kaptan çok sağlam! Bir kez daha vur!', 2);
   } else {
     defeatEnemy(enemy);
@@ -624,6 +632,7 @@ function groundPunch() {
   }
   removeAllBirds();
   burst(tiger.x, tiger.y + 0.2, tiger.z, [1, 0.8, 0.2], 60);
+  playSound('groundPunch');
   showMessage('GÜM! Bütün kuşlar yok oldu!', 3);
   updateHud();
   writeSave();
@@ -728,6 +737,7 @@ function collectWing(wing) {
   wing.taken = true;
   tiger.flightSeconds += SECONDS_PER_WING;
   burst(wing.x, wing.y, wing.z, [1, 1, 1], 30);
+  playSound('wing');
   showMessage('Kanat buldun! Zıpla ve Boşluk tuşunu basılı tut, uç!', 3.5);
   updateHud();
 }
@@ -736,6 +746,7 @@ function collectKey(key) {
   key.taken = true;
   game.keysHeld++;
   burst(key.x, key.y, key.z, [1, 0.8, 0.12], 25);
+  playSound('key');
   showMessage('Anahtarı buldun! Şimdi bir kafese git.');
   updateHud();
 }
@@ -746,6 +757,7 @@ function openCage(cage) {
   cage.open = true;
   burst(cage.x, cage.y + 1.5, cage.z, [0.32, 0.33, 0.38], 60);
   burst(cage.x, cage.y + 1.5, cage.z, [0.28, 0.58, 0.24], 30);
+  playSound('cage');
   followers.push({ x: cage.x, z: cage.z, yaw: 0, stride: 0 });
   updateHud();
   if (game.rescued === cages.length) startBossFight();
@@ -754,6 +766,7 @@ function openCage(cage) {
 
 function completeLevel() {
   game.levelDone = true;
+  playSound('win');
   if (!game.completed.includes(game.level)) game.completed.push(game.level);
   hud.win.classList.remove('hidden');
   document.exitPointerLock();
@@ -783,6 +796,7 @@ function updateBonus(dt) {
   if (!game.bonusTaken && Math.hypot(tiger.x - bonus.x, tiger.y + 0.8 - bonus.y, tiger.z - bonus.z) < BONUS_PICKUP_RADIUS) {
     game.bonusTaken = true;
     game.punchReady = true;
+    playSound('bonus');
     burst(bonus.x, bonus.y, bonus.z, [1, 0.8, 0.2], 50);
     showMessage('BONUS! Vurma tuşuna bas, yere yumruk at!', 4);
     updateHud();
@@ -1087,6 +1101,8 @@ function frame(now) {
   // Giving the mouse back with Esc also stops the game, so the birds wait.
   const paused = game.playing && !game.levelDone && !crossing && !mouseControlsGame();
   hud.paused.classList.toggle('visible', paused);
+  setAudioPaused(paused);
+  updateMusic();
   if (!paused) {
     game.time += dt;
     if (crossing) {

@@ -45,6 +45,7 @@ o tarayıcıya ve açılan adrese özeldir.
 - **Fareyi oynat:** kamerayı çevir
 - **Esc:** oyunu durdur, fareyi geri al; devam etmek için tıkla, baştan başlamak için düğmeye bas
 - **Fare tekerleği:** yakınlaş, uzaklaş
+- **M:** sesi aç, kapat
 - **O (hile):** en yakındaki anahtarı veya kanadı alır, anahtar varsa kafesi açar
 - **Shift+O (hile):** boss'u geçer
 
@@ -59,6 +60,7 @@ o tarayıcıya ve açılan adrese özeldir.
 - `js/boss.js`: bölüm sonu boss'ları ve hamleleri
 - `js/surf.js`: sörf bölümü ve balina
 - `js/home.js`: Ana Sayfa köyü; girişler ve isim yazıları
+- `js/audio.js`: ses efektleri ve dünyaların müzikleri; hepsi kodla üretilir, ses dosyası yoktur
 - `js/game.js`: oyun kuralları, kontroller ve ekran
 - `js/utils.js`: küçük yardımcı fonksiyonlar
 - `vendor/three.min.js`: Three.js 0.187.0, çift tıkla çalışsın diye esbuild ile tek dosyada paketlenmiş hâli (`export * from 'three'`, `--bundle --minify --format=iife --global-name=THREE`)
