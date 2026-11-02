@@ -6,8 +6,8 @@ Kötü kuşlar timsahları kafeslere kilitledi. Kaplan anahtarları bulup kafesl
 kurtarır. Dokuz dünya vardır: Canlı Ağaçlar Ormanı, Akrepler Çölü, Kar Vadisi, Cehennem Köyü, Dev ev,
 Korsanlar gemisi, Deniz dibi zindanı (kaplan başlıkla dalar; kanat gerekmez, Boşluk'u basılı tutunca yüzer; yavaş denizanaları, köpekbalıkları ve dev kalamar
 vardır), Zorlu Sörf (bambaşka oynanır: kaplan üç şeritte kendiliğinden ilerler, kayalardan, şamandıralardan
-ve yunuslardan kaçar; sonunda balinanın gölgesinden kaçar, balinaya vurulamaz) ve Yer Dibi Şehri (haritada
-görünen tüneller, köstebekler, karıncalar ve dev solucan). Dev evin üst katına ve geminin gözcü yerine kanatla çıkılır; gemideki kaptan kuşa iki kez vurmak gerekir.
+ve yunuslardan kaçar; sonunda balinanın gölgesinden kaçar, balinaya vurulamaz) ve Yer Dibi Şehri (her girişte yolları değişen büyük bir labirent, harita yok;
+köstebekler, karıncalar ve dev solucan). Dev evin üst katına ve geminin gözcü yerine kanatla çıkılır; gemideki kaptan kuşa iki kez vurmak gerekir.
 Her bölümde haritada görünmeyen bir bonus vardır: yüksekteki minik kulübeye yalnızca taştan taşa
 zıplayarak çıkılır, çevresinde kanatlar çalışmaz. İçindeki altın topu alıp vurma tuşuna basınca
 kaplan yere yumruk atar ve bölüm bitene kadar bütün kuşlar yok olur; canavarlar kalır.

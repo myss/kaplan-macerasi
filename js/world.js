@@ -125,7 +125,7 @@ const WORLD_THEMES = [
     accents: [BLOCK.WATER, BLOCK.WATER],
   },
   {
-    name: 'Yer Dibi Şehri', sky: [0.06, 0.04, 0.03], fogDensity: 0.0009, hills: 0, crossing: 'dig', layout: 'tunnels', underground: true, noBirds: true,
+    name: 'Yer Dibi Şehri', sky: [0.06, 0.04, 0.03], fogDensity: 0.0009, hills: 0, crossing: 'dig', layout: 'tunnels', underground: true, noBirds: true, noMap: true,
     monsters: ['mole', 'ant'], boss: 'worm', walledBoss: true,
     surface: BLOCK.EARTH, soil: BLOCK.EARTH, deep: BLOCK.EARTH, peak: BLOCK.EARTH, shore: BLOCK.TUNNEL_FLOOR, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
     accents: [BLOCK.EARTH, BLOCK.EARTH], trunk: BLOCK.DIRT,
@@ -215,7 +215,9 @@ function polar(angleDegrees, radius) {
   return [Math.cos(a) * radius, Math.sin(a) * radius];
 }
 
-function generateWorld(level) {
+// Every world comes out the same each time except for its maze, which only tunnels use. A save keeps
+// `mazeSeed` so that a reload finds the same maze.
+function generateWorld(level, mazeSeed = Math.floor(Math.random() * 2 ** 31)) {
   const random = seededRandom(20261101 + level * 7919);
   const noise = makeNoise(random);
   const theme = themeForLevel(level);
@@ -464,7 +466,7 @@ function generateWorld(level) {
     toVoxel,
     toMetres: (voxel) => (voxel + 0.5 - WORLD_SIZE / 2) * VOXEL,
     floorY: (voxelY) => (voxelY + 1) * VOXEL,
-    level,
+    mazeSeed,
     // Hollows out a column of solid earth above a new floor.
     setFloor(vx, vz, floor, height) {
       terrain[vx + vz * WORLD_SIZE] = floor;
@@ -669,6 +671,7 @@ function generateWorld(level) {
 
   return {
     level,
+    mazeSeed,
     theme,
     blockColor,
     sphereData: sphereData.subarray(0, sphereCount * FLOATS_PER_SPHERE),

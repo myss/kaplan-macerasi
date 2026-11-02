@@ -205,6 +205,7 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   camera.yaw = Math.PI;
 
   mapBackground = buildMapBackground();
+  hud.map.canvas.hidden = Boolean(world.theme.noMap);
   updateHud();
   const hardNote = game.hard ? ' · Zor' : '';
   const levelTitle = level >= FIRST_SURPRISE_LEVEL ? `Sürpriz ${level - FIRST_SURPRISE_LEVEL + 1}` : `${level}. Bölüm`;
@@ -223,6 +224,7 @@ function writeSave() {
   if (!game.playing) return;
   const save = game.levelDone ? { level: HOME_LEVEL, completed: game.completed } : {
     level: game.level,
+    mazeSeed: world.mazeSeed,
     completed: game.completed,
     hearts: game.hearts,
     keysHeld: game.keysHeld,
@@ -1134,7 +1136,8 @@ function frame(now) {
 
 const savedGame = readSave();
 game.completed = savedGame?.completed ?? [];
-loadLevel(savedGame ? savedGame.level : HOME_LEVEL);
+const startLevel = savedGame ? savedGame.level : HOME_LEVEL;
+loadLevel(startLevel, generateWorld(startLevel, savedGame?.mazeSeed));
 if (savedGame) {
   restoreSave(savedGame);
   document.getElementById('start-button').textContent = savedGame.level === HOME_LEVEL ? 'Devam et (Ana Sayfa)' : `Devam et (${savedGame.level}. Bölüm)`;

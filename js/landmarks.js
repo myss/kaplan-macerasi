@@ -68,14 +68,13 @@ function placeBed(api, x, z, floor) {
   return floor + 6;
 }
 
-// A grid of rooms joined by tunnels. A random spanning tree connects all of them, so nothing can be
-// out of reach, and a few extra tunnels make loops. The map shows them, as they are lower than the
-// solid earth around them.
+// A grid of rooms joined by tunnels, different each time the world is opened. A random spanning tree
+// connects all of them, so nothing can be out of reach, and a few extra tunnels make loops.
 function buildTunnels(api) {
   const { toVoxel, toMetres, floorY, setFloor } = api;
   const FLOOR = WATER_LEVEL + 1;
-  const SPACING = 128, GRID = 5, MIDDLE = 2;
-  const random = seededRandom(20261101 + api.level * 7919 + 6);
+  const SPACING = 112, GRID = 7, MIDDLE = 3, EXTRA_TUNNELS = 12;
+  const random = seededRandom(api.mazeSeed);
   const nodeX = (i) => toVoxel(0) + (i - MIDDLE) * SPACING;
   const nodeZ = (j) => toVoxel(0) + (j - MIDDLE) * SPACING;
 
@@ -123,7 +122,7 @@ function buildTunnels(api) {
     join(i, j, ni, nj);
     stack.push([ni, nj]);
   }
-  for (let extra = 0; extra < 7; extra++) {
+  for (let extra = 0; extra < EXTRA_TUNNELS; extra++) {
     const i = Math.floor(random() * GRID), j = Math.floor(random() * GRID);
     const options = neighbours(i, j);
     const [ni, nj] = options[Math.floor(random() * options.length)];
