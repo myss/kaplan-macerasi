@@ -14,7 +14,6 @@ function hslColor(hue, saturation, lightness) {
 
 // Fixed seed: everyone gets the same world on every run.
 function seededRandom(seed) {
-  seed *= 10001;
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
