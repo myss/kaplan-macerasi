@@ -40,6 +40,7 @@ const touchLayer = document.getElementById('touch-controls');
 touchLayer.addEventListener('pointerdown', () => { touchPaused = false; });
 touchLayer.addEventListener('touchstart', keepTouchFromBrowser, { passive: false });
 
+const heldControls = [];
 for (const button of touchLayer.querySelectorAll('[data-key]')) {
   const release = () => {
     held.delete(button.dataset.key);
@@ -52,6 +53,8 @@ for (const button of touchLayer.querySelectorAll('[data-key]')) {
   });
   button.addEventListener('pointerup', release);
   button.addEventListener('pointercancel', release);
+  button.addEventListener('lostpointercapture', release);
+  heldControls.push({ element: button, release });
 }
 
 document.getElementById('touch-pause').addEventListener('pointerdown', (e) => {
@@ -92,6 +95,23 @@ pad.addEventListener('pointermove', (e) => {
 });
 pad.addEventListener('pointerup', () => holdPadKeys([]));
 pad.addEventListener('pointercancel', () => holdPadKeys([]));
+pad.addEventListener('lostpointercapture', () => holdPadKeys([]));
+heldControls.push({ element: pad, release: () => holdPadKeys([]) });
+
+// The screen's edge and the system's own gestures can swallow the end of a touch, so the list of
+// fingers still down decides as well: a control with no finger on it lets go.
+function releaseControlsWithoutFinger(e) {
+  for (const { element, release } of heldControls) {
+    if (![...e.touches].some((touch) => element.contains(touch.target))) release();
+  }
+}
+document.addEventListener('touchend', releaseControlsWithoutFinger);
+document.addEventListener('touchcancel', releaseControlsWithoutFinger);
+const releaseAllControls = () => {
+  for (const { release } of heldControls) release();
+};
+window.addEventListener('blur', releaseAllControls);
+document.addEventListener('visibilitychange', releaseAllControls);
 
 const lookSurface = document.getElementById('game');
 let lookPointer = null, lookX = 0, lookY = 0;
