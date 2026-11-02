@@ -41,6 +41,10 @@
   body.touch .card table, body.touch #stats { display: none; }
   body.touch #game { touch-action: none; }
   body.touch #map { width: 120px; height: 120px; }
+  body.touch #top { font-size: 18px; gap: 12px; }
+  body.touch #message { top: auto; bottom: 12px; width: max-content; max-width: calc(100vw - 440px); padding: 4px 12px; border-radius: 12px; font-size: 14px; }
+  body.touch #paused { padding: 10px 18px; font-size: 18px; }
+  body.touch #boss-bar { bottom: 74px; width: calc(100vw - 440px); font-size: 14px; }
   #touch-controls > * { position: fixed; display: flex; align-items: center; justify-content: center; border: 3px solid #fffc; border-radius: 50%; background: #0005; color: #fff; touch-action: none; cursor: pointer; }
   #touch-controls .pressed { background: #e8710acc; }
   #touch-pad { left: 20px; bottom: 20px; width: 170px; height: 170px; }
@@ -52,9 +56,9 @@
   #touch-jump { right: 20px; bottom: 20px; width: 92px; height: 92px; font-size: 38px; }
   #touch-attack { right: 124px; bottom: 28px; width: 78px; height: 78px; font-size: 34px; }
   #touch-run { right: 44px; bottom: 124px; width: 68px; height: 68px; font-size: 30px; }
-  #touch-pause { left: 16px; top: 60px; width: 48px; height: 48px; font-size: 22px; }
-  #touch-mute { left: 74px; top: 60px; width: 48px; height: 48px; font-size: 22px; }
-  @media (max-width: 700px) { body.touch #boss-bar { bottom: 220px; } }
+  #touch-pause { left: 16px; top: 46px; width: 44px; height: 44px; font-size: 20px; }
+  #touch-mute { left: 70px; top: 46px; width: 44px; height: 44px; font-size: 20px; }
+  @media (orientation: portrait) { body.touch #boss-bar { bottom: 250px; width: 80vw; } body.touch #message { bottom: 204px; max-width: 80vw; } }
 </style>
 </head>
 <body>
