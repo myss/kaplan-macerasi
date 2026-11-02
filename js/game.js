@@ -369,6 +369,7 @@ document.addEventListener('pointerlockerror', () => {
 const mouseControlsGame = () => isMouseLocked() || mouseLockRefused;
 
 canvas.addEventListener('mousedown', () => {
+  startAudio();
   if (mouseControlsGame()) attackQueued = true;
   if (!isMouseLocked() && game.playing && !game.levelDone) lockMouse();
 });
@@ -1156,5 +1157,11 @@ if (savedGame) {
   restoreSave(savedGame);
   document.getElementById('start-button').textContent = savedGame.level === HOME_LEVEL ? 'Devam et (Ana Sayfa)' : `Devam et (${savedGame.level}. Bölüm)`;
   document.getElementById('new-game-button').hidden = false;
+}
+// A finished level saves without a tiger, and leaves nothing to continue: straight to the village.
+// Mouse and sound still need a click from the browser's side, which the pause message asks for.
+if (savedGame && !savedGame.tiger) {
+  hud.start.classList.add('hidden');
+  game.playing = true;
 }
 requestAnimationFrame(frame);
