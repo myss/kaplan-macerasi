@@ -2,69 +2,71 @@
 
 **Türkçe** · [English](#english)
 
-Bu oyunu çocuklarım hayal etti, ben de onlara yardım ettim.
+Bu oyun çocuklarımın oyunu. Ben yalnızca ufak tefek yardım ettim.
 
-Her şeyi kürelerden yapılmış, üç boyutlu bir macera oyunu. Birlikte "vibe coding" yaptık: çocuklarım ne istediklerini anlattı, ben de bunu Claude Code'a aktardım, kodu Claude Opus 5.5 modeli yazdı. Dünyaların adlarını onlar koydu, neyin eğlenceli olduğuna onlar karar verdi. Yeni sürümleri onlar oynadı ve birçok hatayı onlar buldu. Bir canavarın tepesinde uçarken ona hasar vermek gibi.
+Oyunu "vibe coding" ile yaptık: Çocuklar ne istediklerini çoğu zaman Claude Code'a kendileri söyledi, kodu da Claude Opus 5.5 yazdı. Dünyalara adlarını onlar verdi, neyin eğlenceli olup neyin olmadığına onlar karar verdi. Her yeni hâlini oynayıp bozuk yerleri de çoğu zaman onlar yakaladı. Mesela canavarın çok üstünde uçarken bile ona hasar verilebildiğini onlar fark etti.
+
+Oyunda her şey kürelerden yapılmış: kaplan da, ağaçlar da, dağlar da.
 
 ## Hikâye
 
-Kötü kuşlar timsahları kafeslere kilitledi! Kaplan anahtarları bulur, kafesleri açar ve timsahları kurtarır. Bütün timsahlar kurtulunca o dünyanın dev canavarı gelir.
+Kötü kuşlar timsahları kafeslere kapatmış! Kaplan anahtarları bulup kafesleri açıyor, timsahları tek tek kurtarıyor. Hepsi kurtulunca da o dünyanın dev canavarı çıkıp geliyor.
 
 ## Dünyalar
 
-Oyun Ana Sayfa köyünde başlar. Her dünyanın kendi girişi vardır:
+Oyun, Ana Sayfa köyünde başlıyor. Her dünyaya köydeki kendi girişinden gidiliyor:
 
-- **Canlı Ağaçlar Ormanı:** yürüyen ağaçların kökleri kaplanı bir an tutar
-- **Akrepler Çölü:** akrepler yavaşlatan zehir atar
-- **Kar Vadisi:** kutup ayıları karınları üstünde kayar
-- **Cehennem Köyü:** lav canavarları ateş topu atar
-- **Dev ev:** fareler sürüyle gezer; üst kata kanatla çıkılır
-- **Korsanlar gemisi:** korsan ayılar yapıştıran bal atar; kaptan kuşa iki kez vurmak gerekir
-- **Deniz dibi zindanı:** köpekbalıklarının yalnızca yüzgeci görünür, yakına gelince fırlar
-- **Zorlu Sörf:** üç şeritte kayalardan ve yunuslardan kaçılır, sonunda dev balinadan kaçılır
-- **Yer Dibi Şehri:** her girişte yolları değişen, haritasız bir labirent; köstebekler ve zırhlı karıncalar yaşar
-- **Sürpriz Kapısı:** her seferinde yeni bir dünya üretir; her bitirişte oyun zorlaşır
+- **Canlı Ağaçlar Ormanı:** Ağaçlar yürüyor, yerden ilerleyen kökleri de kaplanı bir an yakalıyor.
+- **Akrepler Çölü:** Akreplerin attığı zehir kaplanı yavaşlatıyor.
+- **Kar Vadisi:** Kutup ayıları karınlarının üstünde kayarak saldırıyor.
+- **Cehennem Köyü:** Lav canavarları ateş topu atıyor.
+- **Dev ev:** Fareler sürüyle dolaşıyor. Üst kata ancak kanatla çıkılıyor.
+- **Korsanlar gemisi:** Korsan ayılar yapış yapış bal fırlatıyor. Kaptan kuş da iki vuruşta yeniliyor.
+- **Deniz dibi zindanı:** Köpekbalıklarının yalnızca yüzgeci görünüyor, yaklaşınca ısırmak için fırlıyorlar.
+- **Zorlu Sörf:** Üç şeritte kayalardan ve yunuslardan kaçtıktan sonra sıra dev balinadan kaçmaya geliyor.
+- **Yer Dibi Şehri:** Haritası olmayan, yolları her girişte değişen kocaman bir labirent. Köstebekler ve zırhlı karıncalar burada yaşıyor.
+- **Sürpriz Kapısı:** Her seferinde yepyeni bir dünyaya açılıyor. Her bitirişte oyun biraz daha zorlaşıyor.
 
-Her dünyada haritada görünmeyen gizli bir bonus da vardır: taştan taşa zıplayarak çıkılan minik bir kulübe.
+Her dünyada haritada görünmeyen bir de sürpriz var: Taştan taşa zıplayarak çıkılan minik bir kulübe.
 
-## Oynamak
+## Nasıl oynanır?
 
-`index.html` dosyasına çift tıklamak yeter. Kurulum gerekmez, tarayıcının WebGL2 desteklemesi yeterlidir. Oyundaki yazılar Türkçedir. Oyun kendini tarayıcıya kaydeder.
+`index.html` dosyasına çift tıklamanız yeterli, bir şey kurmanıza gerek yok. Tarayıcının WebGL2 desteklemesi yetiyor. Oyun kaldığınız yeri tarayıcıya kaydediyor.
 
-| Tuş | Ne yapar |
+| Tuş | Ne işe yarar? |
 | --- | --- |
-| W A S D / oklar | Yürü |
-| Boşluk | Zıpla; kuşun üstüne zıplarsan onu yenersin |
-| Boşluk'u basılı tut | Kanat aldıysan uç |
-| F / tıkla | Dönerek vur |
-| Q | Hızlı koş; tek başına basınca kaplan olduğu yerde koşar |
-| Fare | Etrafına bak; tekerlek yakınlaştırır |
-| M | Sesi aç, kapat |
-| Esc | Oyunu durdur |
-| Home | Ekran düğmelerini aç, kapat |
-| O (hile) | En yakındaki anahtarı veya kanadı alır, anahtar varsa kafesi açar |
-| Shift+O (hile) | Boss'u geçer |
+| W A S D / oklar | Yürür |
+| Boşluk | Zıplar; kuşun üstüne zıplayınca kuş yenilir |
+| Boşluk'a basılı tutmak | Kanat aldıysanız uçar |
+| F / tıklama | Dönerek vurur |
+| Q | Hızlı koşar; tek başına basılınca kaplan olduğu yerde koşar |
+| Fare | Kamerayı çevirir; tekerlek yakınlaştırıp uzaklaştırır |
+| M | Sesi açar, kapatır |
+| Esc | Oyunu durdurur |
+| Home | Ekran düğmelerini açar, kapatır |
+| O (hile) | En yakındaki anahtarı veya kanadı alır; anahtarınız varsa kafesi açar |
+| Shift+O (hile) | Bölüm sonu canavarını geçer |
 
-Fare olmayan cihazlarda ekran düğmeleri kendiliğinden görünür; farenin de olduğu cihazlarda ekrana ilk dokunuşta açılır.
+Fare olmayan cihazlarda ekran düğmeleri kendiliğinden çıkıyor. Farenin de olduğu cihazlarda ise ekrana ilk dokunuşta açılıyor.
 
 ## Kod
 
-Düz JavaScript ve [Three.js](https://threejs.org). Derleme adımı yoktur; sesler ve müzikler de dosyadan değil, koddan üretilir.
+Düz JavaScript ve [Three.js](https://threejs.org) kullanıldı, derlemeye gerek yok. Ses dosyası da yok; bütün sesleri ve müzikleri kod üretiyor.
 
-- `js/renderer.js`: küreleri Three.js ile çizer
-- `js/world.js`: adayı üretir; dünya 25 cm'lik bir ızgaradır
-- `js/landmarks.js`: elle tasarlanmış yerler
-- `js/models.js`: kaplan, timsah, kuş, anahtar ve kafes
-- `js/crossing.js`: bölümler arası geçiş animasyonu
-- `js/monsters.js`: her dünyanın canavarları ve attıkları
-- `js/boss.js`: bölüm sonu canavarları ve hamleleri
-- `js/surf.js`: sörf bölümü ve balina
-- `js/home.js`: Ana Sayfa köyü
-- `js/audio.js`: ses efektleri ve müzikler
-- `js/touch.js`: fare olmadan oynamak için ekran düğmeleri
-- `js/game.js`: oyun kuralları, kontroller ve ekran
-- `js/utils.js`: küçük yardımcı fonksiyonlar
-- `vendor/three.min.js`: Three.js 0.187.0, çift tıkla çalışsın diye esbuild ile tek dosyada paketlenmiş hâli (`export * from 'three'`, `--bundle --minify --format=iife --global-name=THREE`)
+- `js/renderer.js`: Küreleri Three.js ile çizer.
+- `js/world.js`: Adayı üretir. Dünya, 25 cm'lik bir ızgaradan oluşur.
+- `js/landmarks.js`: Elle tasarlanan yerler burada.
+- `js/models.js`: Kaplan, timsah, kuş, anahtar ve kafes.
+- `js/crossing.js`: Bölümler arasındaki geçiş animasyonu.
+- `js/monsters.js`: Dünyaların canavarları ve fırlattıkları.
+- `js/boss.js`: Bölüm sonu canavarları ve hamleleri.
+- `js/surf.js`: Sörf bölümü ve balina.
+- `js/home.js`: Ana Sayfa köyü.
+- `js/audio.js`: Ses efektleri ve müzikler.
+- `js/touch.js`: Fare olmadan oynamak için ekran düğmeleri.
+- `js/game.js`: Oyunun kuralları, kontroller ve ekran.
+- `js/utils.js`: Küçük yardımcı fonksiyonlar.
+- `vendor/three.min.js`: Three.js 0.187.0. Çift tıklayınca çalışsın diye esbuild ile tek dosyada paketlendi (`export * from 'three'`, `--bundle --minify --format=iife --global-name=THREE`).
 
 ---
 
@@ -74,9 +76,11 @@ Düz JavaScript ve [Three.js](https://threejs.org). Derleme adımı yoktur; sesl
 
 [Türkçe](#kaplan-macerası--tiger-adventure) · **English**
 
-My kids dreamed this game up, and I helped them.
+This is my kids' game. I only helped out a little.
 
-It's a 3D adventure game where everything is made of spheres. We vibe-coded it together: the kids described what they wanted, I passed it on to Claude Code, and the Claude Opus 5.5 model wrote the code. They named the worlds and decided what was fun. They played the new versions and found many of the bugs, like hurting a monster while flying high above its head.
+We vibe-coded it: most of the time the kids told Claude Code what they wanted themselves, and Claude Opus 5.5 wrote the code. They named the worlds and decided what was fun. They played each new version and often caught what was broken, like being able to hurt a monster while flying high above its head.
+
+Everything in the game is made of spheres: the tiger, the trees, even the mountains.
 
 ## The story
 
