@@ -1155,12 +1155,12 @@ const startLevel = savedGame ? savedGame.level : HOME_LEVEL;
 loadLevel(startLevel, generateWorld(startLevel, savedGame?.mazeSeed));
 if (savedGame) {
   restoreSave(savedGame);
-  document.getElementById('start-button').textContent = savedGame.level === HOME_LEVEL ? 'Devam et (Ana Sayfa)' : `Devam et (${savedGame.level}. Bölüm)`;
+  document.getElementById('start-button').textContent = `Devam et (${savedGame.level}. Bölüm)`;
   document.getElementById('new-game-button').hidden = false;
 }
-// A finished level saves without a tiger, and leaves nothing to continue: straight to the village.
-// Mouse and sound still need a click from the browser's side, which the pause message asks for.
-if (savedGame && !savedGame.tiger) {
+// A game saved in the village has nothing to continue, so it goes straight back there. Mouse and
+// sound still need a click from the browser's side, which the pause message asks for.
+if (savedGame?.level === HOME_LEVEL) {
   hud.start.classList.add('hidden');
   game.playing = true;
 }
