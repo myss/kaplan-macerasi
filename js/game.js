@@ -28,6 +28,7 @@ const CAPTAIN_SCALE = 1.7;
 const BIRD_SCALE = 1.2;
 const DRAW_DISTANCE = 120; // moving things farther than this are lost in the fog
 const MOUSE_SENSITIVITY = 0.003;
+const TOUCH_TURN_RATE = 2.2; // radians per second that the side arrows turn the tiger with on-screen controls
 const WING_PICKUP_RADIUS = 1.8;
 const SECONDS_PER_WING = 10;
 const WING_LIFT = 32; // m/s², on top of cancelling gravity
@@ -478,10 +479,17 @@ function updateTiger(dt) {
   if (held.has('KeyD') || held.has('ArrowRight')) right += 1;
   if (held.has('KeyA') || held.has('ArrowLeft')) right -= 1;
 
+  // With on-screen controls the camera is fixed behind the tiger, so the side arrows turn them both.
+  const turning = touchControls && right !== 0;
+  if (turning) {
+    camera.yaw -= right * TOUCH_TURN_RATE * dt;
+    right = 0;
+  }
+
   const running = held.has('KeyQ');
   const moving = right !== 0 || forward !== 0;
   // Without a direction, the run key runs on the spot.
-  if (moving || running) tiger.stride += dt * (running ? RUN_STRIDE_RATE : WALK_STRIDE_RATE);
+  if (moving || running || turning) tiger.stride += dt * (running ? RUN_STRIDE_RATE : WALK_STRIDE_RATE);
   if (moving) {
     const sin = Math.sin(camera.yaw), cos = Math.cos(camera.yaw);
     const dirX = -sin * forward + cos * right;
@@ -503,6 +511,7 @@ function updateTiger(dt) {
     turn = Math.atan2(Math.sin(turn), Math.cos(turn));
     tiger.yaw += turn * Math.min(1, dt * 12);
   }
+  if (touchControls) tiger.yaw = camera.yaw + Math.PI;
 
   tiger.airTime = tiger.grounded ? 0 : tiger.airTime + dt;
   if (jumpQueued && tiger.airTime < 0.12) {
