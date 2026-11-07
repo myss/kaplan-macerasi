@@ -43,6 +43,12 @@ const ENEMY_TOP_SPEED = 7.2; // just slower than the tiger, so running away alwa
 const SAVE_KEY = 'kaplan-macerasi-kayit';
 const SAVE_INTERVAL = 2; // seconds
 const NEXT_WORLD_DELAY_MS = 2500;
+// A key and its cage's locks share a colour. No black: the cages are black already.
+const LOCK_COLORS = [
+  [1, 0.15, 0.12], [1, 0.55, 0.08], [1, 0.9, 0.12], [0.2, 0.85, 0.22], [0.1, 0.85, 0.85],
+  [0.2, 0.4, 1], [0.62, 0.25, 0.95], [1, 0.45, 0.78], [0.97, 0.97, 0.97], [0.55, 0.3, 0.12],
+];
+const lockColor = (pair) => LOCK_COLORS[pair % LOCK_COLORS.length];
 const ATTACK_DURATION = 0.35;
 const ATTACK_COOLDOWN = 0.5; // counted from the start of the attack
 const ATTACK_RADIUS = 3;
@@ -85,8 +91,9 @@ const models = {
   polarBear: uprightAnimalModel({ fur: [0.93, 0.95, 0.98], belly: [0.98, 0.98, 1], nose: [0.05, 0.05, 0.06] }),
   pirateBear: uprightAnimalModel({ fur: [0.42, 0.26, 0.14], belly: [0.72, 0.56, 0.38], nose: [0.05, 0.05, 0.06], eyePatch: true }),
   rat: uprightAnimalModel({ fur: [0.5, 0.45, 0.42], belly: [0.76, 0.72, 0.68], nose: [0.95, 0.55, 0.6], earSize: 0.2, snoutLength: 0.24, tail: [0.92, 0.62, 0.65] }),
-  key: keyModel(),
+  keys: LOCK_COLORS.map(keyModel),
   cage: cageModel(),
+  cageLocks: LOCK_COLORS.map(cageLockModel),
   wings: wingsModel(),
   bonusDoor: bonusDoorModel(),
 };
@@ -129,7 +136,6 @@ const game = {
   completed: [], // the levels finished at least once, which are harder from then on
   leaving: false,
   hearts: MAX_HEARTS,
-  keysHeld: 0,
   rescued: 0,
   messageTime: 0,
   noKeyHintTime: 0,
@@ -163,8 +169,9 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   if (!crossing) hud.mist.style.opacity = 0; // leaving in the middle of a boss's flash must not keep it
   homeSigns = [];
 
-  keys = world.keys.map((k) => ({ ...k, taken: false }));
-  cages = world.cages.map((c) => ({ ...c, open: false }));
+  // Each cage opens only with the key of its own colour: the one at the same place in the list.
+  keys = world.keys.map((k, pair) => ({ ...k, taken: false, pair }));
+  cages = world.cages.map((c, pair) => ({ ...c, open: false, pair }));
   wingPickups = world.wings.map((w) => ({ ...w, taken: false }));
   birds = (world.theme.noBirds ? [] : [...cages, ...keys]).map((home, i) => {
     // Indoors the ceiling is low and the rooms are small, so they fly lower and in tighter circles.
@@ -199,7 +206,6 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
   game.level = level;
   game.levelDone = false;
   game.hearts = MAX_HEARTS;
-  game.keysHeld = 0;
   game.rescued = 0;
   game.bonusTaken = false;
   game.punchReady = false;
@@ -240,7 +246,6 @@ function writeSave() {
     mazeSeed: world.mazeSeed,
     completed: game.completed,
     hearts: game.hearts,
-    keysHeld: game.keysHeld,
     takenKeys: keys.flatMap((key, i) => (key.taken ? [i] : [])),
     openCages: cages.flatMap((cage, i) => (cage.open ? [i] : [])),
     takenWings: wingPickups.flatMap((wing, i) => (wing.taken ? [i] : [])),
@@ -301,7 +306,6 @@ function restoreSave(save) {
   game.punchReady = save.punchReady ?? false;
   if (save.birdsGone || save.enemiesGone) removeAllBirds(); // enemiesGone: its name in some saves
   game.hearts = save.hearts;
-  game.keysHeld = save.keysHeld;
   game.rescued = followers.length;
   Object.assign(camera, save.camera);
   // If the world came out differently since this save, the old spot may be inside something.
@@ -321,7 +325,17 @@ function updateHud() {
   hud.level.textContent = world.theme.home ? '🏠 Ana Sayfa' : `🌍 ${levelTitle}${game.hard ? ' · Zor' : ''}`;
   hud.hearts.textContent = '❤️'.repeat(game.hearts) + '🖤'.repeat(MAX_HEARTS - game.hearts);
   const hasNoCages = world.theme.surf || world.theme.home;
-  hud.keys.textContent = hasNoCages ? '' : `🔑 ${game.keysHeld}`;
+  // A dot in its colour for each key in hand.
+  const held = heldKeys();
+  hud.keys.textContent = hasNoCages ? '' : held.length === 0 ? '🔑 0' : '🔑';
+  if (!hasNoCages) {
+    for (const key of held) {
+      const dot = document.createElement('span');
+      dot.className = 'key-dot';
+      dot.style.background = `rgb(${lockColor(key.pair).map((c) => Math.round(c * 255)).join(',')})`;
+      hud.keys.append(dot);
+    }
+  }
   hud.rescued.textContent = hasNoCages ? '' : `🐊 ${game.rescued} / ${cages.length}`;
   hud.punch.textContent = game.punchReady ? '⭐ Yumruk hazır!' : '';
   updateFlightHud();
@@ -779,17 +793,19 @@ function collectWing(wing) {
   updateHud();
 }
 
+// The keys taken whose cages are still shut.
+const heldKeys = () => keys.filter((key) => key.taken && !cages[key.pair].open);
+const hasKeyFor = (cage) => keys[cage.pair].taken;
+
 function collectKey(key) {
   key.taken = true;
-  game.keysHeld++;
-  burst(key.x, key.y, key.z, [1, 0.8, 0.12], 25);
+  burst(key.x, key.y, key.z, lockColor(key.pair), 25);
   playSound('key');
-  showMessage('Anahtarı buldun! Şimdi bir kafese git.');
+  showMessage('Anahtarı buldun! Şimdi aynı renk kilitli kafese git.');
   updateHud();
 }
 
 function openCage(cage) {
-  game.keysHeld--;
   game.rescued++;
   cage.open = true;
   burst(cage.x, cage.y + 1.5, cage.z, [0.32, 0.33, 0.38], 60);
@@ -824,13 +840,13 @@ function completeLevel() {
   }, NEXT_WORLD_DELAY_MS);
 }
 
-// The cheat key: takes whatever is nearest, wherever it is. A cage only counts with a key in hand.
+// The cheat key: takes whatever is nearest, wherever it is. A cage only counts with its key in hand.
 // A boss takes Shift as well, so that pressing it again and again cannot skip one by accident.
 function collectNearest() {
   const candidates = [
     ...wingPickups.filter((wing) => !wing.taken).map((target) => ({ target, collect: collectWing })),
     ...keys.filter((key) => !key.taken).map((target) => ({ target, collect: collectKey })),
-    ...(game.keysHeld > 0 ? cages.filter((cage) => !cage.open) : []).map((target) => ({ target, collect: openCage })),
+    ...cages.filter((cage) => !cage.open && hasKeyFor(cage)).map((target) => ({ target, collect: openCage })),
   ];
   const distance = ({ target }) => Math.hypot(target.x - tiger.x, target.z - tiger.z);
   const nearest = candidates.reduce((best, c) => (!best || distance(c) < distance(best) ? c : best), null);
@@ -873,10 +889,10 @@ function updateObjectives(dt) {
   }
   for (const cage of cages) {
     if (game.levelDone || cage.open || Math.hypot(tiger.x - cage.x, tiger.z - cage.z) > CAGE_OPEN_RADIUS || Math.abs(tiger.y - cage.y) > CAGE_HEIGHT) continue;
-    if (game.keysHeld > 0) {
+    if (hasKeyFor(cage)) {
       openCage(cage);
     } else if (game.noKeyHintTime <= 0) {
-      showMessage('Bu kafes kilitli. Önce bir anahtar bul!');
+      showMessage(heldKeys().length > 0 ? 'Bu kafesin kilidi başka renk. Aynı renk anahtarı bul!' : 'Bu kafes kilitli. Önce bir anahtar bul!');
       game.noKeyHintTime = 4;
     }
   }
@@ -1015,11 +1031,12 @@ function buildFrameSpheres() {
   for (const key of keys) {
     if (key.taken || !isNear(key)) continue;
     const bob = Math.sin(game.time * 2.5) * 0.15;
-    count = drawModel(frameSpheres, count, models.key, key.x, key.y + bob, key.z, game.time * 1.5, {}, 1.4);
+    count = drawModel(frameSpheres, count, models.keys[key.pair % LOCK_COLORS.length], key.x, key.y + bob, key.z, game.time * 1.5, {}, 1.4);
   }
   for (const cage of cages) {
     if (cage.open || !isNear(cage)) continue;
     count = drawModel(frameSpheres, count, models.cage, cage.x, cage.y, cage.z, 0);
+    count = drawModel(frameSpheres, count, models.cageLocks[cage.pair % LOCK_COLORS.length], cage.x, cage.y, cage.z, 0);
     count = drawModel(frameSpheres, count, models.crocodile, cage.x, cage.y, cage.z, game.time * 0.2, {
       tail: Math.sin(game.time * 2) * 0.15,
     }, CROCODILE_SCALE);

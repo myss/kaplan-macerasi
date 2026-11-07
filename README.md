@@ -10,7 +10,7 @@ Oyunda her şey kürelerden yapılmış: kaplan da, ağaçlar da, dağlar da.
 
 ## Hikâye
 
-Kötü kuşlar timsahları kafeslere kapatmış! Kaplan anahtarları bulup kafesleri açıyor, timsahları tek tek kurtarıyor. Hepsi kurtulunca da o dünyanın dev canavarı çıkıp geliyor.
+Kötü kuşlar timsahları kafeslere kapatmış! Kaplan anahtarları bulup kafesleri açıyor, timsahları tek tek kurtarıyor. Her kafesin kilidi bir renk, onu da yalnızca aynı renk anahtar açıyor. Hepsi kurtulunca da o dünyanın dev canavarı çıkıp geliyor.
 
 ## Dünyalar
 
@@ -47,7 +47,7 @@ Her dünyada haritada görünmeyen bir de sürpriz var: Taştan taşa zıplayara
 | M | Sesi açar, kapatır |
 | Esc | Oyunu durdurur |
 | Home | Ekran düğmelerini açar, kapatır |
-| O (hile) | En yakındaki anahtarı veya kanadı alır; anahtarınız varsa kafesi açar |
+| O (hile) | En yakındaki anahtarı veya kanadı alır; anahtarı sizdeyse kafesi açar |
 | Shift+O (hile) | Bölüm sonu canavarını geçer |
 
 Fare olmayan cihazlarda ekran düğmeleri kendiliğinden çıkıyor. Farenin de olduğu cihazlarda ise ekrana ilk dokunuşta açılıyor.
@@ -87,7 +87,7 @@ Everything in the game is made of spheres: the tiger, the trees, even the mounta
 
 ## The story
 
-Evil birds have locked the crocodiles in cages! The tiger finds the keys, opens the cages and rescues the crocodiles. Once they are all free, the world's giant monster arrives.
+Evil birds have locked the crocodiles in cages! The tiger finds the keys, opens the cages and rescues the crocodiles. Each cage's lock has a colour, and only the key of that colour opens it. Once they are all free, the world's giant monster arrives.
 
 ## The worlds
 
@@ -124,7 +124,7 @@ Double-click `index.html`. There is nothing to install; the browser only needs W
 | M | Sound on or off |
 | Esc | Pause |
 | Home | Show or hide the on-screen buttons |
-| O (cheat) | Takes the nearest key or wing, and opens a cage if you hold a key |
+| O (cheat) | Takes the nearest key or wing, and opens a cage if you hold its key |
 | Shift+O (cheat) | Skips the boss |
 
 On-screen buttons appear by themselves on devices without a mouse. On devices that also have a mouse, they appear at the first touch.

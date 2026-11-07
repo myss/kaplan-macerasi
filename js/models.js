@@ -737,21 +737,41 @@ function bonusDoorModel() {
   return { parts: [part(spheres)] };
 }
 
-function keyModel() {
-  const gold = [1, 0.8, 0.12];
+function keyModel(color) {
   const spheres = [];
   for (let i = 0; i < 18; i++) {
     const a = (i / 18) * Math.PI * 2;
-    addSphere(spheres, Math.cos(a) * 0.28, 0.42 + Math.sin(a) * 0.28, 0, 0.09, gold);
+    addSphere(spheres, Math.cos(a) * 0.28, 0.42 + Math.sin(a) * 0.28, 0, 0.09, color);
   }
-  for (let i = 0; i < 9; i++) addSphere(spheres, 0, 0.12 - i * 0.09, 0, 0.09, gold);
-  addSphere(spheres, 0.14, -0.55, 0, 0.08, gold);
-  addSphere(spheres, 0.14, -0.38, 0, 0.08, gold);
+  for (let i = 0; i < 9; i++) addSphere(spheres, 0, 0.12 - i * 0.09, 0, 0.09, color);
+  addSphere(spheres, 0.14, -0.55, 0, 0.08, color);
+  addSphere(spheres, 0.14, -0.38, 0, 0.08, color);
+  return { parts: [part(spheres)] };
+}
+
+// What shows which key a cage takes, drawn over the cage: a padlock on each side and a flag on top,
+// both in the key's colour.
+function cageLockModel(color) {
+  const iron = [0.32, 0.33, 0.38];
+  const spheres = [];
+  for (let side = 0; side < 4; side++) {
+    const a = (side / 4) * Math.PI * 2 + Math.PI / 4;
+    const x = Math.cos(a) * 1.98, z = Math.sin(a) * 1.98;
+    addShell(spheres, x, 1.15, z, 0.2, 0.2, 0.2, color);
+    for (let i = 0; i <= 6; i++) {
+      const arc = (i / 6) * Math.PI;
+      addSphere(spheres, x + Math.cos(a + Math.PI / 2) * Math.cos(arc) * 0.12, 1.35 + Math.sin(arc) * 0.14, z + Math.sin(a + Math.PI / 2) * Math.cos(arc) * 0.12, 0.04, iron);
+    }
+  }
+  for (let y = 2.5; y <= 4; y += 0.1) addSphere(spheres, 0, y, 0, 0.06, iron);
+  for (let y = 3.4; y <= 4; y += 0.1) {
+    for (let x = 0.1; x <= 1; x += 0.1) addSphere(spheres, x, y, 0, 0.07, color);
+  }
   return { parts: [part(spheres)] };
 }
 
 function cageModel() {
-  const iron = [0.32, 0.33, 0.38], gold = [1, 0.8, 0.12];
+  const iron = [0.32, 0.33, 0.38];
   const spheres = [];
   const radius = 1.9, height = 2.4, bars = 18;
   for (let b = 0; b < bars; b++) {
@@ -764,7 +784,7 @@ function cageModel() {
       addSphere(spheres, Math.cos(a) * radius, y, Math.sin(a) * radius, 0.09, iron);
     }
   }
-  addSphere(spheres, 0, height + 0.15, 0, 0.3, gold);
+  addSphere(spheres, 0, height + 0.15, 0, 0.3, iron);
   return { parts: [part(spheres)] };
 }
 
