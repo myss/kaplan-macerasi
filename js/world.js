@@ -132,7 +132,8 @@ const WORLD_THEMES = [
   },
 ];
 
-const FIRST_SURPRISE_LEVEL = WORLD_THEMES.length + 1;
+// Generated worlds start well past the fixed ones, so that adding a fixed world never renumbers them.
+const FIRST_SURPRISE_LEVEL = 100;
 const SURPRISE_MONSTER_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'shark', 'mole', 'ant'];
 const SURPRISE_BOSS_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'worm', 'squid'];
 const SURPRISE_MIN_MONSTER_KINDS = 2;
@@ -151,7 +152,7 @@ const PLANT_PLACE_NAMES = {
 const HUE_NAMES = ['Kırmızı', 'Turuncu', 'Sarı', 'Yeşil', 'Turkuaz', 'Mavi', 'Mor', 'Pembe'];
 const HUE_NAME_STARTS = [0, 0.05, 0.11, 0.2, 0.44, 0.53, 0.72, 0.86];
 
-// Every level after the fixed ones invents its own colours, plants and liquid. The hues keep their
+// Every generated level invents its own colours, plants and liquid. The hues keep their
 // distance, so the ground, the liquid and the plants can always be told apart.
 function generateTheme(level) {
   const random = seededRandom(20261101 + level * 7919 + 2);
@@ -192,7 +193,7 @@ function generateTheme(level) {
 
 function themeForLevel(level) {
   if (level === HOME_LEVEL) return HOME_THEME;
-  return level <= WORLD_THEMES.length ? WORLD_THEMES[level - 1] : generateTheme(level);
+  return level < FIRST_SURPRISE_LEVEL ? WORLD_THEMES[level - 1] : generateTheme(level);
 }
 
 function makeNoise(random) {

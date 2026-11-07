@@ -224,8 +224,9 @@ function loadLevel(level, generatedWorld = generateWorld(level)) {
 // over. A finished level saves as being back home.
 function writeSave() {
   if (!game.playing) return;
-  const save = game.levelDone ? { level: HOME_LEVEL, completed: game.completed } : {
+  const save = game.levelDone ? { level: HOME_LEVEL, completed: game.completed, firstSurpriseLevel: FIRST_SURPRISE_LEVEL } : {
     level: game.level,
+    firstSurpriseLevel: FIRST_SURPRISE_LEVEL,
     mazeSeed: world.mazeSeed,
     completed: game.completed,
     hearts: game.hearts,
@@ -250,10 +251,21 @@ function writeSave() {
 function readSave() {
   try {
     const save = JSON.parse(localStorage.getItem(SAVE_KEY));
-    return Number.isInteger(save?.level) && save.level >= HOME_LEVEL ? save : null;
+    return Number.isInteger(save?.level) && save.level >= HOME_LEVEL ? renumberSurpriseLevels(save) : null;
   } catch {
     return null;
   }
+}
+
+// A save says where generated worlds started when it was written; one that does not is from when they
+// started at 10. Their finished numbers move to where generated worlds start now. A generated world
+// left halfway comes out different under its new number, so that game goes back home instead.
+function renumberSurpriseLevels(save) {
+  const savedFirst = save.firstSurpriseLevel ?? 10;
+  if (savedFirst === FIRST_SURPRISE_LEVEL) return save;
+  const renumber = (level) => (level >= savedFirst ? level - savedFirst + FIRST_SURPRISE_LEVEL : level);
+  const completed = (save.completed ?? []).map(renumber);
+  return save.level >= savedFirst ? { level: HOME_LEVEL, completed } : { ...save, completed };
 }
 
 function clearSave() {
