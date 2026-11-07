@@ -4,47 +4,113 @@
 // Each build receives the world under construction and returns
 // { cages, keys, wings, mapShapes }, with positions already in metres, and optionally a bonusSpot.
 
-function buildGiantHouse(api, hx, hz) {
+// The giant house: three floors, as many as fit under the top of the world, each laid out
+// differently. Rooms are [x0, z0, x1, z1] in voxels from the house's front left corner, with the
+// front door at z = 0. Together they cover the whole floor; every two rooms that share enough wall
+// get a doorway, and every outside wall a window.
+const GIANT_HOUSE_WIDTH = 180;
+const GIANT_HOUSE_DEPTH = 224;
+const GIANT_HOUSE_ROOM_HEIGHT = 26;
+const GIANT_HOUSE_FLOORS = [
+  {
+    rooms: {
+      hall: [60, 0, 120, 90], sitting: [0, 0, 60, 60], toys: [0, 60, 60, 140], laundry: [0, 140, 60, 224],
+      kitchen: [120, 0, 180, 120], corridor: [60, 90, 100, 224], pantry: [100, 90, 120, 120], dining: [100, 120, 180, 224],
+    },
+  },
+  {
+    rooms: {
+      front: [0, 0, 90, 50], study: [90, 0, 180, 50], gallery: [0, 50, 40, 224], landing: [40, 50, 130, 130],
+      stairwell: [130, 50, 180, 130], playroom: [40, 130, 100, 224], bedroom: [100, 130, 180, 190], bath: [100, 190, 180, 224],
+    },
+    holeBelow: [70, 55, 110, 85], // over the hall
+  },
+  {
+    rooms: {
+      attic: [0, 0, 70, 100], loft: [70, 0, 180, 40], storeroom: [70, 40, 130, 100], top: [130, 40, 180, 100],
+      library: [0, 100, 110, 160], nursery: [110, 100, 180, 224], cupboard: [0, 160, 50, 224], guestroom: [50, 160, 110, 224],
+    },
+    holeBelow: [138, 58, 172, 92], // over the stairwell
+  },
+];
+const DOORWAY_WIDTH = 14;
+const DOORWAY_HEIGHT = 20;
+const MIN_SHARED_WALL = 20;
+
+// `mirror` flips the house left to right. Returns each floor's height and where its rooms' middles are.
+function buildGiantHouse(api, hx, hz, mirror) {
   const { box, EMPTY } = api;
-  const HALF_X = 64, HALF_Z = 80, ROOM_HEIGHT = 28;
-  const ground = api.terrainAt(hx, hz);
-  const upper = ground + ROOM_HEIGHT + 2;
-  const top = upper + ROOM_HEIGHT;
   const { HOUSE_WALL: wall, ROOF: roof, WOOD_FLOOR: wood } = BLOCK;
+  const left = hx - GIANT_HOUSE_WIDTH / 2, front = hz - GIANT_HOUSE_DEPTH / 2;
+  const toX = (x) => left + (mirror ? GIANT_HOUSE_WIDTH - x : x);
+  const toZ = (z) => front + z;
+  // A box given in house coordinates, whichever way round they come out after the mirroring.
+  const houseBox = (x0, y0, z0, x1, y1, z1, block) => {
+    box(Math.min(toX(x0), toX(x1)), y0, toZ(Math.min(z0, z1)), Math.max(toX(x0), toX(x1)), y1, toZ(Math.max(z0, z1)), block);
+  };
+  const ground = api.terrainAt(hx, hz);
+  const floors = GIANT_HOUSE_FLOORS.map((plan, i) => ({ plan, y: ground + i * (GIANT_HOUSE_ROOM_HEIGHT + 2) }));
+  const top = floors[floors.length - 1].y + GIANT_HOUSE_ROOM_HEIGHT;
 
-  box(hx - HALF_X, ground, hz - HALF_Z, hx + HALF_X, ground, hz + HALF_Z, wood);
-  box(hx - HALF_X, ground + 1, hz - HALF_Z, hx + HALF_X, top, hz - HALF_Z + 1, wall);
-  box(hx - HALF_X, ground + 1, hz + HALF_Z - 1, hx + HALF_X, top, hz + HALF_Z, wall);
-  box(hx - HALF_X, ground + 1, hz - HALF_Z, hx - HALF_X + 1, top, hz + HALF_Z, wall);
-  box(hx + HALF_X - 1, ground + 1, hz - HALF_Z, hx + HALF_X, top, hz + HALF_Z, wall);
-  box(hx - HALF_X, upper - 1, hz - HALF_Z, hx + HALF_X, upper, hz + HALF_Z, wood);
-
-  // A hall behind the front door and two rooms behind it, on both floors.
-  for (const floor of [ground, upper]) {
-    const ceiling = floor + ROOM_HEIGHT;
-    box(hx - HALF_X, floor + 1, hz, hx + HALF_X, ceiling, hz + 1, wall);
-    box(hx, floor + 1, hz, hx + 1, ceiling, hz + HALF_Z, wall);
-    box(hx - 42, floor + 1, hz, hx - 18, floor + 20, hz + 1, EMPTY);
-    box(hx + 18, floor + 1, hz, hx + 42, floor + 20, hz + 1, EMPTY);
-    box(hx, floor + 1, hz + 28, hx + 1, floor + 20, hz + 52, EMPTY);
-
-    for (const side of [-1, 1]) {
-      box(hx + side * 40 - 8, floor + 10, hz - HALF_Z, hx + side * 40 + 8, floor + 20, hz - HALF_Z + 1, EMPTY);
-      box(hx + side * 40 - 8, floor + 10, hz + HALF_Z - 1, hx + side * 40 + 8, floor + 20, hz + HALF_Z, EMPTY);
-      const wallX = side < 0 ? hx - HALF_X : hx + HALF_X - 1;
-      for (const z of [hz - 40, hz + 40]) box(wallX, floor + 10, z - 10, wallX + 1, floor + 20, z + 10, EMPTY);
+  for (const { plan, y } of floors) {
+    const ceiling = y + GIANT_HOUSE_ROOM_HEIGHT;
+    houseBox(-1, y - 1, -1, GIANT_HOUSE_WIDTH + 1, y, GIANT_HOUSE_DEPTH + 1, wood);
+    houseBox(0, y + 1, 0, GIANT_HOUSE_WIDTH, ceiling, GIANT_HOUSE_DEPTH, EMPTY);
+    const rooms = Object.values(plan.rooms);
+    for (const [x0, z0, x1, z1] of rooms) {
+      for (const x of [x0, x1]) houseBox(x - 1, y + 1, z0 - 1, x, ceiling, z1, wall);
+      for (const z of [z0, z1]) houseBox(x0 - 1, y + 1, z - 1, x1, ceiling, z, wall);
+    }
+    // Doorways where two rooms share a wall, in the middle of what they share.
+    for (const [i, a] of rooms.entries()) {
+      for (const b of rooms.slice(i + 1)) {
+        for (const [p, q] of [[a, b], [b, a]]) {
+          if (p[2] === q[0]) {
+            const from = Math.max(p[1], q[1]), to = Math.min(p[3], q[3]);
+            const middle = (from + to) / 2;
+            if (to - from >= MIN_SHARED_WALL) houseBox(p[2] - 1, y + 1, middle - DOORWAY_WIDTH / 2, p[2], y + DOORWAY_HEIGHT, middle + DOORWAY_WIDTH / 2, EMPTY);
+          }
+          if (p[3] === q[1]) {
+            const from = Math.max(p[0], q[0]), to = Math.min(p[2], q[2]);
+            const middle = (from + to) / 2;
+            if (to - from >= MIN_SHARED_WALL) houseBox(middle - DOORWAY_WIDTH / 2, y + 1, p[3] - 1, middle + DOORWAY_WIDTH / 2, y + DOORWAY_HEIGHT, p[3], EMPTY);
+          }
+        }
+      }
+    }
+    // A window in the middle of each stretch of outside wall.
+    for (const [x0, z0, x1, z1] of rooms) {
+      const across = (x0 + x1) / 2, along = (z0 + z1) / 2, halfX = Math.min(8, (x1 - x0) / 2 - 6), halfZ = Math.min(8, (z1 - z0) / 2 - 6);
+      if (z0 === 0) houseBox(across - halfX, y + 10, -1, across + halfX, y + 20, 0, EMPTY);
+      if (z1 === GIANT_HOUSE_DEPTH) houseBox(across - halfX, y + 10, z1 - 1, across + halfX, y + 20, z1, EMPTY);
+      if (x0 === 0) houseBox(-1, y + 10, along - halfZ, 0, y + 20, along + halfZ, EMPTY);
+      if (x1 === GIANT_HOUSE_WIDTH) houseBox(x1 - 1, y + 10, along - halfZ, x1, y + 20, along + halfZ, EMPTY);
+    }
+    if (plan.holeBelow) {
+      const [x0, z0, x1, z1] = plan.holeBelow;
+      houseBox(x0, y - 1, z0, x1, y, z1, EMPTY);
     }
   }
-  box(hx - 12, ground + 1, hz - HALF_Z, hx + 12, ground + 20, hz - HALF_Z + 1, EMPTY); // front door
-  box(hx - 30, upper - 1, hz - 60, hx + 30, upper, hz - 20, EMPTY); // the way up: a hole above the hall
+  const [doorX0, , doorX1] = GIANT_HOUSE_FLOORS[0].rooms.hall;
+  houseBox(doorX0 + 18, ground + 1, -1, doorX1 - 18, ground + DOORWAY_HEIGHT, 0, EMPTY); // the front door
 
-  for (let layer = 0; layer <= 24; layer++) {
-    const halfX = HALF_X + 4 - layer * 3;
-    box(hx - halfX, top + 1 + layer, hz - HALF_Z - 4, hx + halfX, top + 1 + layer, hz + HALF_Z + 4, roof);
+  // Low enough to stay under the top of the world.
+  const halfWidth = GIANT_HOUSE_WIDTH / 2;
+  for (let layer = 0; halfWidth + 4 - layer * 6 >= 0; layer++) {
+    const reach = halfWidth + 4 - layer * 6;
+    houseBox(halfWidth - reach, top + 1 + layer, -4, halfWidth + reach, top + 1 + layer, GIANT_HOUSE_DEPTH + 4, roof);
   }
-  box(hx + 30, top + 1, hz + 40, hx + 40, top + 26, hz + 50, BLOCK.STONE);
+  houseBox(140, top + 1, 150, 152, top + 14, 162, BLOCK.STONE);
 
-  return { ground, upper };
+  const middleOf = (floor, room) => {
+    const [x0, z0, x1, z1] = GIANT_HOUSE_FLOORS[floor].rooms[room];
+    return { vx: Math.round(toX((x0 + x1) / 2)), vz: Math.round(toZ((z0 + z1) / 2)), floor: floors[floor].y };
+  };
+  const holeMiddle = (floor) => {
+    const [x0, z0, x1, z1] = GIANT_HOUSE_FLOORS[floor + 1].holeBelow;
+    return { vx: Math.round(toX((x0 + x1) / 2)), vz: Math.round(toZ((z0 + z1) / 2)), floor: floors[floor].y };
+  };
+  return { middleOf, holeMiddle };
 }
 
 // A table too tall to jump onto directly, with a chair as the step up. Returns the tabletop height.
@@ -397,31 +463,43 @@ const LAYOUTS = {
   },
 
   giantHouse: {
+    // The houses' corners are just inside `inner`, where the ground is flat.
     pads: [
-      { x: -26, z: 24, inner: 28, outer: 36 },
-      { x: 26, z: 24, inner: 28, outer: 36 },
+      { x: -36, z: 24, inner: 39, outer: 47 },
+      { x: 36, z: 24, inner: 39, outer: 47 },
     ],
     outsidePairs: 2,
     randomWings: 3,
     build(api) {
       const { toMetres, floorY } = api;
       const out = { cages: [], keys: [], wings: [], mapShapes: [] };
-      const cage = (vx, vz, floor) => out.cages.push({ x: toMetres(vx), z: toMetres(vz), y: floorY(floor), indoors: true });
-      const key = (vx, vz, surface) => out.keys.push({ x: toMetres(vx), z: toMetres(vz), y: floorY(surface) + 1, climb: 'none', indoors: true });
+      // A key and the cage it opens, each in a room given as [floor, room], both in the same house.
+      // The key lies on a table or a bed. They are never on the same floor, so getting around the
+      // house takes the holes between the floors.
+      const PAIRS = [
+        { key: [0, 'dining', placeTable], cage: [1, 'front'] },
+        { key: [1, 'bedroom', placeBed], cage: [0, 'toys'] },
+        { key: [2, 'library', placeTable], cage: [1, 'playroom'] },
+        { key: [1, 'study', placeTable], cage: [2, 'attic'] },
+      ];
 
       for (const pad of this.pads) {
         const hx = api.toVoxel(pad.x), hz = api.toVoxel(pad.z);
-        const { ground, upper } = buildGiantHouse(api, hx, hz);
-        const mirror = pad.x < 0 ? 1 : -1;
-
-        key(hx + mirror * 32, hz + 40, placeTable(api, hx + mirror * 32, hz + 40, ground));
-        cage(hx - mirror * 32, hz + 40, ground);
-        cage(hx + mirror * 32, hz + 40, upper);
-        key(hx - mirror * 32, hz + 40, placeBed(api, hx - mirror * 32, hz + 40, upper));
-
-        // Refills so the upstairs can always be reached, however the wings before it were spent.
-        out.wings.push({ x: toMetres(hx), z: toMetres(hz - 40), y: floorY(ground) + 1.2, refills: true });
-        out.mapShapes.push({ x: pad.x - 16, z: pad.z - 20, width: 32, depth: 40, color: '#b8504a' });
+        const house = buildGiantHouse(api, hx, hz, pad.x > 0);
+        for (const { key: [keyFloor, keyRoom, place], cage: [cageFloor, cageRoom] } of PAIRS) {
+          const k = house.middleOf(keyFloor, keyRoom);
+          out.keys.push({ x: toMetres(k.vx), z: toMetres(k.vz), y: floorY(place(api, k.vx, k.vz, k.floor)) + 1, climb: 'none', indoors: true });
+          const c = house.middleOf(cageFloor, cageRoom);
+          out.cages.push({ x: toMetres(c.vx), z: toMetres(c.vz), y: floorY(c.floor), indoors: true });
+        }
+        // Under each hole up, a wing that refills, so the next floor can always be reached however
+        // the wings before it were spent.
+        for (let floor = 0; floor + 1 < GIANT_HOUSE_FLOORS.length; floor++) {
+          const w = house.holeMiddle(floor);
+          out.wings.push({ x: toMetres(w.vx), z: toMetres(w.vz), y: floorY(w.floor) + 1.2, refills: true });
+        }
+        const width = GIANT_HOUSE_WIDTH * VOXEL, depth = GIANT_HOUSE_DEPTH * VOXEL;
+        out.mapShapes.push({ x: pad.x - width / 2, z: pad.z - depth / 2, width, depth, color: '#b8504a' });
       }
       return out;
     },

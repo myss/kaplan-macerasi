@@ -20,7 +20,7 @@ Oyun, Ana Sayfa köyünde başlıyor. Her dünyaya köydeki kendi girişinden gi
 - **Akrepler Çölü:** Akreplerin attığı zehir kaplanı yavaşlatıyor.
 - **Kar Vadisi:** Kutup ayıları karınlarının üstünde kayarak saldırıyor.
 - **Cehennem Köyü:** Lav canavarları ateş topu atıyor.
-- **Dev ev:** Fareler sürüyle dolaşıyor. Üst kata ancak kanatla çıkılıyor.
+- **Koca Ev:** Her biri üç katlı, odalarla dolu iki ev. Fareler sürüyle dolaşıyor, üst katlara ancak kanatla çıkılıyor.
 - **Korsanlar gemisi:** Korsan ayılar yapış yapış bal fırlatıyor. Kaptan kuş da iki vuruşta yeniliyor.
 - **Deniz dibi zindanı:** Köpekbalıklarının yalnızca yüzgeci görünüyor, yaklaşınca ısırmak için fırlıyorlar.
 - **Zorlu Sörf:** Üç şeritte kayalardan ve yunuslardan kaçtıktan sonra sıra dev balinadan kaçmaya geliyor.
@@ -97,7 +97,7 @@ The game starts in the home village, where each world has its own entrance. The 
 - **Akrepler Çölü (Scorpion Desert):** scorpions throw slowing poison
 - **Kar Vadisi (Snow Valley):** polar bears slide on their bellies
 - **Cehennem Köyü (Hell Village):** lava monsters throw fireballs
-- **Dev ev (Giant House):** rats roam in swarms; wings take you upstairs
+- **Koca Ev (Big House):** two three-storey houses full of rooms, where rats roam in swarms and wings take you upstairs
 - **Korsanlar gemisi (Pirate Ship):** pirate bears throw sticky honey; the captain bird takes two hits
 - **Deniz dibi zindanı (Deep Sea Dungeon):** you only see the sharks' fins until they lunge
 - **Zorlu Sörf (Tough Surf):** dodge rocks and dolphins across three lanes, then escape a giant whale

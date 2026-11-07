@@ -119,7 +119,7 @@ const WORLD_THEMES = [
     accents: [BLOCK.EMBER, BLOCK.EMBER], trunk: BLOCK.DEAD_WOOD, crown: BLOCK.DEAD_WOOD,
   },
   {
-    name: 'Dev ev', sky: [0.6, 0.82, 0.95], hills: 10, mountains: 0, plant: 'leafyTree', crossing: 'swim', monster: 'rat', layout: 'giantHouse',
+    name: 'Koca Ev', sky: [0.6, 0.82, 0.95], hills: 10, mountains: 0, plant: 'leafyTree', crossing: 'swim', monster: 'rat', layout: 'giantHouse',
     surface: BLOCK.GRASS, soil: BLOCK.DIRT, peak: BLOCK.STONE, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
     accents: [BLOCK.RED_FLOWER, BLOCK.YELLOW_FLOWER], trunk: BLOCK.TRUNK, crown: BLOCK.LEAF,
   },
