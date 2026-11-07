@@ -17,9 +17,10 @@ function noteToMidi(name) {
 }
 
 // A part is written one token per eighth note: a note name, `-` for a rest, `=` to hold the note
-// before it, or `x` for a tick of noise. Parts may differ in length, and each loops on its own.
+// before it, or `x` for a tick of noise. Longer parts are a list of four-bar phrases, played one
+// after the other. Parts may differ in length, and each loops on its own.
 function parsePart({ wave, volume, notes }) {
-  const tokens = notes.trim().split(/\s+/);
+  const tokens = [notes].flat().join(' ').trim().split(/\s+/);
   const slots = tokens.map(() => null);
   let last = null;
   tokens.forEach((token, i) => {
@@ -32,93 +33,214 @@ function parsePart({ wave, volume, notes }) {
   return { wave, volume, slots };
 }
 
+// Each song runs its tune, a variation of it, a middle part, and the tune again.
 const SONGS = {
   home: {
     bpm: 126,
     parts: [
-      { wave: 'triangle', volume: 0.3, notes: 'C5 = E5 G5 A5 G5 E5 = F5 = A5 = G5 = E5 C5 D5 = F5 A5 G5 F5 E5 D5 C5 = E5 D5 C5 = - -' },
-      { wave: 'sine', volume: 0.35, notes: 'C3 - G3 - C3 - G3 - F3 - C4 - C3 - G3 - D3 - A3 - G3 - B3 - C3 - G3 - C3 - - -' },
+      { wave: 'triangle', volume: 0.3, notes: [
+        'C5 = E5 G5 A5 G5 E5 = F5 = A5 = G5 = E5 C5 D5 = F5 A5 G5 F5 E5 D5 C5 = E5 D5 C5 = - -',
+        'C5 = E5 G5 A5 G5 E5 = F5 = A5 = G5 = E5 C5 D5 E5 F5 G5 A5 B5 C6 = B5 = G5 = C6 = - -',
+        'A5 = G5 F5 E5 = C5 = D5 = E5 F5 G5 = - - A5 = G5 F5 E5 = D5 C5 D5 = E5 = G5 = - -',
+        'C5 = E5 G5 A5 G5 E5 = F5 = A5 = G5 = E5 C5 D5 = F5 A5 G5 F5 E5 D5 C5 = G4 = C5 = - -',
+      ] },
+      { wave: 'sine', volume: 0.35, notes: [
+        'C3 - G3 - C3 - G3 - F3 - C4 - C3 - G3 - D3 - A3 - G3 - B3 - C3 - G3 - C3 - - -',
+        'C3 - G3 - C3 - G3 - F3 - C4 - C3 - G3 - D3 - A3 - G3 - B3 - C3 - G3 - C4 - - -',
+        'F3 - C4 - F3 - C4 - G3 - D4 - G3 - D4 - A2 - E3 - A2 - E3 - G2 - D3 - G2 - B2 -',
+        'C3 - G3 - C3 - G3 - F3 - C4 - C3 - G3 - D3 - A3 - G3 - B3 - C3 - G3 - C3 - - -',
+      ] },
     ],
   },
   forest: {
     bpm: 108,
     parts: [
-      { wave: 'triangle', volume: 0.3, notes: 'G4 = B4 D5 E5 = D5 B4 C5 = E5 D5 B4 = G4 = A4 = C5 B4 A4 = G4 E4 D4 = G4 A4 G4 = - -' },
-      { wave: 'sine', volume: 0.35, notes: 'G2 - D3 - G2 - D3 - C3 - G3 - G2 - D3 - D3 - A3 - C3 - D3 - G2 - D3 - G2 - - -' },
+      { wave: 'triangle', volume: 0.3, notes: [
+        'G4 = B4 D5 E5 = D5 B4 C5 = E5 D5 B4 = G4 = A4 = C5 B4 A4 = G4 E4 D4 = G4 A4 G4 = - -',
+        'G4 = B4 D5 E5 = D5 B4 C5 = E5 D5 B4 = G4 = A4 B4 C5 D5 E5 = F#5 = G5 = D5 B4 G4 = - -',
+        'E5 = = B4 C5 = B4 A4 G4 = A4 B4 E4 = - - C5 = = B4 A4 = G4 F#4 G4 = A4 = B4 = - -',
+        'G4 = B4 D5 E5 = D5 B4 C5 = E5 D5 B4 = G4 = A4 = C5 B4 A4 = G4 E4 D4 = F#4 = G4 = - -',
+      ] },
+      { wave: 'sine', volume: 0.35, notes: [
+        'G2 - D3 - G2 - D3 - C3 - G3 - G2 - D3 - D3 - A3 - C3 - D3 - G2 - D3 - G2 - - -',
+        'G2 - D3 - G2 - D3 - C3 - G3 - G2 - D3 - D3 - A3 - C3 - D3 - G2 - D3 - G2 - - -',
+        'E2 - B2 - E2 - B2 - E2 - B2 - E2 - B2 - C3 - G3 - C3 - G3 - D3 - A3 - D3 - F#3 -',
+        'G2 - D3 - G2 - D3 - C3 - G3 - G2 - D3 - D3 - A3 - C3 - D3 - G2 - D3 - G2 - - -',
+      ] },
     ],
   },
   desert: {
     bpm: 116,
     parts: [
-      { wave: 'square', volume: 0.14, notes: 'A4 Bb4 C#5 = D5 C#5 Bb4 A4 E5 = F5 E5 D5 C#5 Bb4 = A4 Bb4 C#5 D5 E5 = D5 C#5 Bb4 A4 G4 = A4 Bb4 A4 =' },
-      { wave: 'triangle', volume: 0.35, notes: 'A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3' },
+      { wave: 'square', volume: 0.14, notes: [
+        'A4 Bb4 C#5 = D5 C#5 Bb4 A4 E5 = F5 E5 D5 C#5 Bb4 = A4 Bb4 C#5 D5 E5 = D5 C#5 Bb4 A4 G4 = A4 Bb4 A4 =',
+        'A4 Bb4 C#5 = D5 C#5 Bb4 A4 E5 = F5 E5 D5 C#5 Bb4 = E5 F5 G5 = F5 E5 D5 C#5 D5 C#5 Bb4 = A4 = - -',
+        'D5 = F5 = E5 D5 C#5 D5 Bb4 = A4 Bb4 G4 = A4 = D5 = F5 = G5 F5 E5 D5 C#5 = Bb4 A4 G4 F4 E4 =',
+        'A4 Bb4 C#5 = D5 C#5 Bb4 A4 E5 = F5 E5 D5 C#5 Bb4 = A4 Bb4 C#5 D5 E5 = D5 C#5 Bb4 A4 G4 = A4 Bb4 A4 =',
+      ] },
+      { wave: 'triangle', volume: 0.35, notes: [
+        'A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3',
+        'A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3',
+        'D3 - D3 A3 D3 - D3 A3 Bb2 - Bb2 F3 Bb2 - Bb2 F3 D3 - D3 A3 D3 - D3 A3 A2 - A2 E3 A2 - A2 E3',
+        'A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3 A2 - A2 E3',
+      ] },
       { wave: 'noise', volume: 0.05, notes: 'x - - x - - x -' },
     ],
   },
   snow: {
     bpm: 84,
     parts: [
-      { wave: 'sine', volume: 0.3, notes: 'C6 - A5 - F5 - A5 - C6 - D6 - C6 = - - Bb5 - G5 - E5 - G5 - Bb5 - A5 - F5 = - -' },
-      { wave: 'sine', volume: 0.2, notes: 'F3 = = = C4 = = = F3 = = = A3 = = = C3 = = = G3 = = = F3 = = = C4 = = =' },
+      { wave: 'sine', volume: 0.3, notes: [
+        'C6 - A5 - F5 - A5 - C6 - D6 - C6 = - - Bb5 - G5 - E5 - G5 - Bb5 - A5 - F5 = - -',
+        'C6 - A5 - F5 - A5 - C6 - D6 - C6 = - - Bb5 - D6 - C6 - Bb5 - A5 - G5 - F5 = - -',
+        'D6 - C6 - A5 - F5 - G5 - A5 - D5 = - - Bb5 - A5 - G5 - E5 - F5 - G5 - C5 = - -',
+        'C6 - A5 - F5 - A5 - C6 - D6 - C6 = - - Bb5 - G5 - E5 - G5 - Bb5 - A5 - F5 = - -',
+      ] },
+      { wave: 'sine', volume: 0.2, notes: [
+        'F3 = = = C4 = = = F3 = = = A3 = = = C3 = = = G3 = = = F3 = = = C4 = = =',
+        'F3 = = = C4 = = = F3 = = = A3 = = = C3 = = = G3 = = = F3 = = = C4 = = =',
+        'D3 = = = A3 = = = Bb2 = = = F3 = = = G2 = = = D3 = = = C3 = = = G3 = = =',
+        'F3 = = = C4 = = = F3 = = = A3 = = = C3 = = = G3 = = = F3 = = = C4 = = =',
+      ] },
     ],
   },
   lava: {
     bpm: 132,
     parts: [
-      { wave: 'sawtooth', volume: 0.1, notes: 'E4 E4 G4 E4 B4 = A4 G4 F#4 F#4 A4 F#4 C5 = B4 A4 E4 E4 G4 E4 B4 = D5 C5 B4 A4 G4 F#4 E4 = - -' },
-      { wave: 'triangle', volume: 0.4, notes: 'E2 E2 - E2 E2 - E2 G2 D2 D2 - D2 D2 - D2 F#2 E2 E2 - E2 E2 - E2 G2 E2 E2 - E2 E2 - E2 B2' },
+      { wave: 'sawtooth', volume: 0.1, notes: [
+        'E4 E4 G4 E4 B4 = A4 G4 F#4 F#4 A4 F#4 C5 = B4 A4 E4 E4 G4 E4 B4 = D5 C5 B4 A4 G4 F#4 E4 = - -',
+        'E5 E5 G5 E5 B5 = A5 G5 F#5 F#5 A5 F#5 C6 = B5 A5 G5 = F#5 = E5 = D5 = B4 C5 D5 F#5 E5 = - -',
+        'C5 = B4 A4 G4 = E4 = D5 = C5 B4 A4 = F#4 = C5 = B4 A4 G4 A4 B4 C5 D5 = = = D#5 = = =',
+        'E4 E4 G4 E4 B4 = A4 G4 F#4 F#4 A4 F#4 C5 = B4 A4 E4 E4 G4 E4 B4 = D5 C5 B4 A4 G4 F#4 E4 = - -',
+      ] },
+      { wave: 'triangle', volume: 0.4, notes: [
+        'E2 E2 - E2 E2 - E2 G2 D2 D2 - D2 D2 - D2 F#2 E2 E2 - E2 E2 - E2 G2 E2 E2 - E2 E2 - E2 B2',
+        'E2 E2 - E2 E2 - E2 G2 D2 D2 - D2 D2 - D2 F#2 E2 E2 - E2 E2 - E2 G2 E2 E2 - E2 E2 - E2 B2',
+        'C2 C2 - C2 C2 - C2 G2 D2 D2 - D2 D2 - D2 A2 C2 C2 - C2 C2 - C2 G2 B1 B1 - B1 B1 - B1 D#2',
+        'E2 E2 - E2 E2 - E2 G2 D2 D2 - D2 D2 - D2 F#2 E2 E2 - E2 E2 - E2 G2 E2 E2 - E2 E2 - E2 B2',
+      ] },
       { wave: 'noise', volume: 0.05, notes: 'x - x -' },
     ],
   },
   giantHouse: {
     bpm: 116,
     parts: [
-      { wave: 'square', volume: 0.13, notes: 'F5 - D5 - Bb4 - D5 - F5 = G5 F5 D5 = - - Eb5 - C5 - A4 - C5 - Eb5 = F5 Eb5 C5 = - -' },
-      { wave: 'triangle', volume: 0.4, notes: 'Bb2 - F3 - Bb2 - F3 - Bb2 - F3 - Bb2 - F3 - F2 - C3 - F2 - C3 - F2 - C3 - Bb2 - F3 -' },
+      { wave: 'square', volume: 0.13, notes: [
+        'F5 - D5 - Bb4 - D5 - F5 = G5 F5 D5 = - - Eb5 - C5 - A4 - C5 - Eb5 = F5 Eb5 C5 = - -',
+        'F5 - D5 - Bb4 - D5 - F5 = G5 F5 D5 = - - Eb5 - C5 - A4 - C5 - D5 C5 Bb4 A4 Bb4 = - -',
+        'G5 - Eb5 - Bb4 - Eb5 - G5 = F5 G5 Eb5 = - - F5 - C5 - A4 - C5 - F5 = G5 A5 Bb5 = - -',
+        'F5 - D5 - Bb4 - D5 - F5 = G5 F5 D5 = - - Eb5 - C5 - A4 - C5 - Eb5 = F5 Eb5 C5 = - -',
+      ] },
+      { wave: 'triangle', volume: 0.4, notes: [
+        'Bb2 - F3 - Bb2 - F3 - Bb2 - F3 - Bb2 - F3 - F2 - C3 - F2 - C3 - F2 - C3 - Bb2 - F3 -',
+        'Bb2 - F3 - Bb2 - F3 - Bb2 - F3 - Bb2 - F3 - F2 - C3 - F2 - C3 - F2 - C3 - Bb2 - - -',
+        'Eb2 - Bb2 - Eb2 - Bb2 - Eb2 - Bb2 - Eb2 - Bb2 - F2 - C3 - F2 - C3 - F2 - C3 - F2 - A2 -',
+        'Bb2 - F3 - Bb2 - F3 - Bb2 - F3 - Bb2 - F3 - F2 - C3 - F2 - C3 - F2 - C3 - Bb2 - F3 -',
+      ] },
     ],
   },
   pirate: {
     bpm: 168,
     parts: [
-      { wave: 'square', volume: 0.13, notes: 'A4 D5 D5 F5 D5 F5 A5 G5 F5 E5 D5 C5 A4 C5 C5 E5 C5 E5 G5 F5 E5 D5 C5 A4' },
-      { wave: 'triangle', volume: 0.4, notes: 'D3 - A3 D3 - A3 D3 - A3 D3 - A3 C3 - G3 C3 - G3 C3 - G3 A2 - E3' },
+      { wave: 'square', volume: 0.13, notes: [
+        'A4 D5 D5 F5 D5 F5 A5 G5 F5 E5 D5 C5 A4 C5 C5 E5 C5 E5 G5 F5 E5 D5 C5 A4',
+        'A4 D5 D5 F5 D5 F5 A5 G5 F5 E5 D5 C5 Bb4 D5 D5 F5 E5 D5 C#5 D5 E5 D5 = =',
+        'C5 F5 F5 A5 F5 A5 C6 Bb5 A5 G5 F5 E5 D5 F5 F5 Bb5 A5 G5 E5 F5 G5 A5 = =',
+        'A4 D5 D5 F5 D5 F5 A5 G5 F5 E5 D5 C5 A4 C5 C5 E5 C5 E5 G5 F5 E5 D5 C5 A4',
+      ] },
+      { wave: 'triangle', volume: 0.4, notes: [
+        'D3 - A3 D3 - A3 D3 - A3 D3 - A3 C3 - G3 C3 - G3 C3 - G3 A2 - E3',
+        'D3 - A3 D3 - A3 D3 - A3 D3 - A3 Bb2 - F3 Bb2 - F3 A2 - E3 D3 - -',
+        'F3 - C4 F3 - C4 F3 - C4 C3 - G3 Bb2 - F3 Bb2 - F3 C3 - G3 A2 - E3',
+        'D3 - A3 D3 - A3 D3 - A3 D3 - A3 C3 - G3 C3 - G3 C3 - G3 A2 - E3',
+      ] },
     ],
   },
   deep: {
     bpm: 72,
     parts: [
-      { wave: 'sine', volume: 0.28, notes: 'E5 = = A4 = = C5 = B4 = = E4 = = = - D5 = = G4 = = B4 = A4 = = E4 = = = -' },
-      { wave: 'sine', volume: 0.3, notes: 'A2 = = = = = = = E2 = = = = = = = G2 = = = = = = = A2 = = = = = = =' },
+      { wave: 'sine', volume: 0.28, notes: [
+        'E5 = = A4 = = C5 = B4 = = E4 = = = - D5 = = G4 = = B4 = A4 = = E4 = = = -',
+        'E5 = = A4 = = C5 = B4 = = E4 = = = - D5 = = G4 = = B4 = C5 = = B4 = = A4 =',
+        'F5 = = C5 = = A4 = G4 = = C5 = = = - F5 = = E5 = = D5 = E5 = = = = = = -',
+        'E5 = = A4 = = C5 = B4 = = E4 = = = - D5 = = G4 = = B4 = A4 = = E4 = = = -',
+      ] },
+      { wave: 'sine', volume: 0.3, notes: [
+        'A2 = = = = = = = E2 = = = = = = = G2 = = = = = = = A2 = = = = = = =',
+        'A2 = = = = = = = E2 = = = = = = = G2 = = = = = = = A2 = = = = = = =',
+        'F2 = = = = = = = C3 = = = = = = = D3 = = = = = = = E2 = = = = = = =',
+        'A2 = = = = = = = E2 = = = = = = = G2 = = = = = = = A2 = = = = = = =',
+      ] },
     ],
   },
   surf: {
     bpm: 150,
     parts: [
-      { wave: 'square', volume: 0.13, notes: 'D5 F#5 A5 F#5 D5 F#5 A5 B5 A5 F#5 D5 E5 F#5 = E5 D5 G5 B5 D6 B5 A5 F#5 D5 F#5 E5 C#5 A4 C#5 D5 = - -' },
-      { wave: 'triangle', volume: 0.38, notes: 'D3 D3 A3 D3 D3 D3 A3 D3 D3 D3 A3 D3 A2 A2 E3 A2 G2 G2 D3 G2 D3 D3 A3 D3 A2 A2 E3 A2 D3 D3 A2 -' },
+      { wave: 'square', volume: 0.13, notes: [
+        'D5 F#5 A5 F#5 D5 F#5 A5 B5 A5 F#5 D5 E5 F#5 = E5 D5 G5 B5 D6 B5 A5 F#5 D5 F#5 E5 C#5 A4 C#5 D5 = - -',
+        'D5 F#5 A5 F#5 D5 F#5 A5 B5 A5 F#5 D5 E5 F#5 = E5 D5 B5 A5 G5 F#5 E5 D5 C#5 B4 A4 B4 C#5 E5 D5 = - -',
+        'B4 D5 F#5 D5 B4 D5 F#5 G5 F#5 = E5 = D5 = C#5 = G5 = F#5 G5 A5 = G5 F#5 E5 = F#5 = G5 = A5 =',
+        'D5 F#5 A5 F#5 D5 F#5 A5 B5 A5 F#5 D5 E5 F#5 = E5 D5 G5 B5 D6 B5 A5 F#5 D5 F#5 E5 C#5 A4 C#5 D5 = - -',
+      ] },
+      { wave: 'triangle', volume: 0.38, notes: [
+        'D3 D3 A3 D3 D3 D3 A3 D3 D3 D3 A3 D3 A2 A2 E3 A2 G2 G2 D3 G2 D3 D3 A3 D3 A2 A2 E3 A2 D3 D3 A2 -',
+        'D3 D3 A3 D3 D3 D3 A3 D3 D3 D3 A3 D3 A2 A2 E3 A2 G2 G2 D3 G2 A2 A2 E3 A2 A2 A2 E3 A2 D3 D3 A2 -',
+        'B2 B2 F#3 B2 B2 B2 F#3 B2 F#2 F#2 C#3 F#2 F#2 F#2 C#3 F#2 G2 G2 D3 G2 G2 G2 D3 G2 A2 A2 E3 A2 A2 A2 E3 A2',
+        'D3 D3 A3 D3 D3 D3 A3 D3 D3 D3 A3 D3 A2 A2 E3 A2 G2 G2 D3 G2 D3 D3 A3 D3 A2 A2 E3 A2 D3 D3 A2 -',
+      ] },
       { wave: 'noise', volume: 0.05, notes: 'x - x x' },
     ],
   },
   underground: {
     bpm: 96,
     parts: [
-      { wave: 'triangle', volume: 0.3, notes: 'C4 - - Eb4 - - G4 - F4 - Eb4 - D4 = - - C4 - - Eb4 - - Ab4 - G4 - F4 - Eb4 D4 C4 =' },
-      { wave: 'sine', volume: 0.4, notes: 'C2 = = - G2 = = - Ab2 = = - G2 = = - C2 = = - G2 = = - Ab2 = = - G2 = = -' },
+      { wave: 'triangle', volume: 0.3, notes: [
+        'C4 - - Eb4 - - G4 - F4 - Eb4 - D4 = - - C4 - - Eb4 - - Ab4 - G4 - F4 - Eb4 D4 C4 =',
+        'C5 - - Bb4 - - G4 - Ab4 - G4 - F4 = - - Eb4 - - F4 - - G4 - B3 - D4 - C4 = - -',
+        'Eb4 - - C4 - - Ab3 - Bb3 - C4 - Eb4 = - - F4 - - Ab4 - - C5 - B4 - G4 - D4 = - -',
+        'C4 - - Eb4 - - G4 - F4 - Eb4 - D4 = - - C4 - - Eb4 - - Ab4 - G4 - F4 - Eb4 D4 C4 =',
+      ] },
+      { wave: 'sine', volume: 0.4, notes: [
+        'C2 = = - G2 = = - Ab2 = = - G2 = = - C2 = = - G2 = = - Ab2 = = - G2 = = -',
+        'C2 = = - G2 = = - Ab2 = = - G2 = = - C2 = = - G2 = = - Ab2 = = - G2 = = -',
+        'Ab1 = = - Eb2 = = - Eb2 = = - Bb2 = = - F2 = = - C3 = = - G1 = = - D2 = = -',
+        'C2 = = - G2 = = - Ab2 = = - G2 = = - C2 = = - G2 = = - Ab2 = = - G2 = = -',
+      ] },
     ],
   },
   magma: {
     bpm: 100,
     parts: [
-      { wave: 'sawtooth', volume: 0.1, notes: 'D4 - F4 D4 G#4 = A4 - D4 - F4 D4 C5 = A4 - G#4 - F4 D4 F4 = G#4 - A4 = - - D4 - - -' },
-      { wave: 'triangle', volume: 0.45, notes: 'D2 = D2 - D2 = A2 - D2 = D2 - C2 = G2 - D2 = D2 - D2 = A2 - Bb1 = F2 - A1 = E2 -' },
+      { wave: 'sawtooth', volume: 0.1, notes: [
+        'D4 - F4 D4 G#4 = A4 - D4 - F4 D4 C5 = A4 - G#4 - F4 D4 F4 = G#4 - A4 = - - D4 - - -',
+        'D5 - F5 D5 G#5 = A5 - D5 - F5 D5 C6 = A5 - G#5 - F5 D5 F5 = G#5 - A5 = G#5 = F5 = E5 =',
+        'Bb4 - A4 Bb4 D5 = - - C5 - Bb4 C5 E5 = - - D5 - C5 Bb4 A4 - G#4 - A4 = = = - - - -',
+        'D4 - F4 D4 G#4 = A4 - D4 - F4 D4 C5 = A4 - G#4 - F4 D4 F4 = G#4 - A4 = - - D4 - - -',
+      ] },
+      { wave: 'triangle', volume: 0.45, notes: [
+        'D2 = D2 - D2 = A2 - D2 = D2 - C2 = G2 - D2 = D2 - D2 = A2 - Bb1 = F2 - A1 = E2 -',
+        'D2 = D2 - D2 = A2 - D2 = D2 - C2 = G2 - D2 = D2 - D2 = A2 - Bb1 = F2 - A1 = E2 -',
+        'Bb1 = Bb1 - Bb1 = F2 - C2 = C2 - C2 = G2 - D2 = D2 - D2 = A2 - A1 = A1 - A1 = E2 -',
+        'D2 = D2 - D2 = A2 - D2 = D2 - C2 = G2 - D2 = D2 - D2 = A2 - Bb1 = F2 - A1 = E2 -',
+      ] },
       { wave: 'noise', volume: 0.06, notes: 'x - - - x - x -' },
     ],
   },
   boss: {
     bpm: 168,
     parts: [
-      { wave: 'sawtooth', volume: 0.1, notes: 'A4 A4 C5 A4 E5 A4 D5 C5 A4 A4 C5 A4 F5 E5 D5 C5 G4 G4 B4 G4 D5 G4 C5 B4 E4 E4 G#4 E4 B4 = G#4 =' },
-      { wave: 'triangle', volume: 0.4, notes: 'A2 A2 A3 A2 A2 A2 A3 A2 A2 A2 A3 A2 F2 F2 F3 F2 G2 G2 G3 G2 G2 G2 G3 G2 E2 E2 E3 E2 E2 E2 E3 E2' },
+      { wave: 'sawtooth', volume: 0.1, notes: [
+        'A4 A4 C5 A4 E5 A4 D5 C5 A4 A4 C5 A4 F5 E5 D5 C5 G4 G4 B4 G4 D5 G4 C5 B4 E4 E4 G#4 E4 B4 = G#4 =',
+        'A4 A4 C5 A4 E5 A4 D5 C5 A4 A4 C5 A4 F5 E5 D5 C5 F4 F4 A4 F4 C5 F4 A4 C5 E5 D5 C5 B4 G#4 = E4 =',
+        'D5 D5 F5 D5 A5 D5 G5 F5 E5 E5 G5 E5 C6 = B5 A5 F5 F5 A5 F5 D5 F5 E5 D5 E5 = G#5 = B5 = E5 =',
+        'A4 A4 C5 A4 E5 A4 D5 C5 A4 A4 C5 A4 F5 E5 D5 C5 G4 G4 B4 G4 D5 G4 C5 B4 E4 E4 G#4 E4 B4 = G#4 =',
+      ] },
+      { wave: 'triangle', volume: 0.4, notes: [
+        'A2 A2 A3 A2 A2 A2 A3 A2 A2 A2 A3 A2 F2 F2 F3 F2 G2 G2 G3 G2 G2 G2 G3 G2 E2 E2 E3 E2 E2 E2 E3 E2',
+        'A2 A2 A3 A2 A2 A2 A3 A2 A2 A2 A3 A2 F2 F2 F3 F2 F2 F2 F3 F2 F2 F2 F3 F2 E2 E2 E3 E2 E2 E2 E3 E2',
+        'D2 D2 D3 D2 D2 D2 D3 D2 C2 C2 C3 C2 C2 C2 C3 C2 F2 F2 F3 F2 F2 F2 F3 F2 E2 E2 E3 E2 E2 E2 E3 E2',
+        'A2 A2 A3 A2 A2 A2 A3 A2 A2 A2 A3 A2 F2 F2 F3 F2 G2 G2 G3 G2 G2 G2 G3 G2 E2 E2 E3 E2 E2 E2 E3 E2',
+      ] },
       { wave: 'noise', volume: 0.06, notes: 'x - x -' },
     ],
   },
@@ -135,26 +257,33 @@ function generateSong(level) {
   const random = seededRandom(20261101 + level * 7919 + 7);
   const scale = random() < 0.5 ? [0, 2, 4, 7, 9] : [0, 3, 5, 7, 10];
   const root = 57 + Math.floor(random() * 7);
-  const melody = [];
   let degree = 5;
-  for (let step = 0; step < 32; step++) {
-    if (step % 8 !== 7 && random() < 0.2) {
-      melody.push(step === 0 ? '-' : random() < 0.5 ? '=' : '-');
-      continue;
+  const tune = (steps) => {
+    const tokens = [];
+    for (let step = 0; step < steps; step++) {
+      if (step % 8 !== 7 && random() < 0.2) {
+        tokens.push(step === 0 ? '-' : random() < 0.5 ? '=' : '-');
+        continue;
+      }
+      degree = clamp(degree + Math.floor(random() * 5) - 2, 0, 9);
+      tokens.push(midiToNote(root + scale[degree % 5] + 12 * Math.floor(degree / 5)));
     }
-    degree = clamp(degree + Math.floor(random() * 5) - 2, 0, 9);
-    melody.push(midiToNote(root + scale[degree % 5] + 12 * Math.floor(degree / 5)));
-  }
-  const bass = [];
-  for (let bar = 0; bar < 4; bar++) {
-    const barRoot = root - 24 + scale[[0, 3, 2, 0][bar]];
-    bass.push(midiToNote(barRoot), '-', midiToNote(barRoot + 7), '-', midiToNote(barRoot), '-', midiToNote(barRoot + 7), '-');
-  }
+    return tokens.join(' ');
+  };
+  const bassLine = (chords) => chords.map((chord) => {
+    const low = midiToNote(root - 24 + scale[chord]), high = midiToNote(root - 17 + scale[chord]);
+    return `${low} - ${high} - ${low} - ${high} -`;
+  }).join(' ');
+  // The same shape as the written songs: the tune, the tune with a new ending, a middle part, the tune.
+  const verse = tune(32);
+  const answer = `${verse.split(' ').slice(0, 16).join(' ')} ${tune(16)}`;
+  const middle = tune(32);
+  const verseBass = bassLine([0, 3, 2, 0]);
   return {
     bpm: 110 + Math.min(level - FIRST_SURPRISE_LEVEL, 10) * 4,
     parts: [
-      { wave: 'square', volume: 0.13, notes: melody.join(' ') },
-      { wave: 'triangle', volume: 0.4, notes: bass.join(' ') },
+      { wave: 'square', volume: 0.13, notes: [verse, answer, middle, verse] },
+      { wave: 'triangle', volume: 0.4, notes: [verseBass, verseBass, bassLine([2, 3, 1, 4]), verseBass] },
       { wave: 'noise', volume: 0.05, notes: 'x - x -' },
     ],
   };
