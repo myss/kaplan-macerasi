@@ -371,11 +371,12 @@ function updateBossFight(dt) {
     boss.y += Math.sin(Math.min(progress, 1) * Math.PI) * BOSS_SLAM_HEIGHT;
     if (boss.timer <= 0) {
       boss.y = bossFloor(boss.x, boss.z);
-      if (Math.hypot(tiger.x - boss.x, tiger.z - boss.z) < boss.scale * 0.6) bossHurtsTiger('Ah! Üstüne düştü! Kenara kaç!');
       boss.shock = { radius: 1 };
       boss.state = 'rest';
       boss.timer = BOSS_REST_SECONDS + 0.6;
       burst(boss.x, boss.y + 0.4, boss.z, [0.72, 0.42, 0.14], 40);
+      // Last, as taking the last life starts the fight over.
+      if (Math.hypot(tiger.x - boss.x, tiger.z - boss.z) < boss.scale * 0.6) bossHurtsTiger('Ah! Üstüne düştü! Kenara kaç!');
     }
   } else if (boss.state === 'rest') {
     boss.timer -= dt;
@@ -386,10 +387,11 @@ function updateBossFight(dt) {
   }
 
   if (boss.shock) {
-    boss.shock.radius += BOSS_SHOCK_SPEED * dt;
+    // Done with the ring before it hurts: taking the last life starts the fight over without it.
+    const radius = (boss.shock.radius += BOSS_SHOCK_SPEED * dt);
+    if (radius > BOSS_SHOCK_REACH) boss.shock = null;
     const distance = Math.hypot(tiger.x - boss.x, tiger.z - boss.z);
-    if (Math.abs(distance - boss.shock.radius) < 0.9 && tigerIsLow()) bossHurtsTiger('Ah! Halka gelirken zıpla!');
-    if (boss.shock.radius > BOSS_SHOCK_REACH) boss.shock = null;
+    if (Math.abs(distance - radius) < 0.9 && tigerIsLow()) bossHurtsTiger('Ah! Halka gelirken zıpla!');
   }
 
   // Fighting back. The body's reach grows with the boss.
