@@ -25,7 +25,7 @@ Oyun, Ana Sayfa köyünde başlıyor. Her dünyaya köydeki kendi girişinden gi
 - **Deniz dibi zindanı:** Köpekbalıklarının yalnızca yüzgeci görünüyor, yaklaşınca ısırmak için fırlıyorlar.
 - **Zorlu Sörf:** Üç şeritte kayalardan ve yunuslardan kaçtıktan sonra sıra dev balinadan kaçmaya geliyor.
 - **Yer Dibi Şehri:** Haritası olmayan, yolları her girişte değişen kocaman bir labirent. Köstebekler ve zırhlı karıncalar burada yaşıyor.
-- **Magma Tabakası:** Köstebeklerin şehrinin de altında, lav gölleri arasında. Yeraltı gemileri kayaların içinde yüzüyor, yalnızca periskopları görünüyor. Uzaktan ateş topu atıyor, yaklaşınca fırlayıp çarpıyorlar. Sonunda Dünyanın Çekirdeği geliyor.
+- **Magma Tabakası:** Köstebeklerin şehrinin de altında, lav gölleri arasında. Yeraltı gemileri kayaların içinde yüzüyor, yalnızca periskopları görünüyor. Uzaktan ateş topu atıyor, yaklaşınca fırlayıp çarpıyorlar. Sonunda Dünyanın Çekirdeği geliyor. Onu yenince kaplan taş bir kayıkla lavın üstüne açılıyor, bir lav balinası da onu fışkırttığı lavla bulutlara kadar uçuruyor.
 - **Bulutlar:** Elektrikli bulutlar dokununca çarpıyor, uzaktan da yıldırım atıyor. Kasırga, adanın üstünde güneş şeklinde dev bir bulutta yaşıyor.
 - **Sürpriz Kapısı:** Her seferinde yepyeni bir dünyaya açılıyor. Her bitirişte oyun biraz daha zorlaşıyor.
 
@@ -101,7 +101,7 @@ The game starts in the home village, where each world has its own entrance. The 
 - **Deniz dibi zindanı (Deep Sea Dungeon):** you only see the sharks' fins until they lunge
 - **Zorlu Sörf (Tough Surf):** dodge rocks and dolphins across three lanes, then escape a giant whale
 - **Yer Dibi Şehri (Underground City):** a maze with no map whose paths change on every visit, home to moles and armoured ants
-- **Magma Tabakası (Magma Layer):** below the moles' city, among lava lakes; underground ships sail through the rock with only their periscopes showing, throw fireballs from afar and burst up to ram, and the Earth's core itself is the boss
+- **Magma Tabakası (Magma Layer):** below the moles' city, among lava lakes; underground ships sail through the rock with only their periscopes showing, throw fireballs from afar and burst up to ram, and the Earth's core itself is the boss; beating it sends the tiger out on the lava in a stone boat until a lava whale spouts it up to the clouds
 - **Bulutlar (The Clouds):** electric clouds shock on touch and throw lightning, and a tornado lives in a giant sun-shaped cloud above the island
 - **Sürpriz Kapısı (Surprise Door):** generates a new world every time, and the game gets harder with each one you finish
 

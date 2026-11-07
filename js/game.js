@@ -42,6 +42,7 @@ const SURPRISE_TOP_SPEED_FACTOR = 1.6;
 const ENEMY_TOP_SPEED = 7.2; // just slower than the tiger, so running away always remains possible
 const SAVE_KEY = 'kaplan-macerasi-kayit';
 const SAVE_INTERVAL = 2; // seconds
+const NEXT_WORLD_DELAY_MS = 2500;
 const ATTACK_DURATION = 0.35;
 const ATTACK_COOLDOWN = 0.5; // counted from the start of the attack
 const ATTACK_RADIUS = 3;
@@ -67,6 +68,8 @@ const models = {
   earthCore: earthCoreModel(),
   stormCloud: stormCloudModel(),
   tornado: tornadoModel(),
+  lavaBoat: lavaBoatModel(),
+  lavaWhale: whaleModel({ blue: [0.2, 0.12, 0.1], belly: [1.5, 0.55, 0.08], dark: [0.12, 0.07, 0.06] }),
   surfboard: surfboardModel(),
   dolphin: dolphinModel(),
   seaRock: seaRockModel(),
@@ -795,13 +798,27 @@ function openCage(cage) {
   else showMessage('Timsahı kurtardın! Artık seninle geliyor.');
 }
 
+// A world with a `next` carries straight on into it after a moment, without the stop at home.
 function completeLevel() {
   game.levelDone = true;
   playSound('win');
   if (!game.completed.includes(game.level)) game.completed.push(game.level);
-  hud.win.classList.remove('hidden');
-  document.exitPointerLock?.();
   writeSave();
+  const finished = world, { next } = world.theme;
+  if (next === undefined) {
+    hud.win.classList.remove('hidden');
+    document.exitPointerLock?.();
+    return;
+  }
+  setTimeout(() => {
+    if (world !== finished) return; // gone home in the meantime
+    hud.loading.classList.remove('hidden');
+    // Generating blocks the page, so give the browser a moment to show the loading panel first.
+    setTimeout(() => {
+      startCrossing(generateWorld(next));
+      hud.loading.classList.add('hidden');
+    }, 50);
+  }, NEXT_WORLD_DELAY_MS);
 }
 
 // The cheat key: takes whatever is nearest, wherever it is. A cage only counts with a key in hand.
@@ -940,6 +957,7 @@ function buildFrameSpheres() {
   count = drawMonsters(count);
   count = drawBoss(count);
   count = drawSurf(count);
+  count = drawCrossing(count);
   if (world.theme.home) count = drawHome(count);
   const addSphere = (x, y, z, radius, color) => {
     const at = count * FLOATS_PER_SPHERE;

@@ -552,6 +552,19 @@ function tornadoModel() {
   return { parts: [part(funnel, [0, 0, 0], 'y', 'swirl', 1), part(face)] };
 }
 
+// A stone boat that does not burn, with a glowing rim. The tiger stands on its deck at y = 0.35.
+function lavaBoatModel() {
+  const stone = [0.3, 0.27, 0.27], dark = [0.16, 0.14, 0.14], glow = [1.5, 0.9, 0.3];
+  const spheres = [];
+  addShell(spheres, 0, 0.12, 0, 0.6, 0.24, 1.15, (nx, ny) => (ny < -0.3 ? dark : stone));
+  for (let i = 0; i < 28; i++) {
+    const a = (i / 28) * Math.PI * 2;
+    addSphere(spheres, Math.sin(a) * 0.6, 0.38, Math.cos(a) * 1.15, 0.07, i % 2 === 0 ? glow : stone);
+  }
+  addShell(spheres, 0, 0.3, 0, 0.5, 0.04, 1, stone);
+  return { parts: [part(spheres)] };
+}
+
 function surfboardModel() {
   const board = [0.98, 0.85, 0.2], stripe = [0.95, 0.3, 0.25];
   const spheres = [];
@@ -603,8 +616,8 @@ function rampModel() {
 }
 
 // Built small and drawn large, like the walking tree. Its centre is at y = 0.
-function whaleModel() {
-  const blue = [0.2, 0.3, 0.46], belly = [0.82, 0.86, 0.9], dark = [0.13, 0.2, 0.32], white = [0.98, 0.98, 0.95], black = [0.05, 0.05, 0.06];
+function whaleModel({ blue = [0.2, 0.3, 0.46], belly = [0.82, 0.86, 0.9], dark = [0.13, 0.2, 0.32] } = {}) {
+  const white = [0.98, 0.98, 0.95], black = [0.05, 0.05, 0.06];
   const body = [];
   addShell(body, 0, 0, 0.2, 0.62, 0.6, 1.25, (nx, ny) => (ny < -0.25 && Math.sin(nx * 22) > -0.3 ? belly : blue));
   addShell(body, 0, 0, -1.25, 0.28, 0.26, 0.5, blue);

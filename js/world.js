@@ -92,6 +92,7 @@ const BLOCK_COLORS = {
 };
 
 // The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
+// `next` is the level a finished one carries straight on to, instead of going home.
 const WORLD_THEMES = [
   {
     name: 'Canlı Ağaçlar Ormanı', sky: [0.56, 0.8, 0.96], hills: 26, plant: 'leafyTree', crossing: 'swim', monster: 'walkingTree',
@@ -142,8 +143,8 @@ const WORLD_THEMES = [
     accents: [BLOCK.EARTH, BLOCK.EARTH], trunk: BLOCK.DIRT,
   },
   {
-    name: 'Magma Tabakası', sky: [0.24, 0.06, 0.03], fogDensity: 0.0012, hills: 34, plant: 'crystal', crossing: 'fly', noBirds: true,
-    monster: 'drillShip', boss: 'earthCore',
+    name: 'Magma Tabakası', sky: [0.24, 0.06, 0.03], fogDensity: 0.0012, hills: 34, plant: 'crystal', crossing: 'boat', noBirds: true,
+    monster: 'drillShip', boss: 'earthCore', next: 11,
     surface: BLOCK.MAGMA_ROCK, soil: BLOCK.BASALT, peak: BLOCK.EMBER, shore: BLOCK.BASALT, liquid: BLOCK.LAVA, rock: BLOCK.BASALT,
     accents: [BLOCK.GLOW, BLOCK.EMBER], trunk: BLOCK.BASALT, crown: BLOCK.EMBER,
   },
