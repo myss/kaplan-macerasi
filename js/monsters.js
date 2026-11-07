@@ -12,6 +12,7 @@ const FIRE_BALL = { every: 3.5 };
 const POISON_BALL = { every: 5, speed: 6, radius: 0.3, color: [0.45, 1.1, 0.2], burst: [0.4, 0.8, 0.2], sound: 'fire', stick: POISON_STICK };
 const HONEY_BALL = { every: 5, speed: 6.5, radius: 0.36, color: [1.2, 0.72, 0.1], burst: [1, 0.7, 0.1], sound: 'fire', stick: HONEY_STICK };
 const ROOT_BALL = { every: 6, speed: 7, radius: 0.3, color: [0.42, 0.26, 0.12], burst: [0.42, 0.26, 0.12], sound: 'root', stick: ROOT_STICK, crawls: true };
+const LIGHTNING_BALL = { every: 4, speed: 8, radius: 0.22, color: [1.7, 1.6, 0.45], burst: [1, 1, 0.6], sound: 'zap', sparks: true };
 
 const MONSTER_KINDS = {
   walkingTree: { speed: 1.6, scale: 1.5, color: [0.16, 0.56, 0.22], ball: ROOT_BALL },
@@ -25,6 +26,11 @@ const MONSTER_KINDS = {
   ant: { speed: 4.6, scale: 1.2, color: [0.5, 0.14, 0.08], armored: true },
   // Sails under the rock with its periscope showing, throws fire from there and comes up to ram.
   drillShip: { speed: 3, scale: 1.2, color: [0.46, 0.44, 0.42], dives: true, ball: FIRE_BALL },
+  // Floats above the ground. It shocks whatever touches it, landing on it included.
+  stormCloud: {
+    speed: 2.4, scale: 1.3, color: [0.52, 0.54, 0.6], ball: LIGHTNING_BALL, burnsOnLanding: true,
+    landingMessage: 'Bzzt! Elektrikli buluta basma, uzaktan vur!',
+  },
 };
 
 const MONSTER_SEE_RADIUS = 14;
@@ -343,7 +349,7 @@ function updateMonster(monster, dt) {
   } else if (tiger.vy < -1 && flatDistance < 1.5 && dy > monster.scale) {
     // A lava monster is too hot to land on: it burns the tiger instead of going down.
     if (!monster.burnsOnLanding) hitEnemy(monster);
-    else if (tiger.invulnerable <= 0) hurtTiger(monster.x, monster.z, 'Ay, çok sıcak! Lav canavarına basma, uzaktan vur!');
+    else if (tiger.invulnerable <= 0) hurtTiger(monster.x, monster.z, monster.landingMessage ?? 'Ay, çok sıcak! Lav canavarına basma, uzaktan vur!');
     tiger.vy = JUMP_SPEED * 0.9;
   } else if (tiger.invulnerable <= 0 && monster.fleeTime <= 0 && flatDistance < MONSTER_CONTACT_RADIUS && Math.abs(dy) < (monster.dives ? BITE_REACH_UP : 2)) {
     hurtTiger(monster.x, monster.z);
@@ -364,6 +370,9 @@ function updateFireballs(dt) {
       const floor = floorBelow(ball.x, ball.y + 1, ball.z);
       if (!Number.isFinite(floor) || floor > ball.y + 0.8) isOut = true;
       else ball.y = floor + CRAWL_HEIGHT;
+    }
+    // A crawling one leaves a trail along the ground, and lightning gives off sparks.
+    if (ball.crawls || ball.sparks) {
       ball.trailTime -= dt;
       if (ball.trailTime <= 0) {
         ball.trailTime = CRAWL_TRAIL_SECONDS;

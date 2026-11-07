@@ -28,6 +28,9 @@ const GRAB_ORBIT_METRES = 3;
 const FLING_SPEED = 13;
 const FLING_SECONDS = 0.45;
 const BOSS_TOP_REACH = 0.6; // how far above its head the tiger's feet can be and still touch a boss
+const BOSS_SKY_START = 0.7; // of the sky arena's radius, from its middle
+const BOSS_SKY_EDGE = 1.5; // metres the boss keeps from the sky arena's edge
+const BOSS_SKY_FALL = 4; // metres below the sky arena that count as having fallen off
 
 // lives: more than BOSS_LIVES for a tougher boss; the hard level adds the same number on top.
 // spin.grabs: caught and whirled around unharmed, then flung into a lost life. Otherwise it burns on touch.
@@ -64,6 +67,12 @@ const BOSS_KINDS = {
     ball: { count: 4, speed: 7, radius: 0.9, color: [1.5, 0.6, 0.08], burst: [0.85, 0.85, 0.88] },
     spin: { radius: 10, turnsPerSecond: 0.7, color: [1.5, 0.9, 0.2], grabs: false },
   },
+  // Whirls the tiger around instead of sweeping, and throws lightning.
+  tornado: {
+    name: 'Kasırga', scale: 3.5, speed: 2.4, lungeSpeed: 12, lives: 6, moves: ['throw', 'spin', 'lunge'], color: [0.86, 0.89, 0.95],
+    ball: { count: 3, speed: 9, radius: 0.35, color: [1.7, 1.6, 0.45], burst: [1, 1, 0.6], sound: 'zap', sparks: true },
+    spin: { radius: 9, turnsPerSecond: 0.6, color: [0.86, 0.89, 0.95], grabs: true },
+  },
   squid: {
     name: 'Dev Kalamar', scale: 2.4, speed: 2.2, lungeSpeed: 11, moves: ['throw', 'spin', 'lunge'],
     ball: { count: 3, speed: 7, radius: 0.55, color: [0.05, 0.03, 0.12], burst: [0.1, 0.06, 0.2] },
@@ -89,12 +98,7 @@ function startBossFight() {
   }
   fireballs.length = 0;
 
-  tiger.x = SPAWN.x;
-  tiger.z = SPAWN.z;
-  tiger.y = world.terrainTop(SPAWN.x, SPAWN.z);
-  tiger.vy = 0;
-  tiger.wingsOut = false;
-  camera.yaw = 0; // looking towards the arena
+  placeTigerForBoss();
   for (const follower of followers) {
     follower.x = SPAWN.x;
     follower.z = SPAWN.z + 6;
@@ -114,9 +118,26 @@ function startBossFight() {
   showMessage(`${boss.name} geldi! ${maxLives} kez vur!`, 3.5);
 }
 
+// A world with a sky arena fights up there, on top of its flat cloud. The rest fight on the ground
+// just past the island's middle, where the tiger starts.
+function bossFloor(x, z) {
+  return world.skyArena ? world.skyArena.y : world.terrainTop(x, z);
+}
+
+function placeTigerForBoss() {
+  const sky = world.skyArena;
+  tiger.x = sky ? sky.x : SPAWN.x;
+  tiger.z = sky ? sky.z + sky.radius * BOSS_SKY_START : SPAWN.z;
+  tiger.y = bossFloor(tiger.x, tiger.z);
+  tiger.vy = 0;
+  tiger.wingsOut = false;
+  camera.yaw = 0; // looking towards the arena
+}
+
 function placeBoss() {
+  const { x, z } = world.skyArena ?? BOSS_ARENA;
   Object.assign(boss, {
-    x: BOSS_ARENA.x, z: BOSS_ARENA.z, y: world.terrainTop(BOSS_ARENA.x, BOSS_ARENA.z),
+    x, z, y: bossFloor(x, z),
     yaw: 0, stride: 0, recovery: 0, state: 'approach', timer: 2, nextMove: 0,
     move: null, armAngle: 0, mark: null, shock: null, grab: null,
     lungeX: 0, lungeZ: 0, slamFromX: 0, slamFromZ: 0, slamToX: 0, slamToZ: 0,
@@ -139,8 +160,8 @@ function endBossFight() {
 function restartBossFight() {
   boss.lives = boss.maxLives;
   placeBoss();
+  placeTigerForBoss();
   fireballs.length = 0;
-  camera.yaw = 0;
   updateBossHud();
   showMessage('Yakalandın! Boss da baştan başlıyor.', 3.5);
 }
@@ -163,7 +184,7 @@ function hitBoss() {
 }
 
 function tigerIsLow() {
-  return tiger.y - world.terrainTop(tiger.x, tiger.z) < BOSS_LOW_REACH;
+  return tiger.y - bossFloor(tiger.x, tiger.z) < BOSS_LOW_REACH;
 }
 
 function bossHurtsTiger(message) {
@@ -173,9 +194,11 @@ function bossHurtsTiger(message) {
 function moveBoss(x, z) {
   if (world.isLiquid(x, z)) return;
   if (world.theme.walledBoss && world.isSolid(x, boss.y + 1, z)) return;
+  const sky = world.skyArena;
+  if (sky && Math.hypot(x - sky.x, z - sky.z) > sky.radius - BOSS_SKY_EDGE) return;
   boss.x = x;
   boss.z = z;
-  boss.y = world.terrainTop(x, z);
+  boss.y = bossFloor(x, z);
 }
 
 function turnBossToTiger(dt) {
@@ -186,7 +209,7 @@ function turnBossToTiger(dt) {
 
 function throwBossBalls() {
   const { ball } = boss;
-  playSound('fire');
+  playSound(ball.sound ?? 'fire');
   const y = boss.y + boss.scale * 1.4;
   const ahead = Math.atan2(tiger.x - boss.x, tiger.z - boss.z);
   const flat = Math.hypot(tiger.x - boss.x, tiger.z - boss.z) || 1;
@@ -197,7 +220,7 @@ function throwBossBalls() {
       x: boss.x, y, z: boss.z, life: FIREBALL_LIFE_SECONDS,
       vx: Math.sin(a) * ball.speed, vy: rise * ball.speed, vz: Math.cos(a) * ball.speed,
       radius: ball.radius, color: ball.color, hitRadius: ball.radius + 0.7,
-      burst: ball.burst, stick: ball.stick,
+      burst: ball.burst, stick: ball.stick, sparks: ball.sparks, trailTime: 0,
     });
   }
 }
@@ -285,6 +308,10 @@ function updateBossGrab(dt) {
 function updateBossFight(dt) {
   if (!boss) return;
   boss.recovery = Math.max(0, boss.recovery - dt);
+  if (world.skyArena && tiger.y < world.skyArena.y - BOSS_SKY_FALL) {
+    placeTigerForBoss();
+    hurtTiger(tiger.x, tiger.z - 1, 'Bulutun üstünde kal!');
+  }
   if (boss.mistFade > 0) {
     boss.mistFade -= dt * 2;
     hud.mist.style.opacity = Math.max(0, boss.mistFade);
@@ -336,7 +363,7 @@ function updateBossFight(dt) {
     moveBoss(boss.slamFromX + (boss.slamToX - boss.slamFromX) * progress, boss.slamFromZ + (boss.slamToZ - boss.slamFromZ) * progress);
     boss.y += Math.sin(Math.min(progress, 1) * Math.PI) * BOSS_SLAM_HEIGHT;
     if (boss.timer <= 0) {
-      boss.y = world.terrainTop(boss.x, boss.z);
+      boss.y = bossFloor(boss.x, boss.z);
       if (Math.hypot(tiger.x - boss.x, tiger.z - boss.z) < boss.scale * 0.6) bossHurtsTiger('Ah! Üstüne düştü! Kenara kaç!');
       boss.shock = { radius: 1 };
       boss.state = 'rest';
@@ -384,6 +411,7 @@ function drawBoss(count) {
   };
   count = drawModel(frameSpheres, count, models[boss.kind], boss.x, boss.y, boss.z, boss.yaw, {
     stride: Math.sin(boss.stride) * 0.7,
+    swirl: game.time * 7,
   }, boss.scale);
   if (boss.state === 'spin' || boss.state === 'grab') {
     const { radius, color } = boss.spin;
@@ -396,7 +424,7 @@ function drawBoss(count) {
   if (boss.mark) {
     for (let i = 0; i < 24; i++) {
       const a = (i / 24) * Math.PI * 2;
-      addSphere(boss.mark.x + Math.cos(a) * BOSS_STING_RADIUS, world.terrainTop(boss.mark.x, boss.mark.z) + 0.2, boss.mark.z + Math.sin(a) * BOSS_STING_RADIUS, 0.16, [1.4, 0.1, 0.08]);
+      addSphere(boss.mark.x + Math.cos(a) * BOSS_STING_RADIUS, bossFloor(boss.mark.x, boss.mark.z) + 0.2, boss.mark.z + Math.sin(a) * BOSS_STING_RADIUS, 0.16, [1.4, 0.1, 0.08]);
     }
   }
   if (boss.shock) {

@@ -180,6 +180,7 @@ const HOME_ENTRANCES = [
   { level: 8, build: 'surfCave', x: 0, z: 60 },
   { level: 9, build: 'moleHole', x: 24, z: 60 },
   { level: 10, build: 'magmaPit', x: 46, z: 60 }, // beside the mole hole: under the moles' city is the magma
+  { level: 11, build: 'cloudCave', x: -46, z: 60 },
 ];
 
 function buildHomeVillage(api) {
@@ -252,6 +253,13 @@ function buildHomeVillage(api) {
     iceCave(cx, floor, cz) {
       cave(cx, floor, cz, BLOCK.ICE);
       return { radius: 1.8, portal: [0.6, 1, 1.4] };
+    },
+    // A cave of cloud with smaller puffs piled on it.
+    cloudCave(cx, floor, cz) {
+      cave(cx, floor, cz, BLOCK.CLOUD);
+      for (const [x, y, z, r] of [[-8, 18, 3, 7], [8, 19, 2, 8], [0, 24, 5, 7], [-2, 29, 0, 5]]) stampBlob(cx + x, floor + y, cz + z, r, r - 1, r, BLOCK.CLOUD);
+      box(cx - 4, floor + 1, cz - 16, cx + 4, floor + 10, cz - 11, EMPTY);
+      return { radius: 1.8, portal: [1.3, 1.3, 1.5] };
     },
     volcano(cx, floor, cz) {
       for (let i = 0; i < 12; i++) disc(cx, floor + 1 + i, cz, 26 - Math.round(i * 1.5), i % 3 === 2 ? BLOCK.BASALT : BLOCK.ASH);

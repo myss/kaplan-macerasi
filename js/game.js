@@ -65,6 +65,8 @@ const models = {
   worm: wormModel(),
   drillShip: drillShipModel(),
   earthCore: earthCoreModel(),
+  stormCloud: stormCloudModel(),
+  tornado: tornadoModel(),
   surfboard: surfboardModel(),
   dolphin: dolphinModel(),
   seaRock: seaRockModel(),

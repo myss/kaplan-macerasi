@@ -496,6 +496,62 @@ function earthCoreModel() {
   return { parts: [part(spheres)] };
 }
 
+// Floats with its own height built in, the way the drill ship does: a grey cloud, dark underneath,
+// with an angry face and a bolt hanging below. The bolt flickers on the stride.
+function stormCloudModel() {
+  const light = [0.78, 0.8, 0.86], grey = [0.52, 0.54, 0.6], dark = [0.3, 0.31, 0.36], bolt = [1.7, 1.6, 0.45];
+  const white = [0.98, 0.98, 0.95], black = [0.05, 0.05, 0.06];
+  const y = 1.35;
+  const shade = (nx, ny) => (ny < -0.35 ? dark : ny > 0.4 ? light : grey);
+  const body = [];
+  addShell(body, 0, y, 0, 0.55, 0.38, 0.45, shade);
+  for (const [x, dy, z, r] of [[-0.45, -0.05, 0, 0.32], [0.45, -0.05, 0, 0.32], [-0.18, 0.3, 0.02, 0.3], [0.2, 0.26, -0.05, 0.28]]) {
+    addShell(body, x, y + dy, z, r, r * 0.85, r, shade);
+  }
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.16, y + 0.06, 0.43, 0.08, white);
+    addSphere(body, side * 0.16, y + 0.05, 0.49, 0.045, black);
+    for (let i = 0; i < 3; i++) addSphere(body, side * (0.08 + i * 0.06), y + 0.2 + i * 0.03, 0.44, 0.03, black);
+  }
+  for (let i = -2; i <= 2; i++) addSphere(body, i * 0.05, y - 0.14 + Math.abs(i) * 0.015, 0.44, 0.03, black);
+  const zigzag = [];
+  const points = [[0, y - 0.4], [0.12, y - 0.62], [-0.06, y - 0.7], [0.08, y - 0.95]];
+  for (let p = 0; p + 1 < points.length; p++) {
+    const [x0, y0] = points[p], [x1, y1] = points[p + 1];
+    for (let t = 0; t <= 1; t += 0.25) addSphere(zigzag, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, 0.1, 0.045, bolt);
+  }
+  return { parts: [part(body), part(zigzag, [0, y - 0.4, 0.1], 'z', 'stride', 0.4)] };
+}
+
+// A funnel of wind, narrow at the ground and wide at the top, that swirls on its own. Its eyes keep
+// facing the way it goes.
+function tornadoModel() {
+  const light = [0.86, 0.89, 0.95], grey = [0.6, 0.64, 0.72], dark = [0.4, 0.43, 0.5], dust = [0.62, 0.56, 0.48];
+  const white = [0.98, 0.98, 0.95], black = [0.05, 0.05, 0.06];
+  const funnel = [];
+  const height = 2.2;
+  for (let ring = 0; ring <= 24; ring++) {
+    const t = ring / 24, y = t * height;
+    const radius = 0.12 + t * t * 0.75;
+    const around = Math.max(6, Math.round(radius * 55));
+    for (let i = 0; i < around; i++) {
+      const a = (i / around) * Math.PI * 2;
+      const stripe = Math.sin(a * 3 - t * 9);
+      const color = ring < 3 ? dust : stripe > 0.5 ? light : stripe < -0.5 ? dark : grey;
+      addSphere(funnel, Math.cos(a) * radius, y, Math.sin(a) * radius, SMALL_RADIUS * 1.1, color);
+    }
+  }
+  const face = [];
+  const faceY = height * 0.72, faceZ = 0.12 + 0.72 * 0.72 * 0.75;
+  for (const side of [-1, 1]) {
+    addSphere(face, side * 0.16, faceY, faceZ, 0.1, white);
+    addSphere(face, side * 0.16, faceY, faceZ + 0.06, 0.055, black);
+    for (let i = 0; i < 4; i++) addSphere(face, side * (0.07 + i * 0.05), faceY + 0.13 + i * 0.025, faceZ + 0.02, 0.03, black);
+  }
+  for (let i = -3; i <= 3; i++) addSphere(face, i * 0.045, faceY - 0.2 + Math.abs(i) * 0.012, faceZ - 0.02, 0.032, black);
+  return { parts: [part(funnel, [0, 0, 0], 'y', 'swirl', 1), part(face)] };
+}
+
 function surfboardModel() {
   const board = [0.98, 0.85, 0.2], stripe = [0.95, 0.3, 0.25];
   const spheres = [];
@@ -619,6 +675,10 @@ function drawModel(out, count, model, x, y, z, yaw, pose = {}, scale = 1) {
         const dx = lx - pivot[0], dy = ly - pivot[1];
         lx = pivot[0] + dx * c - dy * s;
         ly = pivot[1] + dx * s + dy * c;
+      } else if (axis === 'y') {
+        const dx = lx - pivot[0], dz = lz - pivot[2];
+        lx = pivot[0] + dx * c + dz * s;
+        lz = pivot[2] - dx * s + dz * c;
       }
       const at = count * FLOATS_PER_SPHERE;
       if (at + FLOATS_PER_SPHERE > out.length) return count;

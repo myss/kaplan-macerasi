@@ -226,6 +226,24 @@ const SONGS = {
       { wave: 'noise', volume: 0.06, notes: 'x - - - x - x -' },
     ],
   },
+  clouds: {
+    bpm: 104,
+    parts: [
+      { wave: 'sine', volume: 0.3, notes: [
+        'B5 = D6 B5 G5 = A5 B5 C6 = B5 A5 G5 = E5 = D5 = G5 A5 B5 = A5 G5 A5 = = = - - - -',
+        'B5 = D6 B5 G5 = A5 B5 C6 = B5 A5 G5 = E5 = D5 = G5 A5 B5 = C6 A5 G5 = = = - - - -',
+        'E5 = G5 B5 = A5 G5 = E5 = G5 C6 = B5 A5 = A5 = C6 E6 = D6 C6 = B5 = A5 = F#5 = D5 =',
+        'B5 = D6 B5 G5 = A5 B5 C6 = B5 A5 G5 = E5 = D5 = G5 A5 B5 = A5 G5 A5 = = = - - - -',
+      ] },
+      { wave: 'triangle', volume: 0.3, notes: [
+        'G3 - D4 - G3 - D4 - C3 - G3 - C3 - G3 - G3 - D4 - E3 - B3 - D3 - A3 - D3 - F#3 -',
+        'G3 - D4 - G3 - D4 - C3 - G3 - C3 - G3 - G3 - D4 - E3 - B3 - D3 - A3 - G3 - - -',
+        'E3 - B3 - E3 - B3 - C3 - G3 - C3 - G3 - A2 - E3 - A2 - E3 - D3 - A3 - D3 - F#3 -',
+        'G3 - D4 - G3 - D4 - C3 - G3 - C3 - G3 - G3 - D4 - E3 - B3 - D3 - A3 - D3 - F#3 -',
+      ] },
+      { wave: 'noise', volume: 0.04, notes: 'x - - - x - - x' },
+    ],
+  },
   boss: {
     bpm: 168,
     parts: [
@@ -247,7 +265,7 @@ const SONGS = {
 };
 
 // By level number, starting from the home village.
-const WORLD_SONGS = ['home', 'forest', 'desert', 'snow', 'lava', 'giantHouse', 'pirate', 'deep', 'surf', 'underground', 'magma'];
+const WORLD_SONGS = ['home', 'forest', 'desert', 'snow', 'lava', 'giantHouse', 'pirate', 'deep', 'surf', 'underground', 'magma', 'clouds'];
 
 const MIDI_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const midiToNote = (midi) => `${MIDI_NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
@@ -316,6 +334,7 @@ const SOUNDS = {
   bossHit: [tone(260, 70, 0.25, 'square', 0.32), hiss(1500, 0.14, 0.3)],
   warn: [tone(880, 880, 0.08, 'square', 0.12), tone(880, 880, 0.08, 'square', 0.12, 0.13)],
   portal: [tone(250, 1300, 0.45, 'sine', 0.3), tone(375, 1950, 0.45, 'triangle', 0.14)],
+  zap: [hiss(4500, 0.18, 0.3), tone(1600, 250, 0.16, 'square', 0.12)],
   win: notes([523, 523, 523, 659, 784, 659, 784, 1047], 0.13, 'square', 0.17),
 };
 

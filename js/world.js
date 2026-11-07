@@ -25,6 +25,12 @@ const SURF_WAVE_PERIOD = 40;
 const BONUS_PLATFORM_TOP = 100; // 25 m up
 const BONUS_SPIRAL_RADIUS = 20;
 const BONUS_STONE_DEGREES = 50;
+// The sun-shaped cloud high over the middle, where the boss of the clouds lives. In voxels.
+const SUN_CLOUD_TOP = 92;
+const SUN_CLOUD_RADIUS = 44;
+const SUN_CLOUD_RAYS = 12;
+const SUN_RAY_GAP = 3;
+const SUN_RAY_LENGTH = 22;
 // Spheres overlap their neighbours just enough to leave no holes in a flat layer.
 const SPHERE_RADIUS_FACTOR = 0.72;
 
@@ -36,7 +42,7 @@ const BLOCK = {
   GEN_ACCENT_A: 27, GEN_ACCENT_B: 28, GEN_TRUNK: 29, GEN_CROWN: 30,
   HOUSE_WALL: 31, ROOF: 32, WOOD_FLOOR: 33, FURNITURE: 34, DECK: 35, HULL: 36, SAIL: 37, FLAG: 38,
   SEABED: 39, ABYSS: 40, KELP: 41, CORAL_PINK: 42, CORAL_ORANGE: 43, SHELL: 44, FOAM: 45,
-  EARTH: 46, TUNNEL_FLOOR: 47, GLOW: 48, SCORPION: 49, MAGMA_ROCK: 50,
+  EARTH: 46, TUNNEL_FLOOR: 47, GLOW: 48, SCORPION: 49, MAGMA_ROCK: 50, CLOUD: 51, CLOUD_SHADE: 52, CLOUD_SEA: 53, SUN_CLOUD: 54,
 };
 const BLOCK_COLORS = {
   [BLOCK.GRASS]: [0.36, 0.72, 0.28],
@@ -79,6 +85,10 @@ const BLOCK_COLORS = {
   [BLOCK.GLOW]: [1.5, 1.25, 0.5],
   [BLOCK.SCORPION]: [0.72, 0.42, 0.14],
   [BLOCK.MAGMA_ROCK]: [0.34, 0.12, 0.08],
+  [BLOCK.CLOUD]: [0.97, 0.98, 1],
+  [BLOCK.CLOUD_SHADE]: [0.76, 0.81, 0.92],
+  [BLOCK.CLOUD_SEA]: [0.86, 0.9, 0.98],
+  [BLOCK.SUN_CLOUD]: [1.15, 1, 0.62],
 };
 
 // The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
@@ -137,12 +147,18 @@ const WORLD_THEMES = [
     surface: BLOCK.MAGMA_ROCK, soil: BLOCK.BASALT, peak: BLOCK.EMBER, shore: BLOCK.BASALT, liquid: BLOCK.LAVA, rock: BLOCK.BASALT,
     accents: [BLOCK.GLOW, BLOCK.EMBER], trunk: BLOCK.BASALT, crown: BLOCK.EMBER,
   },
+  {
+    name: 'Bulutlar', sky: [0.42, 0.66, 0.98], hills: 24, mountains: 0.5, plant: 'cloudTower', crossing: 'fly',
+    monster: 'stormCloud', boss: 'tornado', sunCloud: true,
+    surface: BLOCK.CLOUD, soil: BLOCK.CLOUD_SHADE, peak: BLOCK.CLOUD, shore: BLOCK.CLOUD_SHADE, liquid: BLOCK.CLOUD_SEA, rock: BLOCK.CLOUD_SHADE,
+    accents: [BLOCK.YELLOW_FLOWER, BLOCK.ICE], trunk: BLOCK.CLOUD_SHADE, crown: BLOCK.CLOUD,
+  },
 ];
 
 // Generated worlds start well past the fixed ones, so that adding a fixed world never renumbers them.
 const FIRST_SURPRISE_LEVEL = 100;
-const SURPRISE_MONSTER_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'shark', 'mole', 'ant', 'drillShip'];
-const SURPRISE_BOSS_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'worm', 'squid', 'earthCore'];
+const SURPRISE_MONSTER_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'shark', 'mole', 'ant', 'drillShip', 'stormCloud'];
+const SURPRISE_BOSS_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'worm', 'squid', 'earthCore', 'tornado'];
 const SURPRISE_MIN_MONSTER_KINDS = 2;
 const SURPRISE_MAX_MONSTER_KINDS = 6;
 
@@ -385,6 +401,15 @@ function generateWorld(level, mazeSeed = Math.floor(Math.random() * 2 ** 31)) {
       const radius = 5 + Math.floor(random() * 4);
       stampBlob(vx, top + height + radius - 1, vz, radius, radius, radius, theme.crown);
     },
+    // Puffs piled up, each smaller than the one below.
+    cloudTower(vx, top, vz) {
+      let y = top, radius = 6 + Math.floor(random() * 4);
+      for (let puff = 0; puff < 3; puff++) {
+        stampBlob(vx + Math.round((random() - 0.5) * 4), y + radius - 1, vz + Math.round((random() - 0.5) * 4), radius, radius - 1, radius, puff === 0 ? theme.trunk : theme.crown);
+        y += radius + radius - 3;
+        radius = Math.max(3, radius - 2);
+      }
+    },
   };
 
   const isClearOfPads = (x, z) => pads.every((pad) => Math.hypot(x - pad.x, z - pad.z) > pad.outer);
@@ -592,6 +617,35 @@ function generateWorld(level, mazeSeed = Math.floor(Math.random() * 2 ** 31)) {
   };
   const bonus = theme.surf || theme.home ? null : placeBonus();
 
+  // Like a child's drawing of the sun: a round middle with short lines around it, all of cloud. The
+  // top is flat, the bottom bulges, and whatever grows up into it from below is cut off.
+  const placeSunCloud = () => {
+    const cx = toVoxel(BOSS_ARENA.x), cz = toVoxel(BOSS_ARENA.z);
+    const reach = SUN_CLOUD_RADIUS + SUN_RAY_GAP + SUN_RAY_LENGTH + 2;
+    for (let vz = cz - reach; vz <= cz + reach; vz++) {
+      for (let vx = cx - reach; vx <= cx + reach; vx++) {
+        if ((vx - cx) ** 2 + (vz - cz) ** 2 <= reach * reach) stampBox(vx, SUN_CLOUD_TOP - 14, vz, vx, WORLD_HEIGHT - 1, vz, BLOCK.EMPTY);
+      }
+    }
+    for (let z = -SUN_CLOUD_RADIUS; z <= SUN_CLOUD_RADIUS; z++) {
+      for (let x = -SUN_CLOUD_RADIUS; x <= SUN_CLOUD_RADIUS; x++) {
+        const out = Math.hypot(x, z) / SUN_CLOUD_RADIUS;
+        if (out > 1) continue;
+        const depth = 2 + Math.round(6 * Math.sqrt(1 - out * out));
+        stampBox(cx + x, SUN_CLOUD_TOP - depth, cz + z, cx + x, SUN_CLOUD_TOP, cz + z, BLOCK.SUN_CLOUD);
+      }
+    }
+    for (let ray = 0; ray < SUN_CLOUD_RAYS; ray++) {
+      const a = (ray / SUN_CLOUD_RAYS) * Math.PI * 2;
+      for (let along = 0; along <= SUN_RAY_LENGTH; along++) {
+        const distance = SUN_CLOUD_RADIUS + SUN_RAY_GAP + along;
+        stampBlob(cx + Math.round(Math.cos(a) * distance), SUN_CLOUD_TOP - 2, cz + Math.round(Math.sin(a) * distance), 3, 2, 3, BLOCK.SUN_CLOUD);
+      }
+    }
+    return { x: BOSS_ARENA.x, z: BOSS_ARENA.z, y: (SUN_CLOUD_TOP + 1) * VOXEL, radius: SUN_CLOUD_RADIUS * VOXEL };
+  };
+  const skyArena = theme.sunCloud ? placeSunCloud() : null;
+
   // Their own random sequence, so that adding them leaves the rest of each level unchanged.
   const wingRandom = seededRandom(20261101 + level * 7919 + 1);
   const wings = [...(builtLayout ? builtLayout.wings : [])];
@@ -688,6 +742,7 @@ function generateWorld(level, mazeSeed = Math.floor(Math.random() * 2 ** 31)) {
     keys,
     wings,
     bonus,
+    skyArena,
     mapShapes: builtLayout ? builtLayout.mapShapes : [],
     entrances: builtLayout?.entrances ?? [],
     terrain,
