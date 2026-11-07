@@ -167,10 +167,13 @@ function buildTunnels(api) {
 
 // The home village: every world has its own way in, all facing the middle of the village, where the
 // tiger starts. Doors face -z. An entrance takes the tiger once it is within `radius` of its middle
-// and lower than `maxY`, which for the pits means having dropped in.
+// and lower than `maxY`, which for the pits means having dropped in. Its sign stands at `signAt` from
+// its middle, on ground kept clear of trees and rocks.
+const HOME_SIGN_AT = [6, -8.5];
+const HOME_SIGN_CLEARING = { inner: 3, outer: 7 };
 const HOME_ENTRANCES = [
   { level: 1, build: 'treeHollow', x: -24, z: 16 },
-  { level: 2, build: 'giantScorpion', x: 0, z: 16 },
+  { level: 2, build: 'giantScorpion', x: 0, z: 16, signAt: [10.5, -8.5] }, // past the reach of its claw
   { level: 3, build: 'iceCave', x: 24, z: 16 },
   { level: 4, build: 'volcano', x: -24, z: 38 },
   { level: 5, build: 'tinyHouse', x: 0, z: 38 },
@@ -357,7 +360,7 @@ function buildHomeVillage(api) {
   };
 
   const out = { cages: [], keys: [], wings: [], mapShapes: [], entrances: [] };
-  for (const { level, build, x, z, onShore, surprise } of HOME_ENTRANCES) {
+  for (const { level, build, x, z, onShore, surprise, signAt = HOME_SIGN_AT } of HOME_ENTRANCES) {
     let vx = toVoxel(x);
     const vz = toVoxel(z);
     if (onShore) {
@@ -365,10 +368,10 @@ function buildHomeVillage(api) {
     }
     const floor = terrainAt(onShore ? vx - 1 : vx, vz);
     const { radius, portal, maxY = Infinity, offsetY = 0.9, portalAt = 0, portalVx = vx, floorAt = floor } = BUILDERS[build](vx, floor, vz);
-    const signX = onShore ? api.toMetres(vx - 6) : x + 6;
+    const signX = onShore ? api.toMetres(vx - 6) : x + signAt[0];
     out.entrances.push({
       level, surprise, build, x: api.toMetres(portalVx), z: z + portalAt, y: floorY(floorAt) + offsetY, radius, portal, maxY,
-      signX, signZ: onShore ? z - 4 : z - 8.5,
+      signX, signZ: onShore ? z - 4 : z + signAt[1],
     });
   }
   return out;
@@ -376,7 +379,10 @@ function buildHomeVillage(api) {
 
 const LAYOUTS = {
   homeVillage: {
-    pads: HOME_ENTRANCES.filter(({ onShore }) => !onShore).map(({ x, z }) => ({ x, z, inner: 7, outer: 10 })),
+    pads: HOME_ENTRANCES.filter(({ onShore }) => !onShore).flatMap(({ x, z, signAt = HOME_SIGN_AT }) => [
+      { x, z, inner: 7, outer: 10 },
+      { x: x + signAt[0], z: z + signAt[1], ...HOME_SIGN_CLEARING },
+    ]),
     outsidePairs: 0,
     randomWings: 0,
     build: buildHomeVillage,
