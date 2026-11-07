@@ -426,8 +426,12 @@ function drawBoss(count) {
     const { radius, color } = boss.spin;
     const angle = boss.state === 'spin' ? boss.armAngle : boss.grab.angle;
     const reach = boss.state === 'spin' ? radius : GRAB_ORBIT_METRES;
-    for (let r = boss.scale * 0.2; r < reach; r += 0.3) {
-      addSphere(boss.x + Math.sin(angle) * r, boss.y + 0.5, boss.z + Math.cos(angle) * r, 0.28, color);
+    // From the shoulder, curving down to sweep low along the ground, which is the part to jump over.
+    const from = boss.scale * 0.3, shoulder = boss.height * 0.55;
+    for (let r = from; r < reach; r += 0.3) {
+      const t = (r - from) / (reach - from);
+      const y = 0.5 + (shoulder - 0.5) * (1 - t) ** 3;
+      addSphere(boss.x + Math.sin(angle) * r, boss.y + y, boss.z + Math.cos(angle) * r, 0.28, color);
     }
   }
   if (boss.mark) {
