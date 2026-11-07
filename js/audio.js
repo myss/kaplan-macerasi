@@ -106,6 +106,14 @@ const SONGS = {
       { wave: 'sine', volume: 0.4, notes: 'C2 = = - G2 = = - Ab2 = = - G2 = = - C2 = = - G2 = = - Ab2 = = - G2 = = -' },
     ],
   },
+  magma: {
+    bpm: 100,
+    parts: [
+      { wave: 'sawtooth', volume: 0.1, notes: 'D4 - F4 D4 G#4 = A4 - D4 - F4 D4 C5 = A4 - G#4 - F4 D4 F4 = G#4 - A4 = - - D4 - - -' },
+      { wave: 'triangle', volume: 0.45, notes: 'D2 = D2 - D2 = A2 - D2 = D2 - C2 = G2 - D2 = D2 - D2 = A2 - Bb1 = F2 - A1 = E2 -' },
+      { wave: 'noise', volume: 0.06, notes: 'x - - - x - x -' },
+    ],
+  },
   boss: {
     bpm: 168,
     parts: [
@@ -117,7 +125,7 @@ const SONGS = {
 };
 
 // By level number, starting from the home village.
-const WORLD_SONGS = ['home', 'forest', 'desert', 'snow', 'lava', 'giantHouse', 'pirate', 'deep', 'surf', 'underground'];
+const WORLD_SONGS = ['home', 'forest', 'desert', 'snow', 'lava', 'giantHouse', 'pirate', 'deep', 'surf', 'underground', 'magma'];
 
 const MIDI_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const midiToNote = (midi) => `${MIDI_NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;

@@ -25,6 +25,7 @@ Oyun, Ana Sayfa köyünde başlıyor. Her dünyaya köydeki kendi girişinden gi
 - **Deniz dibi zindanı:** Köpekbalıklarının yalnızca yüzgeci görünüyor, yaklaşınca ısırmak için fırlıyorlar.
 - **Zorlu Sörf:** Üç şeritte kayalardan ve yunuslardan kaçtıktan sonra sıra dev balinadan kaçmaya geliyor.
 - **Yer Dibi Şehri:** Haritası olmayan, yolları her girişte değişen kocaman bir labirent. Köstebekler ve zırhlı karıncalar burada yaşıyor.
+- **Magma Tabakası:** Köstebeklerin şehrinin de altında, lav gölleri arasında. Yeraltı gemileri kayaların içinde yüzüyor, yalnızca periskopları görünüyor. Uzaktan ateş topu atıyor, yaklaşınca fırlayıp çarpıyorlar. Sonunda Dünyanın Çekirdeği geliyor.
 - **Sürpriz Kapısı:** Her seferinde yepyeni bir dünyaya açılıyor. Her bitirişte oyun biraz daha zorlaşıyor.
 
 Her dünyada haritada görünmeyen bir de sürpriz var: Taştan taşa zıplayarak çıkılan minik bir kulübe.
@@ -99,6 +100,7 @@ The game starts in the home village, where each world has its own entrance. The 
 - **Deniz dibi zindanı (Deep Sea Dungeon):** you only see the sharks' fins until they lunge
 - **Zorlu Sörf (Tough Surf):** dodge rocks and dolphins across three lanes, then escape a giant whale
 - **Yer Dibi Şehri (Underground City):** a maze with no map whose paths change on every visit, home to moles and armoured ants
+- **Magma Tabakası (Magma Layer):** below the moles' city, among lava lakes; underground ships sail through the rock with only their periscopes showing, throw fireballs from afar and burst up to ram, and the Earth's core itself is the boss
 - **Sürpriz Kapısı (Surprise Door):** generates a new world every time, and the game gets harder with each one you finish
 
 Every world also hides a bonus that isn't on the map: a tiny hut you reach by jumping from stone to stone.

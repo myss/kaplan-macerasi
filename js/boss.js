@@ -29,6 +29,7 @@ const FLING_SPEED = 13;
 const FLING_SECONDS = 0.45;
 const BOSS_TOP_REACH = 0.6; // how far above its head the tiger's feet can be and still touch a boss
 
+// lives: more than BOSS_LIVES for a tougher boss; the hard level adds the same number on top.
 // spin.grabs: caught and whirled around unharmed, then flung into a lost life. Otherwise it burns on touch.
 const BOSS_KINDS = {
   walkingTree: {
@@ -58,6 +59,11 @@ const BOSS_KINDS = {
     name: 'Dev Solucan', scale: 2.3, speed: 2.4, lungeSpeed: 12, moves: ['throw', 'lunge', 'slam'],
     ball: { count: 3, speed: 7, radius: 0.55, color: [0.42, 0.28, 0.16], burst: [0.42, 0.28, 0.16] },
   },
+  earthCore: {
+    name: 'Dünyanın Çekirdeği', scale: 6, speed: 1.6, lives: 6, moves: ['throw', 'slam', 'spin'], burnsOnLanding: true, color: [1.5, 0.55, 0.08],
+    ball: { count: 4, speed: 7, radius: 0.9, color: [1.5, 0.6, 0.08], burst: [0.85, 0.85, 0.88] },
+    spin: { radius: 10, turnsPerSecond: 0.7, color: [1.5, 0.9, 0.2], grabs: false },
+  },
   squid: {
     name: 'Dev Kalamar', scale: 2.4, speed: 2.2, lungeSpeed: 11, moves: ['throw', 'spin', 'lunge'],
     ball: { count: 3, speed: 7, radius: 0.55, color: [0.05, 0.03, 0.12], burst: [0.1, 0.06, 0.2] },
@@ -67,11 +73,12 @@ const BOSS_KINDS = {
 
 let boss = null;
 
-function bossLivesForLevel() {
+function bossLivesForLevel(kind) {
   if (game.level >= FIRST_SURPRISE_LEVEL) {
     return Math.min(BOSS_LIVES + Math.floor((game.level - FIRST_SURPRISE_LEVEL) / 2), BOSS_SURPRISE_TOP_LIVES);
   }
-  return game.hard ? BOSS_HARD_LIVES : BOSS_LIVES;
+  const lives = BOSS_KINDS[kind].lives ?? BOSS_LIVES;
+  return game.hard ? lives + BOSS_HARD_LIVES - BOSS_LIVES : lives;
 }
 
 function startBossFight() {
@@ -95,7 +102,7 @@ function startBossFight() {
   hud.mist.style.opacity = 1;
 
   const kind = world.theme.boss ?? world.theme.monster;
-  const maxLives = bossLivesForLevel();
+  const maxLives = bossLivesForLevel(kind);
   const { speed, lungeSpeed } = BOSS_KINDS[kind];
   boss = {
     kind, ...BOSS_KINDS[kind], speed: speed * game.speedFactor, lungeSpeed: lungeSpeed * game.speedFactor, maxLives, lives: maxLives, mistFade: 1,

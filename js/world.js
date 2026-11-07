@@ -36,7 +36,7 @@ const BLOCK = {
   GEN_ACCENT_A: 27, GEN_ACCENT_B: 28, GEN_TRUNK: 29, GEN_CROWN: 30,
   HOUSE_WALL: 31, ROOF: 32, WOOD_FLOOR: 33, FURNITURE: 34, DECK: 35, HULL: 36, SAIL: 37, FLAG: 38,
   SEABED: 39, ABYSS: 40, KELP: 41, CORAL_PINK: 42, CORAL_ORANGE: 43, SHELL: 44, FOAM: 45,
-  EARTH: 46, TUNNEL_FLOOR: 47, GLOW: 48, SCORPION: 49,
+  EARTH: 46, TUNNEL_FLOOR: 47, GLOW: 48, SCORPION: 49, MAGMA_ROCK: 50,
 };
 const BLOCK_COLORS = {
   [BLOCK.GRASS]: [0.36, 0.72, 0.28],
@@ -78,6 +78,7 @@ const BLOCK_COLORS = {
   [BLOCK.TUNNEL_FLOOR]: [0.62, 0.48, 0.3],
   [BLOCK.GLOW]: [1.5, 1.25, 0.5],
   [BLOCK.SCORPION]: [0.72, 0.42, 0.14],
+  [BLOCK.MAGMA_ROCK]: [0.34, 0.12, 0.08],
 };
 
 // The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
@@ -130,12 +131,18 @@ const WORLD_THEMES = [
     surface: BLOCK.EARTH, soil: BLOCK.EARTH, deep: BLOCK.EARTH, peak: BLOCK.EARTH, shore: BLOCK.TUNNEL_FLOOR, liquid: BLOCK.WATER, rock: BLOCK.ROCK,
     accents: [BLOCK.EARTH, BLOCK.EARTH], trunk: BLOCK.DIRT,
   },
+  {
+    name: 'Magma Tabakası', sky: [0.24, 0.06, 0.03], fogDensity: 0.0012, hills: 34, plant: 'crystal', crossing: 'fly', noBirds: true,
+    monster: 'drillShip', boss: 'earthCore',
+    surface: BLOCK.MAGMA_ROCK, soil: BLOCK.BASALT, peak: BLOCK.EMBER, shore: BLOCK.BASALT, liquid: BLOCK.LAVA, rock: BLOCK.BASALT,
+    accents: [BLOCK.GLOW, BLOCK.EMBER], trunk: BLOCK.BASALT, crown: BLOCK.EMBER,
+  },
 ];
 
 // Generated worlds start well past the fixed ones, so that adding a fixed world never renumbers them.
 const FIRST_SURPRISE_LEVEL = 100;
-const SURPRISE_MONSTER_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'shark', 'mole', 'ant'];
-const SURPRISE_BOSS_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'worm', 'squid'];
+const SURPRISE_MONSTER_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'shark', 'mole', 'ant', 'drillShip'];
+const SURPRISE_BOSS_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'worm', 'squid', 'earthCore'];
 const SURPRISE_MIN_MONSTER_KINDS = 2;
 const SURPRISE_MAX_MONSTER_KINDS = 6;
 

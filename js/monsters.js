@@ -23,6 +23,8 @@ const MONSTER_KINDS = {
   shark: { speed: 4, scale: 1.2, color: [0.42, 0.5, 0.58], dives: true },
   mole: { speed: 2.6, scale: 1, color: [0.3, 0.22, 0.2], digs: true },
   ant: { speed: 4.6, scale: 1.2, color: [0.5, 0.14, 0.08], armored: true },
+  // Sails under the rock with its periscope showing, throws fire from there and comes up to ram.
+  drillShip: { speed: 3, scale: 1.2, color: [0.46, 0.44, 0.42], dives: true, ball: FIRE_BALL },
 };
 
 const MONSTER_SEE_RADIUS = 14;

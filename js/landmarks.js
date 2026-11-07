@@ -179,6 +179,7 @@ const HOME_ENTRANCES = [
   { level: 7, build: 'waterWell', x: -24, z: 60 },
   { level: 8, build: 'surfCave', x: 0, z: 60 },
   { level: 9, build: 'moleHole', x: 24, z: 60 },
+  { level: 10, build: 'magmaPit', x: 46, z: 60 }, // beside the mole hole: under the moles' city is the magma
 ];
 
 function buildHomeVillage(api) {
@@ -323,6 +324,13 @@ function buildHomeVillage(api) {
       for (let y = 3; y >= -7; y--) disc(cx, floor + y, cz, 6, EMPTY);
       disc(cx, floor - 8, cz, 6, BLOCK.FLAG);
       return { radius: 1.4, portal: [0.75, 0.5, 0.25], maxY: floorY(floor) - 0.5, offsetY: -1.2 };
+    },
+    // A crack in a ring of black rock, glowing from the magma far below.
+    magmaPit(cx, floor, cz) {
+      for (let y = 1; y <= 3; y++) disc(cx, floor + y, cz, 12 - y, y === 3 ? BLOCK.EMBER : BLOCK.BASALT);
+      for (let y = 3; y >= -7; y--) disc(cx, floor + y, cz, 6, EMPTY);
+      disc(cx, floor - 8, cz, 6, BLOCK.GLOW);
+      return { radius: 1.4, portal: [1.6, 0.45, 0.1], maxY: floorY(floor) - 0.5, offsetY: -1.2 };
     },
   };
 

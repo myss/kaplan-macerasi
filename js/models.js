@@ -446,6 +446,56 @@ function wormModel() {
   return { parts: [part(body)] };
 }
 
+// Sails through rock like the shark through the seabed, so it is drawn at the floor below it with its
+// own height built in, and only the tower and the periscope show while it is under.
+function drillShipModel() {
+  const metal = [0.46, 0.44, 0.42], dark = [0.22, 0.2, 0.2], red = [0.78, 0.2, 0.12], steel = [0.72, 0.74, 0.78];
+  const glow = [1.6, 1.15, 0.3], gold = [1, 0.75, 0.15];
+  const y = 0.75;
+  const body = [];
+  addShell(body, 0, y, 0, 0.42, 0.4, 1, (nx, ny) => (Math.abs(ny) < 0.12 ? red : ny < -0.5 ? dark : metal));
+  addShell(body, 0, y + 0.5, -0.1, 0.22, 0.28, 0.34, red); // the tower
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.4, y + 0.08, 0.35, 0.09, glow); // portholes
+    addSphere(body, side * 0.4, y + 0.08, -0.15, 0.09, glow);
+    addSphere(body, side * 0.4, y + 0.08, -0.65, 0.09, glow);
+    addSphere(body, side * 0.11, y + 0.58, 0.2, 0.07, glow); // the tower's two windows, like eyes
+    addShell(body, side * 0.38, y - 0.05, -0.95, 0.24, 0.04, 0.14, dark); // fins at the back
+  }
+  for (let i = 0; i < 6; i++) addSphere(body, 0, y + 0.78 + i * 0.07, -0.18, 0.04, dark); // the periscope
+  for (let i = 0; i < 3; i++) addSphere(body, 0, y + 1.2, -0.12 + i * 0.06, 0.045, dark);
+  const drill = [];
+  for (let ring = 0; ring < 8; ring++) {
+    const radius = 0.34 * (1 - ring / 8);
+    const around = Math.max(4, Math.round(radius * 40));
+    for (let i = 0; i < around; i++) {
+      const a = (i / around) * Math.PI * 2 + ring * 0.5;
+      addSphere(drill, Math.cos(a) * radius, y + Math.sin(a) * radius, 0.95 + ring * 0.09, 0.06, i % 4 < 2 ? steel : gold);
+    }
+  }
+  addSphere(drill, 0, y, 1.68, 0.05, steel);
+  return { parts: [part(body), part(drill, [0, y, 1], 'z', 'stride', 3)] };
+}
+
+// A ball of molten rock with a cracked crust and an angry face. It stands on y = 0, built small to be drawn large.
+function earthCoreModel() {
+  const crust = [0.26, 0.09, 0.06], lava = [1.5, 0.55, 0.08], hot = [1.7, 1.3, 0.35], black = [0.05, 0.03, 0.03];
+  const cracked = (nx, ny, nz) => {
+    const crack = Math.sin(nx * 7 + ny * 5) * Math.sin(ny * 6 - nz * 7) * Math.sin(nz * 5 + nx * 4);
+    return crack > 0.18 ? hot : crack > 0.04 ? lava : crust;
+  };
+  const r = 0.55, cy = 0.58;
+  const spheres = [];
+  addShell(spheres, 0, cy, 0, r, r, r, cracked);
+  for (const side of [-1, 1]) {
+    addSphere(spheres, side * 0.17, cy + 0.14, r - 0.02, 0.09, hot); // eyes
+    addSphere(spheres, side * 0.17, cy + 0.12, r + 0.04, 0.045, black);
+    for (let i = 0; i < 4; i++) addSphere(spheres, side * (0.08 + i * 0.05), cy + 0.27 + i * 0.025, r - 0.04, 0.03, black); // angry brows
+  }
+  for (let i = -4; i <= 4; i++) addSphere(spheres, i * 0.045, cy - 0.17 + Math.abs(i) * 0.012, r - 0.03, 0.035, black); // the frown
+  return { parts: [part(spheres)] };
+}
+
 function surfboardModel() {
   const board = [0.98, 0.85, 0.2], stripe = [0.95, 0.3, 0.25];
   const spheres = [];

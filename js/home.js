@@ -164,7 +164,7 @@ function drawHome(count) {
       frameSpheres.set([sx, sy, sz, radius, portal[0], portal[1], portal[2]], at);
       count++;
     };
-    addGlow(x, y + Math.sin(game.time * 3) * 0.12, z, build === 'volcano' || build === 'waterWell' || build === 'moleHole' ? 0.9 : 0.55);
+    addGlow(x, y + Math.sin(game.time * 3) * 0.12, z, ['volcano', 'waterWell', 'moleHole', 'magmaPit'].includes(build) ? 0.9 : 0.55);
     for (let i = 0; i < 10; i++) {
       const a = game.time * 2.5 + (i / 10) * Math.PI * 2;
       const rise = build === 'volcano' ? ((game.time * 2 + i * 0.37) % 3) : Math.sin(a * 1.5) * 0.3;

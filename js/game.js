@@ -63,6 +63,8 @@ const models = {
   antArmor: antArmorModel(),
   mole: uprightAnimalModel({ fur: [0.3, 0.22, 0.2], belly: [0.5, 0.38, 0.32], nose: [0.95, 0.55, 0.6], earSize: 0.05, snoutLength: 0.12 }),
   worm: wormModel(),
+  drillShip: drillShipModel(),
+  earthCore: earthCoreModel(),
   surfboard: surfboardModel(),
   dolphin: dolphinModel(),
   seaRock: seaRockModel(),
