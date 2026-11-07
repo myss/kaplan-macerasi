@@ -43,6 +43,7 @@ const BLOCK = {
   HOUSE_WALL: 31, ROOF: 32, WOOD_FLOOR: 33, FURNITURE: 34, DECK: 35, HULL: 36, SAIL: 37, FLAG: 38,
   SEABED: 39, ABYSS: 40, KELP: 41, CORAL_PINK: 42, CORAL_ORANGE: 43, SHELL: 44, FOAM: 45,
   EARTH: 46, TUNNEL_FLOOR: 47, GLOW: 48, SCORPION: 49, MAGMA_ROCK: 50, CLOUD: 51, CLOUD_SHADE: 52, CLOUD_SEA: 53, SUN_CLOUD: 54,
+  STEM: 55, PETAL: 56, SEEDS: 57,
 };
 const BLOCK_COLORS = {
   [BLOCK.GRASS]: [0.36, 0.72, 0.28],
@@ -89,6 +90,9 @@ const BLOCK_COLORS = {
   [BLOCK.CLOUD_SHADE]: [0.76, 0.81, 0.92],
   [BLOCK.CLOUD_SEA]: [0.86, 0.9, 0.98],
   [BLOCK.SUN_CLOUD]: [1.15, 1, 0.62],
+  [BLOCK.STEM]: [0.3, 0.6, 0.18],
+  [BLOCK.PETAL]: [1, 0.8, 0.08],
+  [BLOCK.SEEDS]: [0.36, 0.22, 0.1],
 };
 
 // The first levels, in order. `crossing` is how the tiger gets across the liquid: see crossing.js.
@@ -154,12 +158,18 @@ const WORLD_THEMES = [
     surface: BLOCK.CLOUD, soil: BLOCK.CLOUD_SHADE, peak: BLOCK.CLOUD, shore: BLOCK.CLOUD_SHADE, liquid: BLOCK.CLOUD_SEA, rock: BLOCK.CLOUD_SHADE,
     accents: [BLOCK.YELLOW_FLOWER, BLOCK.ICE], trunk: BLOCK.CLOUD_SHADE, crown: BLOCK.CLOUD,
   },
+  {
+    name: 'Ayçiçeği Tarlası', sky: [0.5, 0.78, 0.98], hills: 14, mountains: 0.3, plant: 'sunflower', plantCount: 1400, crossing: 'swim',
+    monster: 'grasshopper', boss: 'sunflower', birdModel: 'bee', birdColor: [1, 0.8, 0.1],
+    surface: BLOCK.GRASS, soil: BLOCK.DIRT, peak: BLOCK.GRASS, shore: BLOCK.SAND, liquid: BLOCK.WATER, rock: BLOCK.DIRT,
+    accents: [BLOCK.YELLOW_FLOWER, BLOCK.PETAL], trunk: BLOCK.STEM, crown: BLOCK.PETAL,
+  },
 ];
 
 // Generated worlds start well past the fixed ones, so that adding a fixed world never renumbers them.
 const FIRST_SURPRISE_LEVEL = 100;
-const SURPRISE_MONSTER_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'shark', 'mole', 'ant', 'drillShip', 'stormCloud'];
-const SURPRISE_BOSS_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'worm', 'squid', 'earthCore', 'tornado'];
+const SURPRISE_MONSTER_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'shark', 'mole', 'ant', 'drillShip', 'stormCloud', 'grasshopper'];
+const SURPRISE_BOSS_KINDS = ['walkingTree', 'scorpion', 'polarBear', 'lavaMonster', 'rat', 'pirateBear', 'worm', 'squid', 'earthCore', 'tornado', 'sunflower'];
 const SURPRISE_MIN_MONSTER_KINDS = 2;
 const SURPRISE_MAX_MONSTER_KINDS = 6;
 
@@ -402,6 +412,21 @@ function generateWorld(level, mazeSeed = Math.floor(Math.random() * 2 ** 31)) {
       const radius = 5 + Math.floor(random() * 4);
       stampBlob(vx, top + height + radius - 1, vz, radius, radius, radius, theme.crown);
     },
+    // Taller than the tiger, with its head turned towards -z like the rest of its field.
+    sunflower(vx, top, vz) {
+      const height = 9 + Math.floor(random() * 6);
+      for (let y = 1; y <= height; y++) stamp(vx, top + y, vz, theme.trunk);
+      const side = random() < 0.5 ? 1 : -1;
+      stampBlob(vx + side * 2, top + Math.floor(height / 2), vz, 2, 0, 1, theme.trunk);
+      const headY = top + height + 3;
+      for (let y = -4; y <= 4; y++) {
+        for (let x = -4; x <= 4; x++) {
+          const out = x * x + y * y;
+          if (out <= 18) stamp(vx + x, headY + y, vz - 1, out <= 5 ? BLOCK.SEEDS : theme.crown);
+        }
+      }
+      for (let y = headY - 3; y < headY; y++) stamp(vx, y, vz, theme.trunk);
+    },
     // Puffs piled up, each smaller than the one below.
     cloudTower(vx, top, vz) {
       let y = top, radius = 6 + Math.floor(random() * 4);
@@ -423,7 +448,7 @@ function generateWorld(level, mazeSeed = Math.floor(Math.random() * 2 ** 31)) {
     }
   };
   if (!theme.openSea && !layout?.solidEarth) {
-    scatter(280, PLANTS[theme.plant]);
+    scatter(theme.plantCount ?? 280, PLANTS[theme.plant]);
     scatter(180, (vx, top, vz) => {
       const size = 3 + Math.floor(random() * 5);
       stampBlob(vx, top, vz, size, size, size, theme.rock);

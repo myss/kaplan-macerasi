@@ -552,6 +552,102 @@ function tornadoModel() {
   return { parts: [part(funnel, [0, 0, 0], 'y', 'swirl', 1), part(face)] };
 }
 
+// The sunflower field's bird: about as big, with the same wing pose.
+function beeModel() {
+  const yellow = [1, 0.78, 0.08], black = [0.06, 0.05, 0.05], wingColor = [0.86, 0.94, 1], white = [0.98, 0.98, 0.95];
+  const body = [];
+  addShell(body, 0, 0, -0.05, 0.3, 0.3, 0.48, (nx, ny, nz) => (Math.sin(nz * 9) > 0.2 ? black : yellow));
+  addShell(body, 0, 0.12, 0.5, 0.24, 0.24, 0.22, black);
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.12, 0.22, 0.68, 0.08, white);
+    addSphere(body, side * 0.12, 0.22, 0.74, 0.045, black);
+    for (let i = 0; i < 5; i++) addSphere(body, side * (0.08 + i * 0.03), 0.34 + i * 0.07, 0.6 + i * 0.03, 0.03, black); // feelers
+  }
+  for (let i = 0; i < 4; i++) addSphere(body, 0, -0.02 - i * 0.02, -0.55 - i * 0.07, 0.05 - i * 0.008, black); // the sting
+  const wing = (side) => {
+    const spheres = [];
+    addShell(spheres, side * 0.55, 0.3, 0, 0.4, 0.04, 0.24, wingColor);
+    return spheres;
+  };
+  return {
+    parts: [
+      part(body),
+      part(wing(1), [0.2, 0.3, 0], 'z', 'wings', 1),
+      part(wing(-1), [-0.2, 0.3, 0], 'z', 'wings', -1),
+    ],
+  };
+}
+
+// Long and green, with big back legs folded for the next hop.
+function grasshopperModel() {
+  const green = [0.36, 0.7, 0.2], dark = [0.2, 0.46, 0.12], white = [0.98, 0.98, 0.95], black = [0.05, 0.05, 0.06];
+  const body = [];
+  addShell(body, 0, 0.5, -0.1, 0.22, 0.24, 0.55, (nx, ny) => (ny < -0.4 ? dark : green));
+  addShell(body, 0, 0.72, 0.5, 0.2, 0.24, 0.2, green);
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.16, 0.82, 0.6, 0.09, white);
+    addSphere(body, side * 0.18, 0.82, 0.66, 0.05, black);
+    for (let i = 0; i < 8; i++) addSphere(body, side * (0.06 + i * 0.02), 0.95 + i * 0.07, 0.55 - i * 0.06, 0.025, dark); // feelers
+    for (const z of [0.3, 0.05]) {
+      for (let i = 0; i < 4; i++) addSphere(body, side * (0.2 + i * 0.05), 0.35 - i * 0.09, z, 0.04, dark); // small front legs
+    }
+  }
+  const backLeg = (side) => {
+    const spheres = [];
+    for (let i = 0; i < 9; i++) addSphere(spheres, side * 0.28, 0.5 + i * 0.05, -0.1 - i * 0.05, 0.07, green); // the thigh, going up
+    for (let i = 0; i < 10; i++) addSphere(spheres, side * 0.3, 0.9 - i * 0.09, -0.55 - i * 0.015, 0.045, dark); // the shin, going down
+    return spheres;
+  };
+  return {
+    parts: [
+      part(body),
+      part(backLeg(1), [0.28, 0.5, -0.1], 'x', 'stride', 1),
+      part(backLeg(-1), [-0.28, 0.5, -0.1], 'x', 'stride', -1),
+    ],
+  };
+}
+
+// The sunflower field's boss. Its face is in the seeds, its leaves are its arms and it walks on
+// its roots. Built small and drawn large, like the walking tree.
+function sunflowerModel() {
+  const stem = [0.3, 0.6, 0.18], petal = [1, 0.8, 0.08], seeds = [0.36, 0.22, 0.1];
+  const white = [0.98, 0.97, 0.92], black = [0.05, 0.05, 0.06];
+  const body = [];
+  for (let y = 0.3; y < 1.45; y += 0.07) addSphere(body, 0, y, 0, 0.09, stem);
+  const headY = 1.75;
+  for (let y = -0.62; y <= 0.62; y += 0.07) {
+    for (let x = -0.62; x <= 0.62; x += 0.07) {
+      const out = Math.hypot(x, y), petalTip = 0.42 + 0.2 * Math.abs(Math.cos(Math.atan2(y, x) * 6));
+      if (out <= petalTip) addSphere(body, x, headY + y, out <= 0.32 ? 0.06 : 0.03, 0.055, out <= 0.32 ? seeds : petal);
+    }
+  }
+  for (const side of [-1, 1]) {
+    addSphere(body, side * 0.12, headY + 0.08, 0.12, 0.08, white);
+    addSphere(body, side * 0.12, headY + 0.07, 0.17, 0.045, black);
+    for (let i = 0; i < 4; i++) addSphere(body, side * (0.05 + i * 0.045), headY + 0.17 + i * 0.022, 0.13, 0.025, black); // angry brows
+  }
+  for (let i = -3; i <= 3; i++) addSphere(body, i * 0.04, headY - 0.14 + Math.abs(i) * 0.012, 0.12, 0.028, black);
+  const leaf = (side) => {
+    const spheres = [];
+    addShell(spheres, side * 0.32, 1, 0.02, 0.26, 0.05, 0.12, stem);
+    return spheres;
+  };
+  const root = (x) => {
+    const spheres = [];
+    addShell(spheres, x, 0.14, 0.05, 0.12, 0.16, 0.18, [0.42, 0.3, 0.16]);
+    return spheres;
+  };
+  return {
+    parts: [
+      part(body),
+      part(leaf(1), [0.08, 1, 0], 'z', 'stride', 1),
+      part(leaf(-1), [-0.08, 1, 0], 'z', 'stride', -1),
+      part(root(0.13), [0.13, 0.32, 0.05], 'x', 'stride', 1),
+      part(root(-0.13), [-0.13, 0.32, 0.05], 'x', 'stride', -1),
+    ],
+  };
+}
+
 // A stone boat that does not burn, with a glowing rim. The tiger stands on its deck at y = 0.35.
 function lavaBoatModel() {
   const stone = [0.3, 0.27, 0.27], dark = [0.16, 0.14, 0.14], glow = [1.5, 0.9, 0.3];

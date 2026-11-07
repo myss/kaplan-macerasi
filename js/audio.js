@@ -244,6 +244,24 @@ const SONGS = {
       { wave: 'noise', volume: 0.04, notes: 'x - - - x - - x' },
     ],
   },
+  sunflower: {
+    bpm: 120,
+    parts: [
+      { wave: 'square', volume: 0.12, notes: [
+        'F5 = A5 C6 A5 = F5 = G5 = Bb5 = A5 G5 F5 = E5 = G5 C6 Bb5 A5 G5 = F5 = A5 = F5 = - -',
+        'F5 = A5 C6 A5 = F5 = G5 = Bb5 = A5 G5 F5 = E5 F5 G5 A5 Bb5 C6 D6 = C6 = A5 = F5 = - -',
+        'D6 = Bb5 = F5 = Bb5 = C6 = A5 = F5 = A5 = Bb5 = G5 = D5 = G5 = A5 = G5 = E5 = C5 =',
+        'F5 = A5 C6 A5 = F5 = G5 = Bb5 = A5 G5 F5 = E5 = G5 C6 Bb5 A5 G5 = F5 = A5 = F5 = - -',
+      ] },
+      { wave: 'triangle', volume: 0.38, notes: [
+        'F3 - C4 - F3 - C4 - C3 - G3 - C3 - G3 - C3 - G3 - C3 - E3 - F3 - C4 - F3 - - -',
+        'F3 - C4 - F3 - C4 - C3 - G3 - C3 - G3 - C3 - G3 - Bb2 - G3 - F3 - C4 - F3 - - -',
+        'Bb2 - F3 - Bb2 - F3 - F3 - C4 - F3 - C4 - G2 - D3 - G2 - D3 - C3 - G3 - C3 - E3 -',
+        'F3 - C4 - F3 - C4 - C3 - G3 - C3 - G3 - C3 - G3 - C3 - E3 - F3 - C4 - F3 - - -',
+      ] },
+      { wave: 'noise', volume: 0.05, notes: 'x - x - x - x x' },
+    ],
+  },
   boss: {
     bpm: 168,
     parts: [
@@ -265,7 +283,7 @@ const SONGS = {
 };
 
 // By level number, starting from the home village.
-const WORLD_SONGS = ['home', 'forest', 'desert', 'snow', 'lava', 'giantHouse', 'pirate', 'deep', 'surf', 'underground', 'magma', 'clouds'];
+const WORLD_SONGS = ['home', 'forest', 'desert', 'snow', 'lava', 'giantHouse', 'pirate', 'deep', 'surf', 'underground', 'magma', 'clouds', 'sunflower'];
 
 const MIDI_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const midiToNote = (midi) => `${MIDI_NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;

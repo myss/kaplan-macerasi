@@ -33,7 +33,8 @@ const BOSS_SKY_EDGE = 1.5; // metres the boss keeps from the sky arena's edge
 const BOSS_SKY_FALL = 4; // metres below the sky arena that count as having fallen off
 
 // lives: more than BOSS_LIVES for a tougher boss; the hard level adds the same number on top.
-// spin.grabs: caught and whirled around unharmed, then flung into a lost life. Otherwise it burns on touch.
+// spin.grabs: caught and whirled around unharmed, then flung into a lost life. Otherwise it hurts on
+// touch, with spin.message if it does not burn.
 const BOSS_KINDS = {
   walkingTree: {
     name: 'Dev Yürüyen Ağaç', scale: 3.4, speed: 1.2, moves: ['throw', 'spin'],
@@ -66,6 +67,12 @@ const BOSS_KINDS = {
     name: 'Dünyanın Çekirdeği', scale: 6, speed: 1.6, lives: 6, moves: ['throw', 'slam', 'spin'], burnsOnLanding: true, color: [1.5, 0.55, 0.08],
     ball: { count: 4, speed: 7, radius: 0.9, color: [1.5, 0.6, 0.08], burst: [0.85, 0.85, 0.88] },
     spin: { radius: 10, turnsPerSecond: 0.7, color: [1.5, 0.9, 0.2], grabs: false },
+  },
+  // Throws its seeds and sweeps with its leaves.
+  sunflower: {
+    name: 'Dev Ayçiçeği', scale: 4, speed: 1.4, lives: 6, moves: ['throw', 'spin', 'throw', 'slam'], color: [1, 0.8, 0.08],
+    ball: { count: 5, speed: 7.5, radius: 0.3, color: [0.2, 0.14, 0.1], burst: [0.36, 0.22, 0.1] },
+    spin: { radius: 8, turnsPerSecond: 0.55, color: [0.3, 0.6, 0.18], grabs: false, message: 'Ah! Yapraklarıyla vurdu! Dönerken zıpla!' },
   },
   // Whirls the tiger around instead of sweeping, and throws lightning.
   tornado: {
@@ -276,7 +283,7 @@ function updateBossSpin(dt) {
       boss.state = 'grab';
       showMessage('Yakalandın!', GRAB_SECONDS);
     } else {
-      bossHurtsTiger('Ah! Kolları çok sıcak! Dönerken zıpla!');
+      bossHurtsTiger(spin.message ?? 'Ah! Kolları çok sıcak! Dönerken zıpla!');
     }
   }
 }

@@ -181,6 +181,7 @@ const HOME_ENTRANCES = [
   { level: 9, build: 'moleHole', x: 24, z: 60 },
   { level: 10, build: 'magmaPit', x: 46, z: 60 }, // beside the mole hole: under the moles' city is the magma
   { level: 11, build: 'cloudCave', x: -46, z: 60 },
+  { level: 12, build: 'giantSunflower', x: -46, z: 38 },
 ];
 
 function buildHomeVillage(api) {
@@ -253,6 +254,19 @@ function buildHomeVillage(api) {
     iceCave(cx, floor, cz) {
       cave(cx, floor, cz, BLOCK.ICE);
       return { radius: 1.8, portal: [0.6, 1, 1.4] };
+    },
+    // Taller than any house, looking at the village. The way in is at the foot of its stalk.
+    giantSunflower(cx, floor, cz) {
+      for (let y = 1; y <= 40; y++) disc(cx, floor + y, cz, 2, BLOCK.STEM);
+      for (const [side, y] of [[1, 14], [-1, 24]]) stampBlob(cx + side * 6, floor + y, cz, 5, 1, 3, BLOCK.STEM);
+      const headY = floor + 46;
+      for (let y = -16; y <= 16; y++) {
+        for (let x = -16; x <= 16; x++) {
+          const out = Math.hypot(x, y), petalTip = 11 + 5 * Math.abs(Math.cos(Math.atan2(y, x) * 6));
+          if (out <= petalTip) box(cx + x, headY + y, cz - 3, cx + x, headY + y, cz - 2, out <= 9 ? BLOCK.SEEDS : BLOCK.PETAL);
+        }
+      }
+      return { radius: 1.8, portal: [1.4, 1.1, 0.2], portalAt: -2.5 };
     },
     // A cave of cloud with smaller puffs piled on it.
     cloudCave(cx, floor, cz) {

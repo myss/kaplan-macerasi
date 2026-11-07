@@ -31,6 +31,8 @@ const MONSTER_KINDS = {
     speed: 2.4, scale: 1.3, color: [0.52, 0.54, 0.6], ball: LIGHTNING_BALL, burnsOnLanding: true,
     landingMessage: 'Bzzt! Elektrikli buluta basma, uzaktan vur!',
   },
+  // Crouches, then hops at the tiger in a long arc.
+  grasshopper: { speed: 3.4, scale: 1.2, color: [0.36, 0.7, 0.2], slides: true, hops: true },
 };
 
 const MONSTER_SEE_RADIUS = 14;
@@ -52,6 +54,7 @@ const SLIDE_WINDUP_SECONDS = 0.8;
 const SLIDE_SECONDS = 1;
 const SLIDE_SPEED = 11;
 const SLIDE_COOLDOWN_SECONDS = 6;
+const HOP_HEIGHT = 2.5;
 const SWARM_SIZE = 3;
 const SWARM_FLEE_SECONDS = 3;
 const FIN_SHOWING = 0.55; // how much of the shark's model stays above the ground, before scale
@@ -138,7 +141,8 @@ function turnMonster(monster, heading, dt) {
   monster.yaw += turn * Math.min(1, dt * 6);
 }
 
-// The polar bear shakes, then throws itself down and slides at the tiger in a straight line.
+// The polar bear shakes, then throws itself down and slides at the tiger in a straight line. The
+// grasshopper does the same in the air, hopping over whatever is in its way.
 function updateSlide(monster, dt, seesTiger, flatDistance, toX, toZ) {
   if (monster.state === 'windup') {
     turnMonster(monster, Math.atan2(toX, toZ), dt);
@@ -147,21 +151,23 @@ function updateSlide(monster, dt, seesTiger, flatDistance, toX, toZ) {
     if (monster.timer <= 0) {
       monster.state = 'slide';
       monster.timer = SLIDE_SECONDS;
-      playSound('slide');
+      playSound(monster.hops ? 'jump' : 'slide');
     }
     return true;
   }
   if (monster.state === 'slide') {
     const x = monster.x + Math.sin(monster.yaw) * SLIDE_SPEED * dt, z = monster.z + Math.cos(monster.yaw) * SLIDE_SPEED * dt;
     monster.timer -= dt;
-    if (monster.timer <= 0 || isBlocked(x, monster.y, z)) {
+    if (monster.timer <= 0 || isBlocked(x, monster.y + monster.lift, z)) {
       monster.state = 'wander';
       monster.abilityCooldown = SLIDE_COOLDOWN_SECONDS;
       monster.cooldown = MONSTER_REST_SECONDS;
+      monster.lift = 0;
     } else {
       monster.x = x;
       monster.z = z;
-      burst(x, monster.y + 0.1, z, [0.93, 0.95, 0.98], 2);
+      if (monster.hops) monster.lift = Math.sin((1 - monster.timer / SLIDE_SECONDS) * Math.PI) * HOP_HEIGHT;
+      else burst(x, monster.y + 0.1, z, [0.93, 0.95, 0.98], 2);
     }
     return true;
   }
